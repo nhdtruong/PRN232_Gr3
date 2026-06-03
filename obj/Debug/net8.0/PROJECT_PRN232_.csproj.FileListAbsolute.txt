@@ -138,3 +138,6 @@ D:\Demo\PROJECT_PRN232_\PROJECT_PRN232_\obj\Debug\net8.0\refint\PROJECT_PRN232_.
 D:\Demo\PROJECT_PRN232_\PROJECT_PRN232_\obj\Debug\net8.0\PROJECT_PRN232_.pdb
 D:\Demo\PROJECT_PRN232_\PROJECT_PRN232_\obj\Debug\net8.0\PROJECT_PRN232_.genruntimeconfig.cache
 D:\Demo\PROJECT_PRN232_\PROJECT_PRN232_\obj\Debug\net8.0\ref\PROJECT_PRN232_.dll
+D:\Demo\PROJECT_PRN232_\PROJECT_PRN232_\bin\Debug\net8.0\BCrypt.Net-Next.dll
+D:\Demo\PROJECT_PRN232_\PROJECT_PRN232_\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+D:\Demo\PROJECT_PRN232_\PROJECT_PRN232_\obj\Debug\net8.0\PROJECT_PRN232_.sourcelink.json

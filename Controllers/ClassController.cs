@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PROJECT_PRN232_.DTOs;
 using PROJECT_PRN232_.Services;
@@ -6,6 +7,7 @@ namespace PROJECT_PRN232_.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ClassController : ControllerBase
     {
         private readonly IClassService _classService;
@@ -34,6 +36,7 @@ namespace PROJECT_PRN232_.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Center")]
         public async Task<IActionResult> CreateClass([FromBody] ClassCreateDto dto)
         {
             if (!ModelState.IsValid)
@@ -46,6 +49,7 @@ namespace PROJECT_PRN232_.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Center")]
         public async Task<IActionResult> UpdateClass(int id, [FromBody] ClassUpdateDto dto)
         {
             if (id != dto.Id)
@@ -68,6 +72,7 @@ namespace PROJECT_PRN232_.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Center")]
         public async Task<IActionResult> DeleteClass(int id)
         {
             var success = await _classService.DeleteClassAsync(id);
