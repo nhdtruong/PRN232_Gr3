@@ -1,0 +1,33 @@
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace PRN232_Gr3.Data.Entities
+{
+    public class Notification
+    {
+        [Key]
+        public int NotificationID { get; set; }
+
+        public int? ClassID { get; set; }
+
+        [ForeignKey(nameof(ClassID))]
+        public virtual Class? Class { get; set; }
+
+        public int? ParentID { get; set; }
+
+        [ForeignKey(nameof(ParentID))]
+        public virtual User? Parent { get; set; }
+
+        [Required]
+        [StringLength(255)]
+        public string Title { get; set; } = null!;
+
+        [Required]
+        public string Message { get; set; } = null!;
+
+        public bool IsRead { get; set; } = false;
+
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+    }
+}

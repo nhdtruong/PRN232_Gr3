@@ -1,0 +1,17 @@
+﻿{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=KENVOID;Database=EduBridgeDb;Trusted_Connection=True;MultipleActiveResultSets=true"
+  },
+  "Jwt": {
+    "Key": "Chuoi_Key_Bao_Mat_Sieu_Cap_Cua_EduBridge_2026",
+    "Issuer": "EduBridgeServer",
+    "Audience": "EduBridgeClient"
+  },
+  "AllowedHosts": "*"
+}

@@ -1,0 +1,24 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace PRN232_Gr3.Data.Entities
+{
+    public class ChatChannel
+    {
+        [Key]
+        public int ChannelID { get; set; }
+
+        [Required]
+        public int CenterID { get; set; }
+        public virtual User Center { get; set; } = null!;
+
+        [Required]
+        public int ParentID { get; set; }
+        public virtual User Parent { get; set; } = null!;
+
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        public virtual ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
+    }
+}

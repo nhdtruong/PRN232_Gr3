@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Demo\\PROJECT_PRN232_\\PROJECT_PRN232_\\PROJECT_PRN232_.csproj": {}
+    "C:\\Users\\Adminn\\OneDrive\\Âm nhạc\\Máy tính\\SU26\\PRN232\\PRN232_Gr3\\PROJECT_PRN232_.csproj": {}
   },
   "projects": {
-    "D:\\Demo\\PROJECT_PRN232_\\PROJECT_PRN232_\\PROJECT_PRN232_.csproj": {
+    "C:\\Users\\Adminn\\OneDrive\\Âm nhạc\\Máy tính\\SU26\\PRN232\\PRN232_Gr3\\PROJECT_PRN232_.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Demo\\PROJECT_PRN232_\\PROJECT_PRN232_\\PROJECT_PRN232_.csproj",
+        "projectUniqueName": "C:\\Users\\Adminn\\OneDrive\\Âm nhạc\\Máy tính\\SU26\\PRN232\\PRN232_Gr3\\PROJECT_PRN232_.csproj",
         "projectName": "PROJECT_PRN232_",
-        "projectPath": "D:\\Demo\\PROJECT_PRN232_\\PROJECT_PRN232_\\PROJECT_PRN232_.csproj",
-        "packagesPath": "C:\\Users\\dantr\\.nuget\\packages\\",
-        "outputPath": "D:\\Demo\\PROJECT_PRN232_\\PROJECT_PRN232_\\obj\\",
+        "projectPath": "C:\\Users\\Adminn\\OneDrive\\Âm nhạc\\Máy tính\\SU26\\PRN232\\PRN232_Gr3\\PROJECT_PRN232_.csproj",
+        "packagesPath": "C:\\Users\\Adminn\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Adminn\\OneDrive\\Âm nhạc\\Máy tính\\SU26\\PRN232\\PRN232_Gr3\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "D:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\dantr\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Adminn\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,7 +26,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
+          "D:\\NugetPackages": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -95,7 +95,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.300/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.312/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

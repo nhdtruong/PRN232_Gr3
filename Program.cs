@@ -1,13 +1,12 @@
-
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using PROJECT_PRN232_.Data;
-using PROJECT_PRN232_.Repositories;
-using PROJECT_PRN232_.Services;
+using PRN232_Gr3.Data;
+using PRN232_Gr3.Repositories;
+using PRN232_Gr3.Services;
 
-namespace PROJECT_PRN232_
+namespace PRN232_Gr3
 {
     public class Program
     {
@@ -89,3 +88,5 @@ namespace PROJECT_PRN232_
         }
     }
 }
+
+
