@@ -38,13 +38,27 @@ namespace PROJECT_PRN232_.Services
             return true;
         }
 
-        // 2. Logic Đăng nhập & Tạo Token JWT
+        // 1.5. Logic Kiểm tra thông tin đăng nhập (Dùng chung cho cả API và Razor Pages)
+        public async Task<User?> AuthenticateAsync(string username, string password)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => 
+                u.Username == username || 
+                u.Email == username || 
+                u.Phone == username);
+
+            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+                return null;
+
+            return user;
+        }
+
+        // 2. Logic Đăng nhập & Tạo Token JWT (Dành cho API)
         public async Task<string?> LoginAsync(LoginDto dto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == dto.Username);
+            var user = await AuthenticateAsync(dto.Username, dto.Password);
             
-            // Kiểm tra user tồn tại và khớp mật khẩu đã băm
-            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            // Kiểm tra user tồn tại
+            if (user == null)
                 return null; 
 
             // Tạo danh sách Claims (Thông tin đính kèm trong thẻ token)
