@@ -1,0 +1,40 @@
+@page "{id:int}"
+@model PROJECT_PRN232_.Pages.Center.Parents.EditModel
+
+@{
+    ViewData["Title"] = "Cập nhật Phụ Huynh";
+}
+
+<div class="container mt-4">
+    <h2>Cập nhật thông tin Phụ huynh</h2>
+    <hr />
+    <div class="row">
+        <div class="col-md-6">
+            <form method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <input type="hidden" asp-for="Input.Id" />
+
+                <div class="form-group mb-3">
+                    <label asp-for="Input.FullName" class="form-label"></label>
+                    <input asp-for="Input.FullName" class="form-control" />
+                    <span asp-validation-for="Input.FullName" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="Input.Email" class="form-label"></label>
+                    <input asp-for="Input.Email" class="form-control" />
+                    <span asp-validation-for="Input.Email" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="Input.Phone" class="form-label"></label>
+                    <input asp-for="Input.Phone" class="form-control" />
+                    <span asp-validation-for="Input.Phone" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                <a asp-page="./Index" class="btn btn-secondary ms-2">Trở về</a>
+            </form>
+        </div>
+    </div>
+</div>

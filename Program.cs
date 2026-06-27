@@ -83,6 +83,7 @@ namespace PROJECT_PRN232_
             using (var scope = app.Services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                context.Database.Migrate(); // Tự động tạo Database và chạy Migrations nếu chưa có
                 DbSeeder.Seed(context);
             }
 
