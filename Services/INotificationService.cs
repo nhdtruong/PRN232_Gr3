@@ -30,6 +30,12 @@ namespace PROJECT_PRN232_.Services
         /// <summary>Thông báo con được nhập học vào lớp cho 1 phụ huynh cụ thể.</summary>
         Task NotifyStudentEnrolledAsync(int parentId, string studentName, int classId, string className);
 
+        /// <summary>Thông báo con bị xóa/rút khỏi lớp cho 1 phụ huynh cụ thể.</summary>
+        Task NotifyStudentRemovedAsync(int parentId, string studentName, int classId, string className);
+
+        /// <summary>Thông báo con được chuyển lớp cho 1 phụ huynh cụ thể.</summary>
+        Task NotifyStudentTransferredAsync(int parentId, string studentName, int fromClassId, string fromClassName, int toClassId, string toClassName);
+
         /// <summary>
         /// Thông báo buổi học mới được tạo đến TẤT CẢ phụ huynh có con trong lớp.
         /// </summary>
@@ -46,6 +52,6 @@ namespace PROJECT_PRN232_.Services
         /// <summary>
         /// Gửi thông báo tổng hợp (Lớp, Buổi, Thời gian, danh sách tài liệu) khi Center xuất bản buổi học.
         /// </summary>
-        Task NotifyPublishedLessonAsync(int lessonId, int classId, string className, string lessonTitle, DateTime lessonDate, List<string> materialTitles);
+        Task NotifyPublishedLessonAsync(int lessonId, int classId, string className, string lessonTitle, DateTime lessonDate, List<string> materialTitles, bool isRebroadcast = false);
     }
 }

@@ -152,7 +152,7 @@ namespace PROJECT_PRN232_.Services
             // Bảo mật: Center sở hữu lớp này mới được quyền publish
             if (lesson.Class.CenterId != centerUserId) return false;
 
-            if (lesson.IsPublished) return true; // Đã publish rồi
+            bool isRebroadcast = lesson.IsPublished;
 
             lesson.IsPublished = true;
             await _context.SaveChangesAsync();
@@ -167,7 +167,8 @@ namespace PROJECT_PRN232_.Services
                 lesson.Class.ClassName,
                 lesson.Title,
                 lesson.LessonDate,
-                materialTitles);
+                materialTitles,
+                isRebroadcast);
 
             return true;
         }

@@ -186,6 +186,83 @@ namespace PROJECT_PRN232_.Services
             await _realtimeNotifier.PushNotificationToParentAsync(parentId, dto, unreadCount);
         }
 
+        // ── Thông báo con bị xóa/rút khỏi lớp (1 phụ huynh cụ thể) ──────────
+        public async Task NotifyStudentRemovedAsync(int parentId, string studentName, int classId, string className)
+        {
+            if (parentId == 0) return;
+
+            var messageBody = $@"
+<div class='mb-2'><b>Học sinh:</b> {studentName}</div>
+<div class='mb-2'><b>Lớp học:</b> <span class='badge bg-danger text-white'>{className}</span></div>
+<hr style='opacity: 0.15; margin: 10px 0;'>
+<div class='text-muted small' style='font-size: 0.8rem;'>Học sinh đã được rút khỏi lớp học này. Vui lòng liên hệ với trung tâm nếu phụ huynh có bất kỳ thắc mắc nào.</div>
+";
+
+            var notification = new Notification
+            {
+                ParentId = parentId,
+                ClassId = classId,
+                Title = $"Rút khỏi lớp học - {studentName}",
+                Message = messageBody,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            };
+
+            await _notificationRepository.AddAsync(notification);
+            var unreadCount = await _notificationRepository.CountUnreadByParentAsync(parentId);
+
+            var dto = new NotificationResponseDto
+            {
+                Id = notification.Id,
+                ClassId = notification.ClassId,
+                Title = notification.Title,
+                Message = notification.Message,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt
+            };
+
+            await _realtimeNotifier.PushNotificationToParentAsync(parentId, dto, unreadCount);
+        }
+
+        // ── Thông báo con được chuyển lớp (1 phụ huynh cụ thể) ──────────
+        public async Task NotifyStudentTransferredAsync(int parentId, string studentName, int fromClassId, string fromClassName, int toClassId, string toClassName)
+        {
+            if (parentId == 0) return;
+
+            var messageBody = $@"
+<div class='mb-2'><b>Học sinh:</b> {studentName}</div>
+<div class='mb-2'><b>Từ lớp:</b> <span class='badge bg-secondary text-white'>{fromClassName}</span></div>
+<div class='mb-2'><b>Sang lớp:</b> <span class='badge bg-indigo text-white' style='background-color: #4F46E5;'>{toClassName}</span></div>
+<hr style='opacity: 0.15; margin: 10px 0;'>
+<div class='text-muted small' style='font-size: 0.8rem;'>Học sinh đã được chuyển lớp thành công. Phụ huynh có thể bắt đầu theo dõi lịch học mới tại mục <b>Lớp của con</b>.</div>
+";
+
+            var notification = new Notification
+            {
+                ParentId = parentId,
+                ClassId = toClassId,
+                Title = $"Chuyển lớp thành công - {studentName}",
+                Message = messageBody,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            };
+
+            await _notificationRepository.AddAsync(notification);
+            var unreadCount = await _notificationRepository.CountUnreadByParentAsync(parentId);
+
+            var dto = new NotificationResponseDto
+            {
+                Id = notification.Id,
+                ClassId = notification.ClassId,
+                Title = notification.Title,
+                Message = notification.Message,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt
+            };
+
+            await _realtimeNotifier.PushNotificationToParentAsync(parentId, dto, unreadCount);
+        }
+
         // ── Thông báo buổi học mới đến TẤT CẢ phụ huynh trong lớp ────────────
         public async Task NotifyNewLessonAsync(int classId, string className, string lessonTitle, DateTime lessonDate)
         {
@@ -266,7 +343,7 @@ namespace PROJECT_PRN232_.Services
         }
 
         // ── Gửi thông báo tổng hợp khi xuất bản buổi học ────────────────────
-        public async Task NotifyPublishedLessonAsync(int lessonId, int classId, string className, string lessonTitle, DateTime lessonDate, List<string> materialTitles)
+        public async Task NotifyPublishedLessonAsync(int lessonId, int classId, string className, string lessonTitle, DateTime lessonDate, List<string> materialTitles, bool isRebroadcast = false)
         {
             var parentIds = await _context.ClassStudents
                 .Where(cs => cs.ClassId == classId)
@@ -312,7 +389,7 @@ namespace PROJECT_PRN232_.Services
                 {
                     ParentId = parentId,
                     ClassId = classId,
-                    Title = $"Buổi học mới - {className}",
+                    Title = isRebroadcast ? $"Cập nhật buổi học - {className}" : $"Buổi học mới - {className}",
                     Message = messageBody,
                     IsRead = false,
                     CreatedAt = DateTime.Now

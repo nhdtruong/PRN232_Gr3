@@ -90,7 +90,21 @@ namespace PROJECT_PRN232_.Services
 
         public async Task<bool> RemoveStudentFromClassAsync(int classId, int studentId)
         {
-            return await _classStudentRepository.RemoveAsync(classId, studentId);
+            var student = await _studentRepository.GetByIdAsync(studentId);
+            var classEntity = await _classRepository.GetClassByIdAsync(classId);
+
+            var success = await _classStudentRepository.RemoveAsync(classId, studentId);
+
+            if (success && student != null && classEntity != null)
+            {
+                await _notificationService.NotifyStudentRemovedAsync(
+                    student.ParentId,
+                    student.FullName,
+                    classEntity.Id,
+                    classEntity.ClassName);
+            }
+
+            return success;
         }
 
         public async Task<bool> TransferStudentClassAsync(int studentId, int fromClassId, int toClassId)
@@ -105,6 +119,19 @@ namespace PROJECT_PRN232_.Services
             if (string.Equals(targetClass.Status, "Closed", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("Không thể chuyển học sinh vào lớp học đã đóng.");
+            }
+
+            // 1.5. Verify source class and student exist
+            var sourceClass = await _classRepository.GetClassByIdAsync(fromClassId);
+            if (sourceClass == null)
+            {
+                throw new ArgumentException($"Lớp học nguồn ID {fromClassId} không tồn tại.");
+            }
+
+            var student = await _studentRepository.GetByIdAsync(studentId);
+            if (student == null)
+            {
+                throw new ArgumentException($"Học sinh ID {studentId} không tồn tại.");
             }
 
             // 2. Verify target class is not duplicate
@@ -130,6 +157,15 @@ namespace PROJECT_PRN232_.Services
                 EnrolledAt = DateTime.Now
             };
             await _classStudentRepository.AddAsync(newEnrollment);
+
+            // Gửi thông báo chuyển lớp thành công cho Phụ huynh
+            await _notificationService.NotifyStudentTransferredAsync(
+                student.ParentId,
+                student.FullName,
+                sourceClass.Id,
+                sourceClass.ClassName,
+                targetClass.Id,
+                targetClass.ClassName);
 
             return true;
         }

@@ -143,14 +143,22 @@ function renderLessons() {
             ? `<span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small fw-semibold" style="font-size: 0.72rem;"><i class="bi bi-broadcast-pin me-1"></i>Đã phát sóng</span>`
             : `<span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2 py-1 small fw-semibold" style="font-size: 0.72rem;"><i class="bi bi-pencil-fill me-1"></i>Nháp</span>`;
 
-        // Nút phát sóng thông báo (chỉ hiện khi chưa xuất bản)
-        const publishButtonHtml = lesson.isPublished ? '' : `
+        // Nút phát sóng thông báo (hiện nút Phát sóng lại nếu đã xuất bản)
+        const publishButtonHtml = lesson.isPublished 
+            ? `
+            <button class="btn btn-outline-primary btn-sm rounded-pill w-100 mb-3 fw-bold shadow-sm" 
+                    onclick="publishLesson(${lesson.id}, true)" 
+                    style="border: 2px solid #4F46E5; color: #4F46E5; background-color: transparent; font-size: 0.8rem; padding: 5px 12px;">
+                <i class="bi bi-arrow-repeat me-1"></i> Phát sóng lại thông báo
+            </button>
+            `
+            : `
             <button class="btn btn-primary btn-sm rounded-pill w-100 mb-3 fw-bold shadow-sm" 
-                    onclick="publishLesson(${lesson.id})" 
+                    onclick="publishLesson(${lesson.id}, false)" 
                     style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); border: none; font-size: 0.8rem; padding: 6px 12px;">
                 <i class="bi bi-broadcast me-1"></i> Phát sóng thông báo
             </button>
-        `;
+            `;
 
         return `
             <div class="col-lg-4 col-md-6 col-sm-12">
@@ -310,10 +318,19 @@ async function editLesson(id) {
 }
 
 // Phát sóng thông báo buổi học tới phụ huynh
-async function publishLesson(id) {
+async function publishLesson(id, isRebroadcast = false) {
+    const titleText = isRebroadcast ? 'Phát sóng lại thông báo?' : 'Phát sóng thông báo?';
+    const textMsg = isRebroadcast 
+        ? "Tài liệu buổi học đã thay đổi. Hệ thống sẽ gửi thông báo cập nhật mới tới toàn bộ Phụ huynh có con trong lớp."
+        : "Hệ thống sẽ gửi thông báo tổng hợp kèm nút xem nhanh tài liệu tới toàn bộ Phụ huynh có con trong lớp này.";
+    const successTitle = isRebroadcast ? 'Đã phát sóng lại!' : 'Đã phát sóng!';
+    const successText = isRebroadcast 
+        ? 'Thông báo cập nhật đã được gửi tới toàn bộ Phụ huynh!'
+        : 'Thông báo tổng hợp đã được gửi tới toàn bộ Phụ huynh!';
+
     Swal.fire({
-        title: 'Phát sóng thông báo?',
-        text: "Hệ thống sẽ gửi thông báo tổng hợp kèm nút xem nhanh tài liệu tới toàn bộ Phụ huynh có con trong lớp này.",
+        title: titleText,
+        text: textMsg,
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#4F46E5',
@@ -329,8 +346,8 @@ async function publishLesson(id) {
 
                 if (response.ok) {
                     Swal.fire({
-                        title: 'Đã phát sóng!',
-                        text: 'Thông báo tổng hợp đã được gửi tới toàn bộ Phụ huynh!',
+                        title: successTitle,
+                        text: successText,
                         icon: 'success',
                         confirmButtonColor: '#4F46E5'
                     });
