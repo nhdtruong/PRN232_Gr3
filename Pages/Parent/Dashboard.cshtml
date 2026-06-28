@@ -6,19 +6,53 @@
 
 <div class="row mt-4">
     <div class="col-12">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0 rounded-4">
             <div class="card-body text-center p-5">
-                <h1 class="display-5 text-primary mb-3">👨‍👩‍👧 Xin chào Phụ huynh!</h1>
-                <p class="lead">Chào mừng bạn đã đăng nhập thành công vào Hệ thống EduBridge bằng chuẩn Razor Pages của PRN232.</p>
-                <hr class="my-4">
-                <p>Tại đây, bạn sẽ có thể:</p>
-                <ul class="list-unstyled">
-                    <li>✔️ Cập nhật hồ sơ cá nhân</li>
-                    <li>✔️ Đổi mật khẩu bảo mật</li>
-                    <li>✔️ Theo dõi tình hình học tập của con em</li>
-                </ul>
-                <a asp-page="/Parent/ChildrenClasses" class="btn btn-primary rounded-pill px-4 py-2 mt-3"><i class="fa-solid fa-graduation-cap me-2"></i>Xem Lớp học của con</a>
+                <h1 class="display-5 text-primary mb-3 fw-bold">👨‍👩‍👧 Xin chào Phụ huynh!</h1>
+                <p class="lead text-muted">Chào mừng bạn đã đăng nhập thành công vào Hệ thống quản lý EduBridge.</p>
+                <p class="small text-muted mb-3">Vui lòng sử dụng các thẻ chức năng bên dưới hoặc thanh Menu để bắt đầu theo dõi con em.</p>
+                <a asp-page="/Parent/ChildrenClasses" class="btn btn-primary rounded-pill px-4 py-2"><i class="fa-solid fa-graduation-cap me-2"></i>Xem Lớp học của con</a>
             </div>
         </div>
     </div>
 </div>
+
+<div class="row g-4 mt-2 mb-5">
+    <!-- Xem lịch học -->
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm border-0 rounded-4 hover-card">
+            <div class="card-body text-center p-4">
+                <div class="display-4 text-primary mb-3">
+                    📅
+                </div>
+                <h3 class="card-title fw-bold">Lịch học & Tài liệu</h3>
+                <p class="card-text text-muted">Theo dõi lịch học các buổi của con và tải tài liệu slide bài giảng, bài tập về nhà.</p>
+                <a href="/Parent/Lessons" class="btn btn-primary rounded-pill px-4 py-2 mt-2">Truy cập lịch học</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Xem chuyên cần -->
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm border-0 rounded-4 hover-card">
+            <div class="card-body text-center p-4">
+                <div class="display-4 text-danger mb-3">
+                    ⏱️
+                </div>
+                <h3 class="card-title fw-bold">Lịch sử chuyên cần</h3>
+                <p class="card-text text-muted">Theo dõi tình hình điểm danh (Có mặt, Đi muộn, Vắng mặt) và lý do chi tiết.</p>
+                <a href="/Parent/Attendance" class="btn btn-danger rounded-pill px-4 py-2 mt-2 text-white">Truy cập chuyên cần</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+</style>

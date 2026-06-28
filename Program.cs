@@ -32,6 +32,9 @@ namespace PROJECT_PRN232_
             builder.Services.AddScoped<IParentProfileService, ParentProfileService>();
 
             builder.Services.AddScoped<ILessonRepository, LessonRepository>();
+            builder.Services.AddScoped<ILessonService, LessonService>();
+            builder.Services.AddScoped<IMaterialRepository, MaterialRepository>();
+            builder.Services.AddScoped<IMaterialService, MaterialService>();
             builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
             builder.Services.AddScoped<IAssessmentRepository, AssessmentRepository>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();

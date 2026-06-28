@@ -7,7 +7,7 @@ namespace PROJECT_PRN232_.Data
     {
         public static void Seed(AppDbContext context)
         {
-            // Chỉ thêm nếu Database đang trống (chưa có User nào)
+            // 1. Tạo Users nếu chưa có
             if (!context.Users.Any())
             {
                 var centerUser = new User
@@ -55,6 +55,75 @@ namespace PROJECT_PRN232_.Data
                 var enrollment2 = new ClassStudent { ClassId = class2.Id, StudentId = student2.Id, EnrolledAt = System.DateTime.Now };
                 context.ClassStudents.AddRange(enrollment1, enrollment2);
                 context.SaveChanges();
+            }
+
+            // Lấy ID của Center và Parent hiện có để phục vụ liên kết
+            var center = context.Users.FirstOrDefault(u => u.Role == "Center");
+            var parent = context.Users.FirstOrDefault(u => u.Role == "Parent");
+
+            if (center != null && parent != null)
+            {
+                // 2. Tạo Classes mẫu nếu chưa có
+                if (!context.Classes.Any())
+                {
+                    var class1 = new Class
+                    {
+                        ClassName = "Lớp Lập trình C# Cơ bản - PRN232",
+                        CenterId = center.Id,
+                        Status = "Active",
+                        CreatedAt = System.DateTime.Now
+                    };
+
+                    var class2 = new Class
+                    {
+                        ClassName = "Lớp Phát triển Web với ASP.NET Core - PRN211",
+                        CenterId = center.Id,
+                        Status = "Active",
+                        CreatedAt = System.DateTime.Now
+                    };
+
+                    context.Classes.AddRange(class1, class2);
+                    context.SaveChanges();
+                }
+
+                // 3. Tạo Students mẫu nếu chưa có
+                if (!context.Students.Any())
+                {
+                    var student1 = new Student
+                    {
+                        FullName = "Nguyễn Văn A (Con Cưng)",
+                        DateOfBirth = new System.DateTime(2015, 5, 10),
+                        ParentId = parent.Id
+                    };
+
+                    var student2 = new Student
+                    {
+                        FullName = "Nguyễn Thị B (Con Thứ)",
+                        DateOfBirth = new System.DateTime(2017, 8, 20),
+                        ParentId = parent.Id
+                    };
+
+                    context.Students.AddRange(student1, student2);
+                    context.SaveChanges();
+                }
+
+                // 4. Liên kết học sinh vào Lớp học (ClassStudent) nếu chưa có
+                if (!context.ClassStudents.Any())
+                {
+                    var firstClass = context.Classes.FirstOrDefault();
+                    var firstStudent = context.Students.FirstOrDefault();
+
+                    if (firstClass != null && firstStudent != null)
+                    {
+                        var classStudent = new ClassStudent
+                        {
+                            ClassId = firstClass.Id,
+                            StudentId = firstStudent.Id
+                        };
+                        context.ClassStudents.Add(classStudent);
+                        context.SaveChanges();
+                    }
+                }
             }
         }
     }

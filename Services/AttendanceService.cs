@@ -1,7 +1,13 @@
+using Microsoft.EntityFrameworkCore;
+using PROJECT_PRN232_.Data;
 using PROJECT_PRN232_.Data.Entities;
 using PROJECT_PRN232_.Data.Enums;
 using PROJECT_PRN232_.DTOs;
 using PROJECT_PRN232_.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace PROJECT_PRN232_.Services
 {
@@ -9,11 +15,13 @@ namespace PROJECT_PRN232_.Services
     {
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly ILessonRepository _lessonRepository;
+        private readonly AppDbContext _context;
 
-        public AttendanceService(IAttendanceRepository attendanceRepository, ILessonRepository lessonRepository)
+        public AttendanceService(IAttendanceRepository attendanceRepository, ILessonRepository lessonRepository, AppDbContext context)
         {
             _attendanceRepository = attendanceRepository;
             _lessonRepository = lessonRepository;
+            _context = context;
         }
 
         public async Task<IEnumerable<AttendanceResponseDto>> GetByLessonIdAsync(int lessonId, int? parentIdFilter = null)
@@ -53,12 +61,52 @@ namespace PROJECT_PRN232_.Services
             return true;
         }
 
+        // Lấy lịch sử điểm danh của học sinh (Parent hoặc Center xem)
+        public async Task<IEnumerable<AttendanceResponseDto>> GetByStudentIdAsync(int studentId, int? parentIdFilter = null)
+        {
+            // Bảo mật: Nếu là Phụ huynh, kiểm tra xem học sinh đó có thực sự là con của phụ huynh này không
+            if (parentIdFilter.HasValue)
+            {
+                var isOwnChild = await _context.Students
+                    .AnyAsync(s => s.Id == studentId && s.ParentId == parentIdFilter.Value);
+                if (!isOwnChild)
+                {
+                    return Enumerable.Empty<AttendanceResponseDto>();
+                }
+            }
+
+            var list = await _attendanceRepository.GetByStudentIdAsync(studentId);
+            return list.Select(MapToDto);
+        }
+
+        // Center sửa 1 bản ghi điểm danh
+        public async Task<bool> UpdateSingleAsync(int attendanceId, AttendanceUpsertDto dto, int centerUserId)
+        {
+            // Tìm bản ghi điểm danh và thông tin lớp học liên quan
+            var existing = await _context.Attendances
+                .Include(a => a.Lesson)
+                    .ThenInclude(l => l.Class)
+                .FirstOrDefaultAsync(a => a.Id == attendanceId);
+
+            if (existing == null) return false;
+
+            // Bảo mật: Chỉ Center sở hữu lớp học của buổi học này mới được quyền sửa
+            if (existing.Lesson.Class.CenterId != centerUserId) return false;
+
+            existing.Status = dto.Status;
+            existing.Note = dto.Note;
+
+            return await _attendanceRepository.UpdateSingleAsync(existing);
+        }
+
         private static AttendanceResponseDto MapToDto(Attendance a) => new()
         {
             Id = a.Id,
             StudentId = a.StudentId,
-            StudentName = a.Student.FullName,
+            StudentName = a.Student?.FullName ?? string.Empty,
             LessonId = a.LessonId,
+            LessonTitle = a.Lesson?.Title ?? string.Empty,
+            ClassName = a.Lesson?.Class?.ClassName ?? string.Empty,
             Status = a.Status,
             Note = a.Note,
             UpdatedAt = a.UpdatedAt
