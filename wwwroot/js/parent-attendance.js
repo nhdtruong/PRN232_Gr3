@@ -105,10 +105,8 @@ async function renderAttendance(childId) {
                     badgeHtml = `<span class="badge bg-success status-badge rounded-pill">✅ Có mặt</span>`;
                 } else if (r.status === "Absent" || r.status === 1) {
                     badgeHtml = `<span class="badge bg-danger status-badge rounded-pill">❌ Vắng mặt</span>`;
-                } else if (r.status === "Late" || r.status === 2) {
-                    badgeHtml = `<span class="badge bg-warning text-dark status-badge rounded-pill">⏰ Đi trễ</span>`;
                 } else {
-                    badgeHtml = `<span class="badge bg-secondary status-badge rounded-pill">📋 Có phép</span>`;
+                    badgeHtml = `<span class="badge bg-warning text-dark status-badge rounded-pill">⏰ Đi trễ</span>`;
                 }
 
                 // Giả lập hoặc lấy tên lớp

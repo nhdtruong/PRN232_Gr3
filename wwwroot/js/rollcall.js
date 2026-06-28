@@ -70,22 +70,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const scoreInput = row.querySelector('.score-input');
             const teacherCommentInput = row.querySelector('.teacher-comment-input');
             const attendanceNoteInput = row.querySelector('.attendance-note-input');
-
+ 
             const scoreRaw = scoreInput.value.trim();
             const scoreValue = scoreRaw !== '' ? parseFloat(scoreRaw) : null;
-
+ 
             payload.rows.push({
                 studentId: studentId,
-                status: attendanceSelect.value,  // "Present" | "Absent" | "Late" | "Excused"
+                status: mapStatusToEnum(attendanceSelect.value),  // Ánh xạ chuỗi "Late" thành số 2
                 note: attendanceNoteInput.value.trim() !== '' ? attendanceNoteInput.value.trim() : null,
                 score: scoreValue,
                 teacherComment: teacherCommentInput.value.trim() !== '' ? teacherCommentInput.value.trim() : null
             });
         });
-
+ 
         // Đặt trạng thái Loading cho nút
         setBtnLoading(true, btnSave, btnText, btnSpinner);
-
+ 
         // 3. Gửi request AJAX PUT tới API
         try {
             const response = await fetch(`/api/lessons/${lessonId}/rollcall`, {
@@ -109,10 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </span>`,
                     alertArea
                 );
-
+ 
                 // Cuộn mịn lên đầu trang để thấy thông báo
                 alertArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
+ 
             } else {
                 // 4b. Thất bại với lỗi từ server
                 let errorMsg = `HTTP ${response.status}`;
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch {
                     // Không parse được JSON, dùng status code
                 }
-
+ 
                 showToastAlert(
                     'danger',
                     `<i class="bi bi-x-circle-fill me-2"></i>
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     alertArea
                 );
             }
-
+ 
         } catch (networkError) {
             // 4c. Lỗi kết nối mạng
             showToastAlert(
@@ -147,8 +147,19 @@ document.addEventListener('DOMContentLoaded', () => {
             setBtnLoading(false, btnSave, btnText, btnSpinner);
         }
     });
-
+ 
     // ===== HELPER FUNCTIONS =====
+
+    // Ánh xạ trạng thái chuỗi sang Enum Number của C# Backend
+    function mapStatusToEnum(statusStr) {
+        switch (statusStr) {
+            case "Present": return 0;
+            case "Absent": return 1;
+            case "Late": return 2;
+            case "Excused": return 3;
+            default: return 0;
+        }
+    }
 
     // Hiển thị thông báo Alert nội tuyến (không reload trang)
     function showToastAlert(type, htmlContent, container) {

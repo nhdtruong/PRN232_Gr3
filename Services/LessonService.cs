@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using PROJECT_PRN232_.Data;
 using PROJECT_PRN232_.Data.Entities;
+using PROJECT_PRN232_.Data.Enums;
 using PROJECT_PRN232_.DTOs;
 using PROJECT_PRN232_.Repositories;
 
@@ -58,6 +59,28 @@ namespace PROJECT_PRN232_.Services
             };
 
             var created = await _lessonRepository.CreateAsync(lesson);
+
+            // TỰ ĐỘNG TẠO BẢN GHI ĐIỂM DANH MẶC ĐỊNH
+            // Lấy danh sách ID học sinh trong lớp
+            var studentIds = await _context.ClassStudents
+                .Where(cs => cs.ClassId == dto.ClassId)
+                .Select(cs => cs.StudentId)
+                .ToListAsync();
+
+            if (studentIds.Any())
+            {
+                var defaultAttendances = studentIds.Select(studentId => new Attendance
+                {
+                    StudentId = studentId,
+                    LessonId = created.Id,
+                    Status = AttendanceStatus.Present,
+                    Note = "Tự động khởi tạo",
+                    UpdatedAt = DateTime.Now
+                }).ToList();
+
+                _context.Attendances.AddRange(defaultAttendances);
+                await _context.SaveChangesAsync();
+            }
             
             // Lấy lại buổi học kèm Class navigation property để map đầy đủ thông tin tên Lớp
             var fullLesson = await _lessonRepository.GetLessonWithClassAsync(created.Id);
