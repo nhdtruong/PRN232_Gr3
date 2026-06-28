@@ -1,0 +1,82 @@
+@page
+@model PROJECT_PRN232_.Pages.Parent.LessonsModel
+@{
+    ViewData["Title"] = "Lịch học & Tài liệu học tập của con";
+}
+
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h3 fw-bold text-dark mb-1">
+                <i class="bi bi-journal-bookmark text-primary me-2"></i>Lịch học & Tài liệu học tập
+            </h1>
+            <p class="text-muted mb-0">Theo dõi tiến độ bài học và tải tài liệu ôn tập của các con</p>
+        </div>
+        <!-- Dropdown Chọn học sinh (Con) nếu phụ huynh có nhiều con -->
+        <div class="col-md-3 mt-3 mt-md-0">
+            <label class="form-label small fw-bold text-muted mb-1">Xem thông tin của con:</label>
+            <select class="form-select rounded-pill border-0 shadow-sm px-3" id="selectChild">
+                <option value="">-- Chọn học sinh --</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Khu vực hiển thị kết quả -->
+    <div class="row g-4">
+        <!-- Cột trái: Lịch học các buổi -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom py-3 px-4" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                    <h5 class="mb-0 fw-bold text-dark">
+                        <i class="bi bi-calendar3 text-primary me-2"></i>Lịch học chi tiết
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="lessonsList">
+                        <!-- Trạng thái trống ban đầu -->
+                        <div class="text-center py-5 text-muted" id="noLessonsMessage">
+                            <i class="bi bi-calendar2-x fs-1 d-block mb-2 text-secondary"></i>
+                            Vui lòng chọn con ở góc phải để xem lịch học.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Tài liệu ôn tập của buổi học đang chọn -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 position-sticky" style="top: 24px;">
+                <div class="card-header bg-white border-bottom py-3 px-4" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                    <h5 class="mb-0 fw-bold text-dark">
+                        <i class="bi bi-box-seam text-success me-2"></i>Học liệu & Bài tập ôn tập
+                    </h5>
+                </div>
+                <div class="card-body p-4" id="lessonDetailsArea">
+                    <div class="text-center py-5 text-muted" id="noSelectLessonMessage">
+                        <i class="bi bi-info-circle fs-2 d-block mb-2 text-secondary"></i>
+                        Chọn một buổi học ở danh sách bên trái để xem tài liệu chi tiết.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .lesson-item {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .lesson-item:hover {
+        background-color: #f8f9fa;
+    }
+    .lesson-item.active {
+        background-color: #e9ecef;
+        border-left: 4px solid #0d6efd;
+    }
+</style>
+
+@section Scripts {
+    <script src="~/js/parent-lessons.js" asp-append-version="true"></script>
+}

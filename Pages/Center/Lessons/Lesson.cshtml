@@ -1,0 +1,90 @@
+@page "{classId:int}"
+@model PROJECT_PRN232_.Pages.Center.Lessons.LessonModel
+@{
+    ViewData["Title"] = "Quản lý buổi học";
+}
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="/Center/Dashboard" class="text-decoration-none">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Quản lý buổi học</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">
+                <i class="bi bi-calendar2-week text-primary me-2"></i>Danh sách buổi học
+            </h1>
+            <p class="text-muted mb-0">Quản lý lịch học, tài liệu giảng dạy và điểm danh cho lớp học</p>
+        </div>
+        <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#createLessonModal">
+            <i class="bi bi-plus-lg me-1"></i> Thêm buổi học mới
+        </button>
+    </div>
+
+    <!-- Danh sách buổi học -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="py-3 px-4" style="width: 80px;">STT</th>
+                            <th class="py-3">Chủ đề / Tên buổi học</th>
+                            <th class="py-3">Mô tả</th>
+                            <th class="py-3">Ngày học</th>
+                            <th class="py-3 text-center" style="width: 320px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Dữ liệu sẽ được render hoặc gọi API hiển thị -->
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
+                                Chưa có buổi học nào được tạo cho lớp này.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm buổi học -->
+<div class="modal fade" id="createLessonModal" tabindex="-1" aria-labelledby="createLessonModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold" id="createLessonModalLabel">Thêm buổi học mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createLessonForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chủ đề buổi học</label>
+                        <input type="text" class="form-control rounded-3" placeholder="Ví dụ: Buổi 1 - Giới thiệu về OOP" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mô tả ngắn</label>
+                        <textarea class="form-control rounded-3" rows="3" placeholder="Nội dung chính của buổi học..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ngày học & Giờ học</label>
+                        <input type="datetime-local" class="form-control rounded-3" required />
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-light rounded-pill px-4 me-2" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">Tạo buổi học</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/lessons.js" asp-append-version="true"></script>
+}
