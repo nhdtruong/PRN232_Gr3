@@ -6,15 +6,22 @@ namespace PROJECT_PRN232_.Services
 {
     public interface ILessonService
     {
-        /// <summary>
-        /// Tạo một buổi học mới.
-        /// Cần kiểm tra: Lớp học phải đang hoạt động (Active), không thuộc lớp đã đóng.
-        /// </summary>
-        Task<LessonResponseDto?> CreateLessonAsync(LessonCreateDto dto, int centerUserId);
+        // Lấy danh sách buổi học của một Lớp
+        Task<IEnumerable<LessonResponseDto>> GetByClassIdAsync(int classId);
 
-        /// <summary>
-        /// Lấy danh sách tất cả các buổi học (Center quản lý, có thể filter theo ngày).
-        /// </summary>
-        Task<IEnumerable<LessonResponseDto>> GetAllLessonsAsync();
+        // Xem chi tiết một buổi học cụ thể
+        Task<LessonResponseDto?> GetByIdAsync(int lessonId);
+
+        // Tạo buổi học mới (Kiểm tra lớp hoạt động và quyền sở hữu của Center)
+        Task<LessonResponseDto?> CreateAsync(LessonCreateDto dto, int centerUserId);
+
+        // Sửa buổi học (Kiểm tra quyền sở hữu của Center)
+        Task<bool> UpdateAsync(int lessonId, LessonUpdateDto dto, int centerUserId);
+
+        // Xóa buổi học (Kiểm tra quyền sở hữu của Center)
+        Task<bool> DeleteAsync(int lessonId, int centerUserId);
+
+        // Parent xem lịch học của con
+        Task<IEnumerable<LessonResponseDto>> GetByStudentForParentAsync(int studentId, int parentUserId);
     }
 }

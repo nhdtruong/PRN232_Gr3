@@ -1,39 +1,41 @@
-// Dữ liệu con
-const childrenData = [
-    { id: 101, name: "Nguyễn Văn A (Lớp C# - PRN232)" },
-    { id: 102, name: "Nguyễn Thị B (Lớp Web - PRN211)" }
-];
-
-// Dữ liệu điểm danh của từng con
-const attendanceDataByChild = {
-    101: [
-        { id: 1, className: "Lớp C# - PRN232", lessonTitle: "Buổi 1: Giới thiệu khóa học", date: "2026-06-01", status: "Present", note: "Đến đúng giờ" },
-        { id: 2, className: "Lớp C# - PRN232", lessonTitle: "Buổi 2: Biến & Kiểu dữ liệu", date: "2026-06-04", status: "Present", note: "Hăng hái phát biểu" },
-        { id: 3, className: "Lớp C# - PRN232", lessonTitle: "Buổi 3: Vòng lặp & Mảng", date: "2026-06-08", status: "Late", note: "Trễ 15 phút do hỏng xe" },
-        { id: 4, className: "Lớp C# - PRN232", lessonTitle: "Buổi 4: OOP cơ bản", date: "2026-06-11", status: "Absent", note: "Vắng có phép (ốm)" }
-    ],
-    102: [
-        { id: 10, className: "Lớp Web - PRN211", lessonTitle: "Buổi 1: Tổng quan về Web", date: "2026-06-02", status: "Present", note: "Đến đúng giờ" }
-    ]
-};
+let childrenData = [];
 
 document.addEventListener("DOMContentLoaded", () => {
+    loadChildrenFromServer();
+
+    const select = document.getElementById("selectChild");
+    if (select) {
+        select.addEventListener("change", () => {
+            const childId = select.value;
+            if (!childId) {
+                resetView();
+                return;
+            }
+            renderAttendance(childId);
+        });
+    }
+});
+
+// Tải danh sách con
+async function loadChildrenFromServer() {
     const select = document.getElementById("selectChild");
     if (!select) return;
 
-    // Load dropdown con
-    select.innerHTML = '<option value="">-- Chọn con --</option>' + 
-        childrenData.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
-
-    select.addEventListener("change", () => {
-        const childId = select.value;
-        if (!childId) {
-            resetView();
-            return;
+    try {
+        const response = await fetch("/api/parent/my-children");
+        if (response.ok) {
+            const data = await response.json();
+            childrenData = data;
+        } else {
+            console.error("Lỗi khi tải danh sách con");
         }
-        renderAttendance(childId);
-    });
-});
+    } catch (err) {
+        console.error("Lỗi kết nối API con:", err);
+    }
+
+    select.innerHTML = '<option value="">-- Chọn con --</option>' + 
+        childrenData.map(c => `<option value="${c.id}">${c.fullName || c.name}</option>`).join("");
+}
 
 function resetView() {
     document.getElementById("statsRow").style.display = "none";
@@ -46,64 +48,95 @@ function resetView() {
         </tr>`;
 }
 
-function renderAttendance(childId) {
-    const records = attendanceDataByChild[childId] || [];
+// Gọi API thật của Người 4: GET /api/parent/children/{studentId}/attendance
+async function renderAttendance(childId) {
     const tbody = document.getElementById("attendanceTableBody");
     const statsRow = document.getElementById("statsRow");
-
-    if (records.length === 0) {
-        statsRow.style.display = "none";
+    if (tbody) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center py-5 text-muted">
-                    <i class="bi bi-list-nested fs-2 d-block mb-2"></i>
-                    Không có thông tin điểm danh của học sinh này.
+                <td colspan="6" class="text-center py-5">
+                    <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span>
+                    Đang nạp lịch sử điểm danh chuyên cần của con...
                 </td>
             </tr>`;
-        return;
     }
 
-    // Tính toán thống kê chuyên cần
-    const total = records.length;
-    const present = records.filter(r => r.status === "Present").length;
-    const absent = records.filter(r => r.status === "Absent").length;
-    const others = total - present - absent;
+    try {
+        const response = await fetch(`/api/parent/children/${childId}/attendance`);
+        if (response.ok) {
+            const records = await response.json();
 
-    document.getElementById("statTotal").textContent = total;
-    document.getElementById("statPresent").textContent = present;
-    document.getElementById("statAbsent").textContent = absent;
-    document.getElementById("statOther").textContent = others;
+            if (records.length === 0) {
+                statsRow.style.display = "none";
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-list-nested fs-2 d-block mb-2"></i>
+                            Con chưa có lịch sử điểm danh nào trên hệ thống.
+                        </td>
+                    </tr>`;
+                return;
+            }
 
-    statsRow.style.display = "flex";
+            // Tính toán thống kê chuyên cần thực tế
+            const total = records.length;
+            
+            // Map AttendanceStatus Enum hoặc String (Present = 0, Absent = 1, Late = 2, Excused = 3 tùy thuộc Enum định nghĩa)
+            // Nhận diện theo tên String hoặc số tương ứng
+            const present = records.filter(r => r.status === "Present" || r.status === 0).length;
+            const absent = records.filter(r => r.status === "Absent" || r.status === 1).length;
+            const others = total - present - absent;
 
-    // Vẽ bảng
-    tbody.innerHTML = records.map((r, idx) => {
-        let badgeHtml = "";
-        if (r.status === "Present") {
-            badgeHtml = `<span class="badge bg-success status-badge rounded-pill">✅ Có mặt</span>`;
-        } else if (r.status === "Absent") {
-            badgeHtml = `<span class="badge bg-danger status-badge rounded-pill">❌ Vắng mặt</span>`;
-        } else if (r.status === "Late") {
-            badgeHtml = `<span class="badge bg-warning text-dark status-badge rounded-pill">⏰ Đi trễ</span>`;
+            document.getElementById("statTotal").textContent = total;
+            document.getElementById("statPresent").textContent = present;
+            document.getElementById("statAbsent").textContent = absent;
+            document.getElementById("statOther").textContent = others;
+
+            statsRow.style.display = "flex";
+
+            // Vẽ bảng dữ liệu thật
+            tbody.innerHTML = records.map((r, idx) => {
+                let badgeHtml = "";
+                let statusName = r.status;
+                
+                // Chuẩn hóa hiển thị trạng thái
+                if (r.status === "Present" || r.status === 0) {
+                    badgeHtml = `<span class="badge bg-success status-badge rounded-pill">✅ Có mặt</span>`;
+                } else if (r.status === "Absent" || r.status === 1) {
+                    badgeHtml = `<span class="badge bg-danger status-badge rounded-pill">❌ Vắng mặt</span>`;
+                } else if (r.status === "Late" || r.status === 2) {
+                    badgeHtml = `<span class="badge bg-warning text-dark status-badge rounded-pill">⏰ Đi trễ</span>`;
+                } else {
+                    badgeHtml = `<span class="badge bg-secondary status-badge rounded-pill">📋 Có phép</span>`;
+                }
+
+                // Giả lập hoặc lấy tên lớp
+                const className = r.className || "Lớp học liên kết";
+                const lessonTitle = r.lessonTitle || "Buổi học";
+                
+                const date = r.updatedAt ? new Date(r.updatedAt).toLocaleDateString("vi-VN", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric"
+                }) : "—";
+
+                return `
+                    <tr>
+                        <td class="px-4 text-muted fw-semibold">${idx + 1}</td>
+                        <td class="fw-bold text-dark">${className}</td>
+                        <td>${lessonTitle}</td>
+                        <td>${date}</td>
+                        <td class="text-center">${badgeHtml}</td>
+                        <td class="text-muted small">${r.note || "—"}</td>
+                    </tr>
+                `;
+            }).join("");
         } else {
-            badgeHtml = `<span class="badge bg-secondary status-badge rounded-pill">📋 Có phép</span>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger">Không có quyền xem thông tin học sinh này.</td></tr>`;
         }
-
-        const formattedDate = new Date(r.date).toLocaleDateString("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric"
-        });
-
-        return `
-            <tr>
-                <td class="px-4 text-muted fw-semibold">${idx + 1}</td>
-                <td class="fw-bold text-dark">${r.className}</td>
-                <td>${r.lessonTitle}</td>
-                <td>${formattedDate}</td>
-                <td class="text-center">${badgeHtml}</td>
-                <td class="text-muted small">${r.note || "—"}</td>
-            </tr>
-        `;
-    }).join("");
+    } catch (err) {
+        console.error("Lỗi:", err);
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger">Lỗi kết nối máy chủ.</td></tr>`;
+    }
 }

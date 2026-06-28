@@ -1,43 +1,87 @@
-// Dữ liệu mẫu (Mock data) cho các buổi học
-let lessonsData = [
-    { id: 1, title: "Buổi 1: Giới thiệu khóa học & Cài đặt môi trường", description: "Làm quen với cú pháp C#, cài đặt Visual Studio và viết chương trình Hello World.", date: "2026-06-01T18:00:00" },
-    { id: 2, title: "Buổi 2: Biến, Kiểu dữ liệu và Các cấu trúc điều khiển", description: "Học về kiểu dữ liệu số, chuỗi, boolean, câu lệnh if-else và switch-case.", date: "2026-06-04T18:00:00" },
-    { id: 3, title: "Buổi 3: Vòng lặp & Mảng trong C#", description: "Học vòng lặp for, while, do-while và làm việc với cấu trúc dữ liệu mảng.", date: "2026-06-08T18:00:00" },
-    { id: 4, title: "Buổi 4: Lập trình hướng đối tượng - OOP cơ bản", description: "Học về Class, Object, Constructor và 4 tính chất OOP.", date: "2026-06-11T18:00:00" }
-];
+// Lấy ClassId từ metadata ẩn của trang HTML
+const metadataEl = document.getElementById("lesson-metadata");
+const classId = metadataEl ? parseInt(metadataEl.getAttribute("data-class-id")) : 0;
+
+let lessonsData = [];
 
 document.addEventListener("DOMContentLoaded", () => {
-    renderLessons();
+    if (classId > 0) {
+        loadLessonsFromServer();
+    }
 
-    // Xử lý submit Form Thêm buổi học
+    // Xử lý submit Form Thêm buổi học mới
     const createForm = document.getElementById("createLessonForm");
     if (createForm) {
-        createForm.addEventListener("submit", (e) => {
+        createForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             const titleInput = createForm.querySelector('input[type="text"]');
             const descInput = createForm.querySelector('textarea');
             const dateInput = createForm.querySelector('input[type="datetime-local"]');
 
-            const newLesson = {
-                id: lessonsData.length + 1,
+            const payload = {
                 title: titleInput.value,
                 description: descInput.value,
-                date: dateInput.value
+                lessonDate: new Date(dateInput.value).toISOString()
             };
 
-            lessonsData.push(newLesson);
-            renderLessons();
+            try {
+                const response = await fetch(`/api/center/classes/${classId}/lessons`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
 
-            // Reset form và đóng modal
-            createForm.reset();
-            const modalEl = document.getElementById("createLessonModal");
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            modal.hide();
+                if (response.ok) {
+                    showToast("Thành công", "Đã tạo buổi học mới và lưu vào cơ sở dữ liệu!", "success");
+                    createForm.reset();
+                    
+                    // Đóng modal
+                    const modalEl = document.getElementById("createLessonModal");
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    modal.hide();
 
-            showToast("Thành công", "Đã tạo buổi học mới thành công!", "success");
+                    // Tải lại danh sách thật từ DB
+                    await loadLessonsFromServer();
+                } else {
+                    const error = await response.json();
+                    showToast("Thất bại", error.message || "Không thể tạo buổi học mới.", "danger");
+                }
+            } catch (err) {
+                console.error("Lỗi khi kết nối API:", err);
+                showToast("Lỗi hệ thống", "Không thể kết nối đến máy chủ.", "danger");
+            }
         });
     }
 });
+
+// Tải danh sách buổi học thật từ database
+async function loadLessonsFromServer() {
+    const tbody = document.querySelector("table tbody");
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-5">
+                    <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span>
+                    Đang tải danh sách buổi học từ máy chủ...
+                </td>
+            </tr>`;
+    }
+
+    try {
+        const response = await fetch(`/api/center/classes/${classId}/lessons`);
+        if (response.ok) {
+            lessonsData = await response.json();
+            renderLessons();
+        } else {
+            showToast("Lỗi", "Không thể tải dữ liệu buổi học từ máy chủ.", "danger");
+        }
+    } catch (err) {
+        console.error("Lỗi fetch:", err);
+        showToast("Lỗi kết nối", "Không thể tải lịch học.", "danger");
+    }
+}
 
 // Render danh sách buổi học ra bảng HTML
 function renderLessons() {
@@ -56,7 +100,7 @@ function renderLessons() {
     }
 
     tbody.innerHTML = lessonsData.map((lesson, idx) => {
-        const lessonDate = new Date(lesson.date);
+        const lessonDate = new Date(lesson.lessonDate);
         const formattedDate = lessonDate.toLocaleDateString("vi-VN", {
             day: "2-digit",
             month: "2-digit",
@@ -98,28 +142,64 @@ function renderLessons() {
     }).join("");
 }
 
-// Xử lý Xóa buổi học
-function deleteLesson(id) {
-    if (confirm("Bạn có chắc chắn muốn xóa/hủy buổi học này? Thao tác này sẽ xóa tất cả điểm danh và tài liệu liên quan!")) {
-        lessonsData = lessonsData.filter(l => l.id !== id);
-        renderLessons();
-        showToast("Đã xóa", "Buổi học đã bị xóa khỏi hệ thống.", "danger");
+// Xóa buổi học thật trong Database
+async function deleteLesson(id) {
+    if (confirm("Bạn có chắc chắn muốn xóa/hủy buổi học này? Thao tác này sẽ xóa tất cả điểm danh và tài liệu liên quan trong cơ sở dữ liệu!")) {
+        try {
+            const response = await fetch(`/api/center/lessons/${id}`, {
+                method: "DELETE"
+            });
+
+            if (response.ok) {
+                showToast("Thành công", "Đã xóa buổi học thành công khỏi database.", "success");
+                await loadLessonsFromServer();
+            } else {
+                const error = await response.json();
+                showToast("Thất bại", error.message || "Không thể xóa buổi học.", "danger");
+            }
+        } catch (err) {
+            console.error("Lỗi khi xóa:", err);
+            showToast("Lỗi", "Không thể kết nối máy chủ để xóa.", "danger");
+        }
     }
 }
 
-// Xử lý Sửa buổi học (Mock)
-function editLesson(id) {
+// Sửa tiêu đề buổi học thật trong Database
+async function editLesson(id) {
     const lesson = lessonsData.find(l => l.id === id);
     if (!lesson) return;
+
     const newTitle = prompt("Nhập tiêu đề mới cho buổi học:", lesson.title);
-    if (newTitle) {
-        lesson.title = newTitle;
-        renderLessons();
-        showToast("Thành công", "Đã cập nhật tiêu đề buổi học.", "info");
+    if (!newTitle || newTitle.trim() === "") return;
+
+    const payload = {
+        title: newTitle,
+        description: lesson.description,
+        lessonDate: lesson.lessonDate
+    };
+
+    try {
+        const response = await fetch(`/api/center/lessons/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            showToast("Thành công", "Đã cập nhật thông tin buổi học vào cơ sở dữ liệu!", "success");
+            await loadLessonsFromServer();
+        } else {
+            showToast("Thất bại", "Không thể cập nhật thông tin buổi học.", "danger");
+        }
+    } catch (err) {
+        console.error("Lỗi khi cập nhật:", err);
+        showToast("Lỗi", "Không thể kết nối máy chủ để cập nhật.", "danger");
     }
 }
 
-// Hàm vẽ Toast thông báo góc màn hình
+// Hàm vẽ Toast thông báo
 function showToast(title, content, type = "success") {
     let alertClass = "bg-success";
     if (type === "danger") alertClass = "bg-danger";

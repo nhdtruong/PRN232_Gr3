@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using PROJECT_PRN232_.Data;
 using PROJECT_PRN232_.Data.Entities;
 
@@ -15,24 +17,35 @@ namespace PROJECT_PRN232_.Repositories
             _context = context;
         }
 
-        public Task<IEnumerable<Material>> GetByLessonIdAsync(int lessonId)
+        public async Task<IEnumerable<Material>> GetByLessonIdAsync(int lessonId)
         {
-            throw new NotImplementedException();
+            return await _context.Materials
+                .Where(m => m.LessonId == lessonId)
+                .OrderBy(m => m.UploadedAt)
+                .ToListAsync();
         }
 
-        public Task<Material?> GetByIdAsync(int materialId)
+        public async Task<Material?> GetByIdAsync(int materialId)
         {
-            throw new NotImplementedException();
+            return await _context.Materials
+                .FirstOrDefaultAsync(m => m.Id == materialId);
         }
 
-        public Task<Material> CreateAsync(Material material)
+        public async Task<Material> CreateAsync(Material material)
         {
-            throw new NotImplementedException();
+            _context.Materials.Add(material);
+            await _context.SaveChangesAsync();
+            return material;
         }
 
-        public Task<bool> DeleteAsync(int materialId)
+        public async Task<bool> DeleteAsync(int materialId)
         {
-            throw new NotImplementedException();
+            var material = await _context.Materials.FindAsync(materialId);
+            if (material == null) return false;
+
+            _context.Materials.Remove(material);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

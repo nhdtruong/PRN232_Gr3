@@ -4,6 +4,11 @@
     ViewData["Title"] = "Quản lý buổi học";
 }
 
+<!-- Metadata ẩn truyền ClassId xuống cho JavaScript -->
+<div id="lesson-metadata"
+     data-class-id="@Model.ClassId"
+     style="display: none;"></div>
+
 <div class="container py-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb small">

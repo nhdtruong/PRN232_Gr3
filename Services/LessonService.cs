@@ -1,24 +1,125 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using PROJECT_PRN232_.Data;
+using PROJECT_PRN232_.Data.Entities;
 using PROJECT_PRN232_.DTOs;
+using PROJECT_PRN232_.Repositories;
 
 namespace PROJECT_PRN232_.Services
 {
     public class LessonService : ILessonService
     {
-        public LessonService()
+        private readonly ILessonRepository _lessonRepository;
+        private readonly AppDbContext _context; // Dùng để kiểm tra mối quan hệ Parent-Student và Lớp học nhanh gọn
+
+        public LessonService(ILessonRepository lessonRepository, AppDbContext context)
         {
+            _lessonRepository = lessonRepository;
+            _context = context;
         }
 
-        public Task<LessonResponseDto?> CreateLessonAsync(LessonCreateDto dto, int centerUserId)
+        // Lấy danh sách buổi học của Lớp học
+        public async Task<IEnumerable<LessonResponseDto>> GetByClassIdAsync(int classId)
         {
-            throw new NotImplementedException();
+            var lessons = await _lessonRepository.GetByClassIdAsync(classId);
+            return lessons.Select(MapToDto);
         }
 
-        public Task<IEnumerable<LessonResponseDto>> GetAllLessonsAsync()
+        // Lấy thông tin chi tiết một buổi học
+        public async Task<LessonResponseDto?> GetByIdAsync(int lessonId)
         {
-            throw new NotImplementedException();
+            var lesson = await _lessonRepository.GetLessonWithClassAsync(lessonId);
+            if (lesson == null) return null;
+            return MapToDto(lesson);
         }
+
+        // Tạo buổi học mới
+        public async Task<LessonResponseDto?> CreateAsync(LessonCreateDto dto, int centerUserId)
+        {
+            // 1. Kiểm tra Lớp học tồn tại
+            var targetClass = await _lessonRepository.GetClassByIdAsync(dto.ClassId);
+            if (targetClass == null) return null;
+
+            // 2. Bảo mật: Đảm bảo Center này là chủ sở hữu lớp học
+            if (targetClass.CenterId != centerUserId) return null;
+
+            // 3. Quy tắc: Không xếp học sinh / tạo buổi học cho lớp đã đóng
+            if (targetClass.Status != "Active") return null;
+
+            var lesson = new Lesson
+            {
+                ClassId = dto.ClassId,
+                Title = dto.Title,
+                Description = dto.Description,
+                LessonDate = dto.LessonDate
+            };
+
+            var created = await _lessonRepository.CreateAsync(lesson);
+            
+            // Lấy lại buổi học kèm Class navigation property để map đầy đủ thông tin tên Lớp
+            var fullLesson = await _lessonRepository.GetLessonWithClassAsync(created.Id);
+            return fullLesson != null ? MapToDto(fullLesson) : null;
+        }
+
+        // Sửa buổi học
+        public async Task<bool> UpdateAsync(int lessonId, LessonUpdateDto dto, int centerUserId)
+        {
+            var existingLesson = await _lessonRepository.GetLessonWithClassAsync(lessonId);
+            if (existingLesson == null) return false;
+
+            // Bảo mật: Chỉ Center sở hữu lớp này mới được quyền sửa
+            if (existingLesson.Class.CenterId != centerUserId) return false;
+
+            // Bảo mật: Không sửa buổi học của lớp đã đóng
+            if (existingLesson.Class.Status != "Active") return false;
+
+            existingLesson.Title = dto.Title;
+            existingLesson.Description = dto.Description;
+            existingLesson.LessonDate = dto.LessonDate;
+
+            return await _lessonRepository.UpdateAsync(existingLesson);
+        }
+
+        // Xóa buổi học
+        public async Task<bool> DeleteAsync(int lessonId, int centerUserId)
+        {
+            var existingLesson = await _lessonRepository.GetLessonWithClassAsync(lessonId);
+            if (existingLesson == null) return false;
+
+            // Bảo mật: Chỉ Center sở hữu lớp này mới được quyền xóa
+            if (existingLesson.Class.CenterId != centerUserId) return false;
+
+            return await _lessonRepository.DeleteAsync(lessonId);
+        }
+
+        // Parent xem lịch học của con
+        public async Task<IEnumerable<LessonResponseDto>> GetByStudentForParentAsync(int studentId, int parentUserId)
+        {
+            // Bảo mật: Đảm bảo học sinh này thực sự là con của phụ huynh đăng nhập
+            var isOwnChild = await _context.Students
+                .AnyAsync(s => s.Id == studentId && s.ParentId == parentUserId);
+            
+            if (!isOwnChild)
+            {
+                return Enumerable.Empty<LessonResponseDto>();
+            }
+
+            var lessons = await _lessonRepository.GetLessonsByStudentIdAsync(studentId);
+            return lessons.Select(MapToDto);
+        }
+
+        // Mapper Helper chuyển đổi Entity sang DTO
+        private static LessonResponseDto MapToDto(Lesson l) => new()
+        {
+            Id = l.Id,
+            ClassId = l.ClassId,
+            ClassName = l.Class?.ClassName ?? string.Empty,
+            Title = l.Title,
+            Description = l.Description,
+            LessonDate = l.LessonDate
+        };
     }
 }
