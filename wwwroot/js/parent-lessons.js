@@ -109,7 +109,7 @@ async function renderLessons(childId, targetLessonId = null) {
                 return `
                     <div class="lesson-card p-3 d-flex flex-column gap-2" onclick="selectLesson(${childId}, ${lesson.id}, this)">
                         <div class="d-flex justify-content-between align-items-center">
-                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold" style="font-size: 0.72rem;">
+                            <span class="badge rounded-pill px-2.5 py-1 small fw-semibold" style="font-size: 0.72rem; background-color: rgba(79, 70, 229, 0.15); color: #4F46E5;">
                                 ${lesson.className || 'Lớp học'}
                             </span>
                             <span class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i>${date}</span>

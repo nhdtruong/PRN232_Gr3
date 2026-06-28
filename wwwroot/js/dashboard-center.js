@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                         <h4 class="fw-bold text-dark mb-3 text-truncate">${c.ClassName}</h4>
                         <p class="text-muted small flex-grow-1 mb-4">
-                            Trạng thái: <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 fw-bold">${c.Status}</span>
+                            Trạng thái: <span class="badge rounded-pill px-2.5 py-1 fw-bold" style="${c.Status === 'Active' ? 'background-color: rgba(16, 185, 129, 0.15); color: #047857;' : 'background-color: rgba(239, 68, 68, 0.15); color: #b91c1c;'}">${c.Status === 'Active' ? 'Đang hoạt động' : 'Đã đóng'}</span>
                         </p>
                         
                         <div class="d-flex flex-column gap-2 mt-auto">

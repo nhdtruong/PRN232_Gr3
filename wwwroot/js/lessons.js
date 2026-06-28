@@ -140,8 +140,8 @@ function renderLessons() {
 
         // Trạng thái xuất bản
         const statusBadge = lesson.isPublished 
-            ? `<span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small fw-semibold" style="font-size: 0.72rem;"><i class="bi bi-broadcast-pin me-1"></i>Đã phát sóng</span>`
-            : `<span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2 py-1 small fw-semibold" style="font-size: 0.72rem;"><i class="bi bi-pencil-fill me-1"></i>Nháp</span>`;
+            ? `<span class="badge rounded-pill px-2 py-1 small fw-semibold" style="font-size: 0.72rem; background-color: rgba(16, 185, 129, 0.15); color: #047857;"><i class="bi bi-broadcast-pin me-1"></i>Đã phát sóng</span>`
+            : `<span class="badge rounded-pill px-2 py-1 small fw-semibold" style="font-size: 0.72rem; background-color: rgba(107, 114, 128, 0.15); color: #4B5563;"><i class="bi bi-pencil-fill me-1"></i>Nháp</span>`;
 
         // Nút phát sóng thông báo (hiện nút Phát sóng lại nếu đã xuất bản)
         const publishButtonHtml = lesson.isPublished 
@@ -166,7 +166,7 @@ function renderLessons() {
                     <div class="card-body p-4 d-flex flex-column h-100">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div class="d-flex align-items-center gap-2">
-                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1.5 small fw-bold">Buổi ${absoluteIndex}</span>
+                                <span class="badge rounded-pill px-3 py-1.5 small fw-bold" style="background-color: rgba(79, 70, 229, 0.15); color: #4F46E5;">Buổi ${absoluteIndex}</span>
                                 ${statusBadge}
                             </div>
                             <span class="text-muted small" style="font-size: 0.78rem;"><i class="bi bi-clock me-1"></i>${formattedDate}</span>
