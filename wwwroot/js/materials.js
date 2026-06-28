@@ -9,7 +9,36 @@ document.addEventListener("DOMContentLoaded", () => {
         loadMaterialsFromServer();
     }
 
-    // Xử lý bộ lọc filter
+    // Xử lý chuyển đổi qua lại giữa chọn File và dán Link URL
+    const sourceFileRadio = document.getElementById("sourceFile");
+    const sourceUrlRadio = document.getElementById("sourceUrl");
+    const fileInputGroup = document.getElementById("fileInputGroup");
+    const urlInputGroup = document.getElementById("urlInputGroup");
+
+    if (sourceFileRadio && sourceUrlRadio && fileInputGroup && urlInputGroup) {
+        sourceFileRadio.addEventListener("change", () => {
+            if (sourceFileRadio.checked) {
+                fileInputGroup.style.display = "block";
+                urlInputGroup.style.display = "none";
+                document.getElementById("materialFile").setAttribute("required", "required");
+                document.getElementById("materialUrl").removeAttribute("required");
+            }
+        });
+
+        sourceUrlRadio.addEventListener("change", () => {
+            if (sourceUrlRadio.checked) {
+                fileInputGroup.style.display = "none";
+                urlInputGroup.style.display = "block";
+                document.getElementById("materialUrl").setAttribute("required", "required");
+                document.getElementById("materialFile").removeAttribute("required");
+            }
+        });
+
+        // Thiết lập require ban đầu cho input file
+        document.getElementById("materialFile").setAttribute("required", "required");
+    }
+
+    // Xử lý bộ lọc filter loại học liệu
     const filterBtns = document.querySelectorAll(".filter-btn");
     filterBtns.forEach(btn => {
         btn.addEventListener("click", () => {
@@ -20,22 +49,66 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Xử lý upload tài liệu mới
+    // Xử lý submit Form Upload tài liệu mới
     const form = document.getElementById("uploadMaterialForm");
     if (form) {
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+
             const titleInput = document.getElementById("materialTitle");
             const typeSelect = document.getElementById("materialType");
-            const urlInput = document.getElementById("materialUrl");
+            const isUploadFile = document.getElementById("sourceFile").checked;
 
-            const payload = {
-                title: titleInput.value,
-                materialType: typeSelect.value,
-                fileURL: urlInput.value
-            };
+            let fileURL = "";
+
+            // Hiển thị trạng thái loading khi upload
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> Đang tải lên...`;
 
             try {
+                if (isUploadFile) {
+                    // PHƯƠNG ÁN 1: Tải file vật lý lên server
+                    const fileInput = document.getElementById("materialFile");
+                    if (fileInput.files.length === 0) {
+                        showToast("Lỗi", "Vui lòng chọn 1 file để tải lên.", "danger");
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnText;
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append("file", fileInput.files[0]);
+
+                    const uploadResponse = await fetch("/api/center/materials/upload-file", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    if (uploadResponse.ok) {
+                        const uploadResult = await uploadResponse.json();
+                        fileURL = uploadResult.url; // Đường dẫn tương đối từ server
+                    } else {
+                        const error = await uploadResponse.json();
+                        showToast("Lỗi upload file", error.message || "Không thể lưu file lên server.", "danger");
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnText;
+                        return;
+                    }
+                } else {
+                    // PHƯƠNG ÁN 2: Dán link URL ngoài
+                    const urlInput = document.getElementById("materialUrl");
+                    fileURL = urlInput.value;
+                }
+
+                // Tiến hành lưu thông tin học liệu vào database
+                const payload = {
+                    title: titleInput.value,
+                    materialType: typeSelect.value,
+                    fileURL: fileURL
+                };
+
                 const response = await fetch(`/api/center/lessons/${lessonId}/materials`, {
                     method: "POST",
                     headers: {
@@ -45,16 +118,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 if (response.ok) {
-                    showToast("Thành công", "Đã tải lên tài liệu mới thành công và lưu vào database!", "success");
+                    showToast("Thành công", "Đã tải lên học liệu mới thành công!", "success");
                     form.reset();
-                    await loadMaterialsFromServer(); // Reload lại danh sách thật
+                    
+                    // Thiết lập lại trạng thái mặc định cho form
+                    if (sourceFileRadio) sourceFileRadio.click();
+
+                    await loadMaterialsFromServer();
                 } else {
                     const error = await response.json();
-                    showToast("Thất bại", error.message || "Không thể upload tài liệu.", "danger");
+                    showToast("Thất bại", error.message || "Không thể lưu học liệu.", "danger");
                 }
             } catch (err) {
-                console.error("Lỗi upload:", err);
-                showToast("Lỗi", "Không thể kết nối đến máy chủ.", "danger");
+                console.error("Lỗi:", err);
+                showToast("Lỗi hệ thống", "Không thể kết nối đến máy chủ.", "danger");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
             }
         });
     }
@@ -76,7 +156,6 @@ async function loadMaterialsFromServer() {
         if (response.ok) {
             materialsData = await response.json();
             
-            // Cập nhật lại bộ lọc đang active
             const activeBtn = document.querySelector(".filter-btn.active");
             const filterType = activeBtn ? activeBtn.getAttribute("data-filter") : "all";
             renderMaterials(filterType);
@@ -84,7 +163,7 @@ async function loadMaterialsFromServer() {
             showToast("Lỗi", "Không thể tải danh sách tài liệu từ máy chủ.", "danger");
         }
     } catch (err) {
-        console.error("Lỗi tải tài liệu:", err);
+        console.error("Lỗi:", err);
         showToast("Lỗi kết nối", "Không thể nạp học liệu.", "danger");
     }
 }
@@ -133,6 +212,10 @@ function renderMaterials(filterType = "all") {
             year: "numeric"
         });
 
+        // Hỗ trợ link tải xuống trực tiếp nếu file lưu trên server của mình
+        const isInternalFile = m.fileURL.startsWith("/uploads/");
+        const downloadAttr = isInternalFile ? `download="${m.title}"` : "";
+
         return `
             <div class="col-md-6 material-item" data-type="${m.materialType}">
                 <div class="card h-100 border rounded-4 shadow-sm material-card">
@@ -144,8 +227,8 @@ function renderMaterials(filterType = "all") {
                         <h6 class="fw-bold text-dark mb-3 text-truncate-2" style="height: 38px;">${icon} ${m.title}</h6>
                         
                         <div class="d-flex gap-2">
-                            <a href="${m.fileURL}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1">
-                                <i class="bi bi-box-arrow-up-right me-1"></i> Xem chi tiết
+                            <a href="${m.fileURL}" target="_blank" ${downloadAttr} class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Xem / Tải về
                             </a>
                             <button class="btn btn-outline-danger btn-sm rounded-circle" onclick="deleteMaterial(${m.id})" title="Xóa">
                                 <i class="bi bi-trash"></i>
@@ -174,7 +257,7 @@ async function deleteMaterial(id) {
                 showToast("Thất bại", error.message || "Không thể xóa học liệu.", "danger");
             }
         } catch (err) {
-            console.error("Lỗi khi xóa học liệu:", err);
+            console.error("Lỗi:", err);
             showToast("Lỗi", "Không thể kết nối máy chủ để xóa.", "danger");
         }
     }

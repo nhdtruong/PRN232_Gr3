@@ -106,26 +106,26 @@ async function renderLessons(childId) {
     }
 }
 
-// Tải danh sách học liệu thật của buổi học đó từ database
-async function selectLesson(childId, lessonId, element) {
+function selectLesson(childId, lessonId, element) {
+    // Active class item
     document.querySelectorAll(".lesson-item").forEach(item => item.classList.remove("active"));
     element.classList.add("active");
 
     const detailArea = document.getElementById("lessonDetailsArea");
-    if (detailArea) {
-        detailArea.innerHTML = `
-            <div class="text-center py-4">
-                <span class="spinner-border spinner-border-sm text-success me-2" role="status"></span>
-                Đang tải tài liệu học tập ôn tập...
-            </div>`;
-    }
+    if (!detailArea) return;
 
-    try {
-        // Gọi API thật của Người 4: GET /api/center/lessons/{lessonId}/materials
-        const response = await fetch(`/api/center/lessons/${lessonId}/materials`);
-        if (response.ok) {
-            const materials = await response.json();
-            
+    detailArea.innerHTML = `
+        <div class="text-center py-4">
+            <span class="spinner-border spinner-border-sm text-success me-2" role="status"></span>
+            Đang tải tài liệu học tập ôn tập...
+        </div>`;
+
+    fetch(`/api/center/lessons/${lessonId}/materials`)
+        .then(response => {
+            if (response.ok) return response.json();
+            throw new Error("Lỗi tải");
+        })
+        .then(materials => {
             if (materials.length === 0) {
                 detailArea.innerHTML = `
                     <div class="alert alert-light text-center py-4 border rounded-3">
@@ -139,26 +139,42 @@ async function selectLesson(childId, lessonId, element) {
                 let typeIcon = "📄";
                 let typeName = "Tài liệu";
                 let badgeColor = "bg-primary";
+                let embedHtml = ""; // HTML nhúng video (nếu có)
 
                 if (m.materialType === "Video") {
                     typeIcon = "🎥";
                     typeName = "Video bài giảng";
                     badgeColor = "bg-danger";
+
+                    // Trích xuất ID Youtube để tạo link nhúng embed
+                    const youtubeId = getYoutubeId(m.fileURL);
+                    if (youtubeId) {
+                        embedHtml = `
+                            <div class="ratio ratio-16x9 mb-3 rounded-3 overflow-hidden shadow-sm">
+                                <iframe src="https://www.youtube.com/embed/${youtubeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                            </div>
+                        `;
+                    }
                 } else if (m.materialType === "Homework") {
                     typeIcon = "📝";
                     typeName = "Bài tập";
                     badgeColor = "bg-warning text-dark";
                 }
 
+                // Cấu hình tải về trực tiếp đối với file hệ thống
+                const isInternalFile = m.fileURL.startsWith("/uploads/");
+                const downloadAttr = isInternalFile ? `download="${m.title}"` : "";
+
                 return `
-                    <div class="card border rounded-3 mb-2 p-3">
+                    <div class="card border rounded-4 mb-3 p-3 shadow-sm">
+                        ${embedHtml}
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <span class="badge ${badgeColor} rounded-pill px-2.5 py-0.5 small mb-1">${typeName}</span>
                                 <div class="fw-bold text-dark small">${typeIcon} ${m.title}</div>
                             </div>
-                            <a href="${m.fileURL}" target="_blank" class="btn btn-outline-success btn-sm rounded-pill">
-                                <i class="bi bi-download me-1"></i> Xem học tập
+                            <a href="${m.fileURL}" target="_blank" ${downloadAttr} class="btn btn-outline-success btn-sm rounded-pill">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Xem / Tải về
                             </a>
                         </div>
                     </div>
@@ -169,11 +185,17 @@ async function selectLesson(childId, lessonId, element) {
                 <p class="text-muted small mb-3">Tài liệu ôn tập chính thức:</p>
                 ${materialsHtml}
             `;
-        } else {
-            detailArea.innerHTML = `<div class="alert alert-danger">Lỗi tải học liệu.</div>`;
-        }
-    } catch (err) {
-        console.error("Lỗi:", err);
-        detailArea.innerHTML = `<div class="alert alert-danger">Không kết nối được server.</div>`;
-    }
+        })
+        .catch(err => {
+            console.error("Lỗi:", err);
+            detailArea.innerHTML = `<div class="alert alert-danger">Không thể tải tài liệu. Vui lòng thử lại.</div>`;
+        });
+}
+
+// Hàm trích xuất ID của video Youtube từ các định dạng URL khác nhau
+function getYoutubeId(url) {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
 }

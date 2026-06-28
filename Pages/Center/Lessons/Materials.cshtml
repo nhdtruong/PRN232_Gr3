@@ -52,16 +52,39 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Loại học liệu</label>
                             <select id="materialType" class="form-select rounded-3">
-                                <option value="Document">📄 Tài liệu (PDF, Word, Slide)</option>
-                                <option value="Video">🎥 Video bài giảng (Youtube, MP4)</option>
+                                <option value="Document">📄 Tài liệu (PDF, Word, Slide, Ảnh)</option>
+                                <option value="Video">🎥 Video bài giảng (Youtube, Drive)</option>
                                 <option value="Homework">📝 Bài tập về nhà</option>
                             </select>
                         </div>
+                        
+                        <!-- Lựa chọn hình thức -->
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Đường dẫn liên kết / URL File</label>
-                            <input type="url" id="materialUrl" class="form-control rounded-3" placeholder="https://drive.google.com/..." required />
-                            <div class="form-text small text-muted">Vui lòng cung cấp link Drive, Youtube hoặc link file lưu trữ công khai.</div>
+                            <label class="form-label fw-semibold d-block">Hình thức tải lên</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="uploadSource" id="sourceFile" value="file" checked>
+                                <label class="form-check-label small" for="sourceFile">Tải file từ máy tính</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="uploadSource" id="sourceUrl" value="url">
+                                <label class="form-check-label small" for="sourceUrl">Dán liên kết (URL)</label>
+                            </div>
                         </div>
+
+                        <!-- Vùng chọn file (Mặc định hiện) -->
+                        <div class="mb-3" id="fileInputGroup">
+                            <label class="form-label fw-semibold">Chọn file tài liệu / ảnh</label>
+                            <input type="file" id="materialFile" class="form-control rounded-3" accept=".pdf,.docx,.doc,.xlsx,.xls,.png,.jpg,.jpeg,.txt,.pptx,.ppt" />
+                            <div class="form-text small text-muted">Hỗ trợ PDF, Word, Excel, Slide, Ảnh. Tối đa 20MB.</div>
+                        </div>
+
+                        <!-- Vùng dán link URL (Mặc định ẩn) -->
+                        <div class="mb-3" id="urlInputGroup" style="display: none;">
+                            <label class="form-label fw-semibold">Đường dẫn liên kết / URL File</label>
+                            <input type="url" id="materialUrl" class="form-control rounded-3" placeholder="https://drive.google.com/..." />
+                            <div class="form-text small text-muted">Vui lòng dán link Drive, Youtube, Dropbox...</div>
+                        </div>
+
                         <button type="submit" class="btn btn-success w-100 rounded-pill py-2 fw-semibold mt-2">
                             <i class="bi bi-plus-circle me-1"></i> Upload học liệu
                         </button>
