@@ -20,7 +20,8 @@ namespace PROJECT_PRN232_.Services
             {
                 Id = c.Id,
                 ClassName = c.ClassName,
-                CenterId = c.CenterId
+                CenterId = c.CenterId,
+                Status = c.Status
             });
         }
 
@@ -33,7 +34,8 @@ namespace PROJECT_PRN232_.Services
             {
                 Id = classEntity.Id,
                 ClassName = classEntity.ClassName,
-                CenterId = classEntity.CenterId
+                CenterId = classEntity.CenterId,
+                Status = classEntity.Status
             };
         }
 
@@ -51,19 +53,28 @@ namespace PROJECT_PRN232_.Services
             {
                 Id = createdClass.Id,
                 ClassName = createdClass.ClassName,
-                CenterId = createdClass.CenterId
+                CenterId = createdClass.CenterId,
+                Status = createdClass.Status
             };
         }
 
         public async Task<bool> UpdateClassAsync(ClassUpdateDto dto)
         {
-            var classEntity = new Class
-            {
-                Id = dto.Id,
-                ClassName = dto.ClassName,
-                CenterId = dto.CenterId
-            };
+            var classEntity = await _classRepository.GetClassByIdAsync(dto.Id);
+            if (classEntity == null) return false;
 
+            classEntity.ClassName = dto.ClassName;
+            classEntity.CenterId = dto.CenterId;
+
+            return await _classRepository.UpdateClassAsync(classEntity);
+        }
+
+        public async Task<bool> UpdateClassStatusAsync(int id, string status)
+        {
+            var classEntity = await _classRepository.GetClassByIdAsync(id);
+            if (classEntity == null) return false;
+
+            classEntity.Status = status;
             return await _classRepository.UpdateClassAsync(classEntity);
         }
 

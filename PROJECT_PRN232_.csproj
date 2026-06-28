@@ -21,4 +21,14 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="PRN232_Gr3\**" />
+    <Content Remove="PRN232_Gr3\**" />
+    <EmbeddedResource Remove="PRN232_Gr3\**" />
+    <None Remove="PRN232_Gr3\**" />
+    <Compile Remove="PROJECT_PRN232_\**" />
+    <Content Remove="PROJECT_PRN232_\**" />
+    <EmbeddedResource Remove="PROJECT_PRN232_\**" />
+    <None Remove="PROJECT_PRN232_\**" />
+  </ItemGroup>
 </Project>

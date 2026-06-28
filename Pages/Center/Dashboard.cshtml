@@ -33,7 +33,7 @@
     <!-- KHU VỰC QUẢN TRỊ CỐT LÕI (Đẩy lên đầu trang) -->
     <div class="row g-4 mb-5">
         <!-- Quản lý phụ huynh -->
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="card h-100 shadow-sm border-0 rounded-4 hover-card">
                 <div class="card-body text-center p-4">
                     <div class="display-4 text-primary mb-3">
@@ -41,7 +41,7 @@
                     </div>
                     <h3 class="card-title fw-bold">Quản lý phụ huynh</h3>
                     <p class="card-text text-muted">Thêm, sửa, xóa, và theo dõi thông tin tài khoản phụ huynh học sinh.</p>
-                    <a href="/Center/Parents/Index" class="btn btn-primary rounded-pill px-5 py-2.5 mt-2 fw-semibold shadow-sm">
+                    <a href="/Center/Parents/Index" class="btn btn-primary rounded-pill px-4 py-2 mt-2 fw-semibold shadow-sm">
                         <i class="bi bi-person-gear me-1"></i> Truy cập quản lý
                     </a>
                 </div>
@@ -49,7 +49,7 @@
         </div>
 
         <!-- Quản lý học sinh -->
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="card h-100 shadow-sm border-0 rounded-4 hover-card">
                 <div class="card-body text-center p-4">
                     <div class="display-4 text-info mb-3">
@@ -57,8 +57,24 @@
                     </div>
                     <h3 class="card-title fw-bold">Quản lý học sinh</h3>
                     <p class="card-text text-muted">Quản lý danh sách, hồ sơ học sinh và kết quả học tập trong trung tâm.</p>
-                    <a href="/Center/Students/Index" class="btn btn-info text-white rounded-pill px-5 py-2.5 mt-2 fw-semibold shadow-sm">
+                    <a href="/Center/Students/Index" class="btn btn-info text-white rounded-pill px-4 py-2 mt-2 fw-semibold shadow-sm">
                         <i class="bi bi-mortarboard-fill me-1"></i> Truy cập quản lý
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quản lý lớp học & Nhập học (Người 3) -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 rounded-4 hover-card" style="border: 2px solid #7c3aed !important;">
+                <div class="card-body text-center p-4">
+                    <div class="display-4 text-warning mb-3">
+                        🏫
+                    </div>
+                    <h3 class="card-title fw-bold" style="color: #7c3aed;">Quản lý lớp học & Nhập học</h3>
+                    <p class="card-text text-muted">Xếp lớp học viên, chuyển lớp, đóng lớp và quản lý thành viên lớp.</p>
+                    <a asp-page="/Center/Classes/Index" class="btn text-white rounded-pill px-4 py-2 mt-2" style="background: linear-gradient(135deg, #7c3aed, #06b6d4);">
+                        <i class="bi bi-collection-fill me-1"></i> Truy cập
                     </a>
                 </div>
             </div>

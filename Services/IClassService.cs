@@ -8,6 +8,7 @@ namespace PROJECT_PRN232_.Services
         Task<ClassResponseDto?> GetClassByIdAsync(int id);
         Task<ClassResponseDto> CreateClassAsync(ClassCreateDto dto);
         Task<bool> UpdateClassAsync(ClassUpdateDto dto);
+        Task<bool> UpdateClassStatusAsync(int id, string status);
         Task<bool> DeleteClassAsync(int id);
     }
 }
