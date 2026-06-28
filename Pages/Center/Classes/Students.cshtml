@@ -99,7 +99,7 @@
                         <input type="hidden" asp-for="ClassId" />
                         <div class="mb-3">
                             <label asp-for="StudentId" class="form-label fw-semibold">ID Học sinh</label>
-                            <input asp-for="StudentId" class="form-control rounded-3" type="number" required placeholder="Nhập mã học sinh...">
+                            <input asp-for="StudentId" class="form-control rounded-3" type="number" min="1" required placeholder="Nhập mã học sinh...">
                             <span asp-validation-for="StudentId" class="text-danger small"></span>
                         </div>
                         
