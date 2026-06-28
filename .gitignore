@@ -1,0 +1,10 @@
+# Build results
+bin/
+obj/
+
+# Visual Studio files
+.vs/
+*.user
+
+# Personal Configuration Files
+appsettings.Development.json

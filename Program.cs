@@ -1,12 +1,13 @@
 using System.Text;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using PRN232_Gr3.Data;
-using PRN232_Gr3.Repositories;
-using PRN232_Gr3.Services;
+using PROJECT_PRN232_.Data;
+using PROJECT_PRN232_.Repositories;
+using PROJECT_PRN232_.Services;
 
-namespace PRN232_Gr3
+namespace PROJECT_PRN232_
 {
     public class Program
     {
@@ -21,10 +22,17 @@ namespace PRN232_Gr3
             builder.Services.AddScoped<IClassRepository, ClassRepository>();
             builder.Services.AddScoped<IClassService, ClassService>();
             builder.Services.AddScoped<AuthService>();
+            builder.Services.AddScoped<IParentProfileService, ParentProfileService>();
 
-            // Configure JWT Authentication
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
+            // Configure Authentication (Cookie for Web, JWT for API)
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Auth/Login";
+                    options.LogoutPath = "/Auth/Logout";
+                    options.AccessDeniedPath = "/Auth/AccessDenied";
+                })
+                .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
                 {
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
@@ -38,6 +46,7 @@ namespace PRN232_Gr3
                     };
                 });
 
+            builder.Services.AddRazorPages();
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -70,6 +79,13 @@ namespace PRN232_Gr3
 
             var app = builder.Build();
 
+            // Kích hoạt Database Seeder
+            using (var scope = app.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                DbSeeder.Seed(context);
+            }
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -77,12 +93,15 @@ namespace PRN232_Gr3
                 app.UseSwaggerUI();
             }
 
+            app.UseStaticFiles(); // Phục vụ file tĩnh trong wwwroot (cho css, js)
+
             app.UseHttpsRedirection();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
+            app.MapRazorPages(); // Map đường dẫn Razor Pages
 
             app.Run();
         }

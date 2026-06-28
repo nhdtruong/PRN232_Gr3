@@ -1,0 +1,85 @@
+@page
+@model PROJECT_PRN232_.Pages.Auth.LoginModel
+@{
+    Layout = null; // Ẩn layout chung (menu)
+    ViewData["Title"] = "Đăng nhập";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EduBridge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 font-sans text-gray-900">
+    <div id="login-toast" class="fixed right-6 top-6 z-50 hidden w-[360px] rounded-xl px-5 py-4 text-white shadow-2xl">
+        <div id="login-toast-title" class="text-lg font-bold leading-6"></div>
+        <div id="login-toast-message" class="mt-1 text-sm font-medium leading-5 text-white/95"></div>
+    </div>
+
+    <div class="w-full max-w-md bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div class="p-6 text-center">
+            <div class="flex justify-center mb-4">
+                <div class="size-16 rounded-full bg-gradient-to-br from-blue-600 to-green-600 flex items-center justify-center shadow-md">
+                    <svg class="size-8 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 6 8-4 8 4"/><path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/><path d="M18 5v17"/><path d="M6 5v17"/><circle cx="12" cy="9" r="2"/></svg>
+                </div>
+            </div>
+            <h2 class="text-2xl font-bold tracking-tight">EduBridge</h2>
+            <p class="text-sm text-gray-500 mt-1">Nền tảng quản lý giáo dục toàn diện</p>
+        </div>
+
+        <div class="p-6 pt-0">
+            <form id="form-login" method="post" class="space-y-4">
+                @Html.AntiForgeryToken()
+
+                <input name="Input.Email"
+                       type="text"
+                       placeholder="Email hoặc số điện thoại"
+                       required
+                       class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
+
+                <input name="Input.Password"
+                       type="password"
+                       placeholder="Nhập mật khẩu"
+                       required
+                       class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
+
+                <button type="submit" class="w-full h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors">
+                    Đăng nhập
+                </button>
+            </form>
+
+            <p class="text-xs text-center text-gray-500 mt-6">Sử dụng email hoặc số điện thoại của tài khoản đã được cấp</p>
+        </div>
+    </div>
+
+    <script>
+        const loginErrorMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ErrorMessage));
+        const loginSuccessMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastMessage"] as string));
+        const logoutSuccessMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            string.Equals(HttpContext.Request.Query["loggedOut"], "true", StringComparison.OrdinalIgnoreCase)
+                ? "Đã đăng xuất."
+                : null));
+
+        function showLoginToast(message, isSuccess) {
+            if (!message) {
+                return;
+            }
+
+            const toast = document.getElementById('login-toast');
+            document.getElementById('login-toast-title').textContent = isSuccess ? 'Thành công' : 'Thất bại';
+            document.getElementById('login-toast-message').textContent = message;
+            toast.className = `fixed right-6 top-6 z-50 w-[360px] rounded-xl px-5 py-4 text-white shadow-2xl ${isSuccess ? 'bg-green-600' : 'bg-red-600'}`;
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        showLoginToast(logoutSuccessMessage || loginSuccessMessage, true);
+        showLoginToast(loginErrorMessage, false);
+
+    </script>
+</body>
+</html>

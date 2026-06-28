@@ -41,6 +41,13 @@ namespace PROJECT_PRN232_.Controllers
             return Ok(new { token = token });
         }
 
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            // Với JWT, Backend không cần lưu trạng thái. Trả về 200 OK để Client tự xóa Token.
+            return Ok(new { message = "Đăng xuất thành công!" });
+        }
+
         private IActionResult UniversalAuthError() => 
             Unauthorized(new { message = "Tài khoản hoặc mật khẩu không chính xác!" });
     }

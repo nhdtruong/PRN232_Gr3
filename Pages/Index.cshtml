@@ -1,0 +1,15 @@
+@page
+@model PROJECT_PRN232_.Pages.IndexModel
+@{
+    ViewData["Title"] = "Trang Chủ";
+}
+
+<div class="text-center mt-5">
+    <h1 class="display-4">Chào mừng đến với EduBridge</h1>
+    <p>Hệ thống Quản lý Trung tâm Tiếng Anh</p>
+    
+    @if (!User.Identity.IsAuthenticated)
+    {
+        <a href="/Auth/Login" class="btn btn-primary mt-3">Đăng nhập ngay</a>
+    }
+</div>
