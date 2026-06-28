@@ -39,21 +39,25 @@ async function loadChildrenFromServer() {
 }
 
 function resetView() {
+    const badge = document.getElementById("lessonBadgeCount");
+    if (badge) badge.style.display = "none";
+
     document.getElementById("lessonsList").innerHTML = `
-        <div class="text-center py-5 text-muted" id="noLessonsMessage">
-            <i class="bi bi-calendar2-x fs-1 d-block mb-2 text-secondary"></i>
-            Vui lòng chọn con ở góc phải để xem lịch học.
+        <div class="text-center py-5 text-muted my-4" id="noLessonsMessage">
+            <i class="bi bi-calendar2-x fs-1 d-block mb-3 text-secondary opacity-50"></i>
+            <p class="mb-0 fw-semibold">Vui lòng chọn con ở góc phải để xem lịch học chi tiết.</p>
         </div>`;
     document.getElementById("lessonDetailsArea").innerHTML = `
-        <div class="text-center py-5 text-muted" id="noSelectLessonMessage">
-            <i class="bi bi-info-circle fs-2 d-block mb-2 text-secondary"></i>
-            Chọn một buổi học ở danh sách bên trái để xem tài liệu chi tiết.
+        <div class="text-center py-5 text-muted my-5" id="noSelectLessonMessage">
+            <i class="bi bi-info-circle fs-2 d-block mb-3 text-secondary opacity-50"></i>
+            <p class="mb-0 fw-semibold">Chọn một buổi học ở danh sách bên trái để xem tài liệu chi tiết.</p>
         </div>`;
 }
 
 // Tải lịch học thật của con từ database
 async function renderLessons(childId) {
     const container = document.getElementById("lessonsList");
+    const badge = document.getElementById("lessonBadgeCount");
     if (container) {
         container.innerHTML = `
             <div class="text-center py-5">
@@ -68,11 +72,16 @@ async function renderLessons(childId) {
         if (response.ok) {
             const list = await response.json();
             
+            if (badge) {
+                badge.textContent = `${list.length} buổi`;
+                badge.style.display = "inline-block";
+            }
+            
             if (list.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center py-5 text-muted">
-                        <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>
-                        Học sinh chưa tham gia lớp học nào hoặc chưa có buổi học được xếp lịch.
+                    <div class="text-center py-5 text-muted my-4">
+                        <i class="bi bi-calendar-x fs-2 d-block mb-2 text-secondary opacity-50"></i>
+                        Học sinh chưa tham gia lớp học nào hoặc chưa được xếp lịch.
                     </div>`;
                 return;
             }
@@ -87,13 +96,15 @@ async function renderLessons(childId) {
                 });
 
                 return `
-                    <div class="list-group-item lesson-item p-4 border-bottom" onclick="selectLesson(${childId}, ${lesson.id}, this)">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <span class="badge bg-light text-primary border rounded-pill">${lesson.className || 'Buổi ' + (idx + 1)}</span>
-                            <span class="text-muted small">${date}</span>
+                    <div class="lesson-card p-3 d-flex flex-column gap-2" onclick="selectLesson(${childId}, ${lesson.id}, this)">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold" style="font-size: 0.72rem;">
+                                ${lesson.className || 'Lớp học'}
+                            </span>
+                            <span class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i>${date}</span>
                         </div>
-                        <h6 class="fw-bold text-dark mb-1">${lesson.title}</h6>
-                        <p class="text-muted small mb-0">${lesson.description || 'Không có mô tả nội dung.'}</p>
+                        <h6 class="fw-bold text-dark mb-0 text-truncate" style="font-size: 0.92rem;">${lesson.title}</h6>
+                        <p class="text-muted small mb-0 text-truncate-2" style="font-size: 0.8rem; line-height: 1.4;">${lesson.description || 'Không có mô tả nội dung.'}</p>
                     </div>
                 `;
             }).join("");
@@ -108,7 +119,7 @@ async function renderLessons(childId) {
 
 function selectLesson(childId, lessonId, element) {
     // Active class item
-    document.querySelectorAll(".lesson-item").forEach(item => item.classList.remove("active"));
+    document.querySelectorAll(".lesson-card").forEach(item => item.classList.remove("active"));
     element.classList.add("active");
 
     const detailArea = document.getElementById("lessonDetailsArea");

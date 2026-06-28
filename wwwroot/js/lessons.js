@@ -3,10 +3,23 @@ const metadataEl = document.getElementById("lesson-metadata");
 const classId = metadataEl ? parseInt(metadataEl.getAttribute("data-class-id")) : 0;
 
 let lessonsData = [];
+let searchQuery = "";
+let currentPage = 1;
+const pageSize = 6; // Hiển thị tối đa 6 buổi học trên một trang để không bị kéo dài
 
 document.addEventListener("DOMContentLoaded", () => {
     if (classId > 0) {
         loadLessonsFromServer();
+    }
+
+    // Lắng nghe sự kiện tìm kiếm buổi học
+    const searchInput = document.getElementById("searchLessonInput");
+    if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+            searchQuery = e.target.value.toLowerCase().trim();
+            currentPage = 1; // Reset về trang 1 khi gõ tìm kiếm
+            renderLessons();
+        });
     }
 
     // Xử lý submit Form Thêm buổi học mới
@@ -42,14 +55,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     const modal = bootstrap.Modal.getInstance(modalEl);
                     modal.hide();
 
-                    // Tải lại danh sách thật từ DB
                     await loadLessonsFromServer();
                 } else {
                     const error = await response.json();
                     showToast("Thất bại", error.message || "Không thể tạo buổi học mới.", "danger");
                 }
             } catch (err) {
-                console.error("Lỗi khi kết nối API:", err);
+                console.error("Lỗi:", err);
                 showToast("Lỗi hệ thống", "Không thể kết nối đến máy chủ.", "danger");
             }
         });
@@ -58,15 +70,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Tải danh sách buổi học thật từ database
 async function loadLessonsFromServer() {
-    const tbody = document.querySelector("table tbody");
-    if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" class="text-center py-5">
-                    <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span>
-                    Đang tải danh sách buổi học từ máy chủ...
-                </td>
-            </tr>`;
+    const gridContainer = document.getElementById("lessonsGridContainer");
+    if (gridContainer) {
+        gridContainer.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span>
+                Đang tải danh sách buổi học từ máy chủ...
+            </div>`;
     }
 
     try {
@@ -78,28 +88,44 @@ async function loadLessonsFromServer() {
             showToast("Lỗi", "Không thể tải dữ liệu buổi học từ máy chủ.", "danger");
         }
     } catch (err) {
-        console.error("Lỗi fetch:", err);
+        console.error("Lỗi:", err);
         showToast("Lỗi kết nối", "Không thể tải lịch học.", "danger");
     }
 }
 
-// Render danh sách buổi học ra bảng HTML
+// Render danh sách buổi học dạng Grid of Cards kèm Phân trang
 function renderLessons() {
-    const tbody = document.querySelector("table tbody");
-    if (!tbody) return;
+    const gridContainer = document.getElementById("lessonsGridContainer");
+    const countSpan = document.getElementById("lessonsCount");
+    const pagination = document.getElementById("lessonsPagination");
+    if (!gridContainer) return;
 
-    if (lessonsData.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" class="text-center py-5 text-muted">
-                    <i class="bi bi-calendar-x fs-1 d-block mb-2 text-secondary"></i>
-                    Chưa có buổi học nào được tạo cho lớp này.
-                </td>
-            </tr>`;
+    // Lọc theo từ khóa tìm kiếm
+    const filtered = lessonsData.filter(l => 
+        l.title.toLowerCase().includes(searchQuery) || 
+        (l.description && l.description.toLowerCase().includes(searchQuery))
+    );
+
+    if (countSpan) {
+        countSpan.textContent = filtered.length;
+    }
+
+    if (filtered.length === 0) {
+        gridContainer.innerHTML = `
+            <div class="col-12 text-center py-5 text-muted">
+                <i class="bi bi-calendar-x fs-1 d-block mb-3 text-secondary opacity-50"></i>
+                <p class="mb-0 fw-semibold">${searchQuery !== "" ? "Không tìm thấy buổi học nào khớp với từ khóa tìm kiếm." : "Chưa có buổi học nào được tạo cho lớp này."}</p>
+            </div>`;
+        if (pagination) pagination.innerHTML = "";
         return;
     }
 
-    tbody.innerHTML = lessonsData.map((lesson, idx) => {
+    // Thực hiện phân trang
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const pageItems = filtered.slice(startIndex, endIndex);
+
+    gridContainer.innerHTML = pageItems.map((lesson, idx) => {
         const lessonDate = new Date(lesson.lessonDate);
         const formattedDate = lessonDate.toLocaleDateString("vi-VN", {
             day: "2-digit",
@@ -109,37 +135,101 @@ function renderLessons() {
             minute: "2-digit"
         });
 
+        // Tính toán đúng số thứ tự buổi học thực tế trên toàn bộ danh sách
+        const absoluteIndex = startIndex + idx + 1;
+
         return `
-            <tr>
-                <td class="px-4 text-muted fw-semibold">${idx + 1}</td>
-                <td>
-                    <div class="fw-bold text-dark">${lesson.title}</div>
-                </td>
-                <td class="text-muted" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    ${lesson.description || "<i>Không có mô tả</i>"}
-                </td>
-                <td>
-                    <span class="badge bg-light text-dark border"><i class="bi bi-calendar3 me-1"></i>${formattedDate}</span>
-                </td>
-                <td class="text-center">
-                    <div class="d-flex justify-content-center gap-2">
-                        <a href="/Center/Lessons/Materials/${lesson.id}" class="btn btn-outline-success btn-sm rounded-pill px-3">
-                            <i class="bi bi-folder2-open me-1"></i> Tài liệu
-                        </a>
-                        <a href="/Center/Lessons/RollCall?LessonId=${lesson.id}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
-                            <i class="bi bi-person-check me-1"></i> Điểm danh
-                        </a>
-                        <button class="btn btn-outline-warning btn-sm rounded-circle" onclick="editLesson(${lesson.id})" title="Sửa">
-                            <i class="bi bi-pencil-square"></i>
-                        </button>
-                        <button class="btn btn-outline-danger btn-sm rounded-circle" onclick="deleteLesson(${lesson.id})" title="Xóa">
-                            <i class="bi bi-trash"></i>
-                        </button>
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="admin-lesson-card shadow-sm">
+                    <div class="card-body p-4 d-flex flex-column h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1.5 small fw-bold">Buổi ${absoluteIndex}</span>
+                            <span class="text-muted small" style="font-size: 0.78rem;"><i class="bi bi-clock me-1"></i>${formattedDate}</span>
+                        </div>
+                        
+                        <h5 class="fw-bold text-dark mb-2 text-truncate" title="${lesson.title}">${lesson.title}</h5>
+                        <p class="text-muted small flex-grow-1 text-truncate-3" style="font-size: 0.85rem; line-height: 1.5;">
+                            ${lesson.description || "<i>Không có mô tả nội dung cho buổi học này.</i>"}
+                        </p>
+                        
+                        <!-- Nút hành động -->
+                        <div class="card-footer-buttons d-flex justify-content-between align-items-center mt-3">
+                            <div class="d-flex gap-2">
+                                <a href="/Center/Lessons/Materials/${lesson.id}" class="btn btn-success btn-sm rounded-pill px-3 fw-semibold">
+                                    <i class="bi bi-folder2-open me-1"></i> Tài liệu
+                                </a>
+                                <a href="/Center/Lessons/RollCall?LessonId=${lesson.id}" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold">
+                                    <i class="bi bi-person-check me-1"></i> Điểm danh
+                                </a>
+                            </div>
+                            <div class="d-flex gap-1.5">
+                                <button class="btn btn-outline-warning btn-sm btn-action-circle" onclick="editLesson(${lesson.id})" title="Sửa thông tin">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm btn-action-circle" onclick="deleteLesson(${lesson.id})" title="Xóa buổi học">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </td>
-            </tr>
+                </div>
+            </div>
         `;
     }).join("");
+
+    renderLessonsPagination(filtered.length);
+}
+
+// Vẽ thanh phân trang cho Buổi học
+function renderLessonsPagination(totalItems) {
+    const pagination = document.getElementById("lessonsPagination");
+    if (!pagination) return;
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+    if (totalPages <= 1) {
+        pagination.innerHTML = "";
+        return;
+    }
+
+    let html = `<nav aria-label="Page navigation"><ul class="pagination pagination-sm mb-0 gap-1">`;
+
+    // Nút Prev
+    html += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <button class="page-link rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" data-page="${currentPage - 1}" aria-label="Previous">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        </li>`;
+
+    // Nút các trang số
+    for (let i = 1; i <= totalPages; i++) {
+        html += `
+            <li class="page-item ${currentPage === i ? 'active' : ''}">
+                <button class="page-link rounded-circle d-flex align-items-center justify-content-center fw-semibold ${currentPage === i ? 'bg-primary border-primary text-white' : 'text-primary'}" style="width: 32px; height: 32px;" data-page="${i}">${i}</button>
+            </li>`;
+    }
+
+    // Nút Next
+    html += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <button class="page-link rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" data-page="${currentPage + 1}" aria-label="Next">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </li>`;
+
+    html += `</ul></nav>`;
+    pagination.innerHTML = html;
+
+    // Gắn sự kiện click
+    pagination.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const page = parseInt(btn.getAttribute("data-page"));
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderLessons();
+            }
+        });
+    });
 }
 
 // Xóa buổi học thật trong Database
