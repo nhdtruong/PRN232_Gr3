@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using PROJECT_PRN232_.DTOs;
 
 namespace PROJECT_PRN232_.Services
@@ -6,5 +8,11 @@ namespace PROJECT_PRN232_.Services
     {
         Task<IEnumerable<AttendanceResponseDto>> GetByLessonIdAsync(int lessonId, int? parentIdFilter = null);
         Task<bool> SaveBulkAsync(int lessonId, LessonAttendanceBulkDto dto, int centerUserId);
+        
+        /// <summary>
+        /// Xem lịch sử điểm danh của một học sinh cụ thể (dành cho Center báo cáo hoặc Parent theo dõi con mình).
+        /// </summary>
+        Task<IEnumerable<AttendanceResponseDto>> GetByStudentIdAsync(int studentId, int? parentIdFilter = null);
     }
 }
+

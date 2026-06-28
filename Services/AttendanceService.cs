@@ -53,6 +53,11 @@ namespace PROJECT_PRN232_.Services
             return true;
         }
 
+        public Task<IEnumerable<AttendanceResponseDto>> GetByStudentIdAsync(int studentId, int? parentIdFilter = null)
+        {
+            throw new NotImplementedException();
+        }
+
         private static AttendanceResponseDto MapToDto(Attendance a) => new()
         {
             Id = a.Id,
