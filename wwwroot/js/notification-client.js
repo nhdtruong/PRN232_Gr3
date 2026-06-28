@@ -1,5 +1,14 @@
 // SignalR Realtime Client Configuration for EduBridge System
 document.addEventListener('DOMContentLoaded', () => {
+    // ── GUARD CLAUSE (Global Layout Safety) ──────────────────────────────────
+    // File này được nhúng toàn cục trong _Layout.cshtml cho mọi user đã login.
+    // Chỉ Parent mới có #notificationDropdown và NotificationHub subscription.
+    // Center KHÔNG có các phần tử này → thoát sớm để tránh lỗi + tốn tài nguyên.
+    const globalMeta = document.getElementById('global-chat-metadata');
+    if (!globalMeta) return; // User chưa đăng nhập
+    if (globalMeta.getAttribute('data-current-role') !== 'Parent') return; // Không phải Parent
+    // ─────────────────────────────────────────────────────────────────────────
+
     // 1. Establish connection to SignalR NotificationHub
     const connection = new signalR.HubConnectionBuilder()
         .withUrl("/notificationHub")
