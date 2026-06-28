@@ -60,5 +60,64 @@ namespace PROJECT_PRN232_.Repositories
                 assessments.GetValueOrDefault(s.Id)
             ));
         }
+        public async Task<IEnumerable<Lesson>> GetByClassIdAsync(int classId)
+        {
+            return await _context.Lessons
+                .Include(l => l.Class)
+                .Where(l => l.ClassId == classId)
+                .OrderBy(l => l.LessonDate)
+                .ToListAsync();
+        }
+
+        public async Task<Lesson> CreateAsync(Lesson lesson)
+        {
+            _context.Lessons.Add(lesson);
+            await _context.SaveChangesAsync();
+            return lesson;
+        }
+
+        public async Task<bool> UpdateAsync(Lesson lesson)
+        {
+            _context.Entry(lesson).State = EntityState.Modified;
+            try
+            {
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteAsync(int lessonId)
+        {
+            var lesson = await _context.Lessons.FindAsync(lessonId);
+            if (lesson == null) return false;
+
+            _context.Lessons.Remove(lesson);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<Class?> GetClassByIdAsync(int classId)
+        {
+            return await _context.Classes.FindAsync(classId);
+        }
+
+        public async Task<IEnumerable<Lesson>> GetLessonsByStudentIdAsync(int studentId)
+        {
+            // Lấy danh sách các classId học sinh đó tham gia
+            var classIds = await _context.ClassStudents
+                .Where(cs => cs.StudentId == studentId)
+                .Select(cs => cs.ClassId)
+                .ToListAsync();
+
+            return await _context.Lessons
+                .Include(l => l.Class)
+                .Where(l => classIds.Contains(l.ClassId))
+                .OrderBy(l => l.LessonDate)
+                .ToListAsync();
+        }
     }
 }

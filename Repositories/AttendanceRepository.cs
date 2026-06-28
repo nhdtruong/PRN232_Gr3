@@ -58,5 +58,31 @@ namespace PROJECT_PRN232_.Repositories
 
             await _context.SaveChangesAsync();
         }
+
+        // Thực thi mới cho Người 4: Lấy lịch sử điểm danh của học sinh
+        public async Task<IEnumerable<Attendance>> GetByStudentIdAsync(int studentId)
+        {
+            return await _context.Attendances
+                .Include(a => a.Student)
+                .Include(a => a.Lesson)
+                    .ThenInclude(l => l.Class)
+                .Where(a => a.StudentId == studentId)
+                .OrderBy(a => a.Lesson.LessonDate)
+                .ToListAsync();
+        }
+
+        // Thực thi mới cho Người 4: Sửa 1 bản ghi điểm danh
+        public async Task<bool> UpdateSingleAsync(Attendance attendance)
+        {
+            var existing = await _context.Attendances.FindAsync(attendance.Id);
+            if (existing == null) return false;
+
+            existing.Status = attendance.Status;
+            existing.Note = attendance.Note;
+            existing.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }
