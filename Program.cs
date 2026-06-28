@@ -25,6 +25,9 @@ namespace PROJECT_PRN232_
 
             builder.Services.AddScoped<IClassRepository, ClassRepository>();
             builder.Services.AddScoped<IClassService, ClassService>();
+            builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+            builder.Services.AddScoped<IClassStudentRepository, ClassStudentRepository>();
+            builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
             builder.Services.AddScoped<AuthService>();
             builder.Services.AddScoped<IParentProfileService, ParentProfileService>();
 
@@ -126,6 +129,7 @@ namespace PROJECT_PRN232_
                 app.UseSwaggerUI();
             }
 
+            app.UseDefaultFiles();
             app.UseStaticFiles(); // Phục vụ file tĩnh trong wwwroot (cho css, js)
 
             app.UseHttpsRedirection();

@@ -17,7 +17,7 @@
 
 <div class="row g-4 mb-5">
     <!-- Quản lý phụ huynh -->
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card h-100 shadow-sm border-0 rounded-4 hover-card">
             <div class="card-body text-center p-4">
                 <div class="display-4 text-primary mb-3">
@@ -31,7 +31,7 @@
     </div>
 
     <!-- Quản lý student -->
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card h-100 shadow-sm border-0 rounded-4 hover-card">
             <div class="card-body text-center p-4">
                 <div class="display-4 text-info mb-3">
@@ -40,6 +40,20 @@
                 <h3 class="card-title fw-bold">Quản lý học sinh</h3>
                 <p class="card-text text-muted">Quản lý hồ sơ học sinh, kết quả học tập và thông tin cá nhân.</p>
                 <a asp-page="/Center/Students/Index" class="btn btn-info text-white rounded-pill px-4 py-2 mt-2">Truy cập</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quản lý lớp học & Nhập học (Người 3) -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 rounded-4 hover-card" style="border: 2px solid #7c3aed !important;">
+            <div class="card-body text-center p-4">
+                <div class="display-4 text-warning mb-3">
+                    🏫
+                </div>
+                <h3 class="card-title fw-bold" style="color: #7c3aed;">Quản lý lớp học & Nhập học</h3>
+                <p class="card-text text-muted">Xếp lớp học viên, chuyển lớp, đóng lớp và quản lý thành viên lớp.</p>
+                <a asp-page="/Center/Classes/Index" class="btn text-white rounded-pill px-4 py-2 mt-2" style="background: linear-gradient(135deg, #7c3aed, #06b6d4);">Truy cập</a>
             </div>
         </div>
     </div>
