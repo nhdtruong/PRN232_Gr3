@@ -12,11 +12,16 @@ namespace PROJECT_PRN232_.Services
     {
         private readonly IMaterialRepository _materialRepository;
         private readonly ILessonRepository _lessonRepository;
+        private readonly INotificationService _notificationService;
 
-        public MaterialService(IMaterialRepository materialRepository, ILessonRepository lessonRepository)
+        public MaterialService(
+            IMaterialRepository materialRepository,
+            ILessonRepository lessonRepository,
+            INotificationService notificationService)
         {
             _materialRepository = materialRepository;
             _lessonRepository = lessonRepository;
+            _notificationService = notificationService;
         }
 
         // Xem danh sách học liệu của 1 buổi học
@@ -26,7 +31,7 @@ namespace PROJECT_PRN232_.Services
             return list.Select(MapToDto);
         }
 
-        // Center upload tài liệu vào buổi học
+        // Center upload tài liệu vào buổi học — TRIGGER NOTIFICATION cho phụ huynh
         public async Task<MaterialResponseDto?> CreateAsync(int lessonId, MaterialCreateDto dto, int centerUserId)
         {
             // 1. Kiểm tra Buổi học tồn tại và lấy kèm thông tin Lớp học để check CenterId

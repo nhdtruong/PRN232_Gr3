@@ -25,6 +25,8 @@ namespace PROJECT_PRN232_.Data.Entities
 		[Required]
 		public DateTime LessonDate { get; set; }
 
+		public bool IsPublished { get; set; } = false;
+
 		// Navigation Properties
 		public virtual ICollection<Material> Materials { get; set; } = new List<Material>();
 		public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();

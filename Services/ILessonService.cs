@@ -23,5 +23,8 @@ namespace PROJECT_PRN232_.Services
 
         // Parent xem lịch học của con
         Task<IEnumerable<LessonResponseDto>> GetByStudentForParentAsync(int studentId, int parentUserId);
+
+        // Center xuất bản buổi học và gửi thông báo tổng hợp tới phụ huynh
+        Task<bool> PublishAsync(int lessonId, int centerUserId);
     }
 }

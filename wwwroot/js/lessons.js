@@ -138,20 +138,40 @@ function renderLessons() {
         // Tính toán đúng số thứ tự buổi học thực tế trên toàn bộ danh sách
         const absoluteIndex = startIndex + idx + 1;
 
+        // Trạng thái xuất bản
+        const statusBadge = lesson.isPublished 
+            ? `<span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small fw-semibold" style="font-size: 0.72rem;"><i class="bi bi-broadcast-pin me-1"></i>Đã phát sóng</span>`
+            : `<span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2 py-1 small fw-semibold" style="font-size: 0.72rem;"><i class="bi bi-pencil-fill me-1"></i>Nháp</span>`;
+
+        // Nút phát sóng thông báo (chỉ hiện khi chưa xuất bản)
+        const publishButtonHtml = lesson.isPublished ? '' : `
+            <button class="btn btn-primary btn-sm rounded-pill w-100 mb-3 fw-bold shadow-sm" 
+                    onclick="publishLesson(${lesson.id})" 
+                    style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); border: none; font-size: 0.8rem; padding: 6px 12px;">
+                <i class="bi bi-broadcast me-1"></i> Phát sóng thông báo
+            </button>
+        `;
+
         return `
             <div class="col-lg-4 col-md-6 col-sm-12">
                 <div class="admin-lesson-card shadow-sm">
                     <div class="card-body p-4 d-flex flex-column h-100">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1.5 small fw-bold">Buổi ${absoluteIndex}</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1.5 small fw-bold">Buổi ${absoluteIndex}</span>
+                                ${statusBadge}
+                            </div>
                             <span class="text-muted small" style="font-size: 0.78rem;"><i class="bi bi-clock me-1"></i>${formattedDate}</span>
                         </div>
                         
                         <h5 class="fw-bold text-dark mb-2 text-truncate" title="${lesson.title}">${lesson.title}</h5>
-                        <p class="text-muted small flex-grow-1 text-truncate-3" style="font-size: 0.85rem; line-height: 1.5;">
+                        <p class="text-muted small flex-grow-1 text-truncate-3" style="font-size: 0.85rem; line-height: 1.5; min-height: 50px;">
                             ${lesson.description || "<i>Không có mô tả nội dung cho buổi học này.</i>"}
                         </p>
                         
+                        <!-- Nút phát sóng thông báo nếu có -->
+                        ${publishButtonHtml}
+
                         <!-- Nút hành động -->
                         <div class="card-footer-buttons d-flex justify-content-between align-items-center mt-3">
                             <div class="d-flex gap-2">
@@ -287,6 +307,44 @@ async function editLesson(id) {
         console.error("Lỗi khi cập nhật:", err);
         showToast("Lỗi", "Không thể kết nối máy chủ để cập nhật.", "danger");
     }
+}
+
+// Phát sóng thông báo buổi học tới phụ huynh
+async function publishLesson(id) {
+    Swal.fire({
+        title: 'Phát sóng thông báo?',
+        text: "Hệ thống sẽ gửi thông báo tổng hợp kèm nút xem nhanh tài liệu tới toàn bộ Phụ huynh có con trong lớp này.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4F46E5',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Đồng ý phát sóng',
+        cancelButtonText: 'Hủy'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`/api/center/lessons/${id}/publish`, {
+                    method: "POST"
+                });
+
+                if (response.ok) {
+                    Swal.fire({
+                        title: 'Đã phát sóng!',
+                        text: 'Thông báo tổng hợp đã được gửi tới toàn bộ Phụ huynh!',
+                        icon: 'success',
+                        confirmButtonColor: '#4F46E5'
+                    });
+                    await loadLessonsFromServer(); // Tải lại danh sách để cập nhật giao diện
+                } else {
+                    const error = await response.json();
+                    Swal.fire('Thất bại', error.message || "Không thể xuất bản buổi học.", 'error');
+                }
+            } catch (err) {
+                console.error("Lỗi khi xuất bản:", err);
+                Swal.fire('Lỗi', "Không thể kết nối máy chủ để xuất bản.", 'error');
+            }
+        }
+    });
 }
 
 // Hàm vẽ Toast thông báo

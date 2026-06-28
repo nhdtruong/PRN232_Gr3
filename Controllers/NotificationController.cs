@@ -45,5 +45,19 @@ namespace PROJECT_PRN232_.Controllers
             await _notificationService.MarkAllAsReadByParentAsync(parentId);
             return Ok(new { message = "Đã đánh dấu tất cả thông báo là đã đọc.", unreadCount = 0 });
         }
+
+        /// <summary>Đánh dấu 1 thông báo cụ thể là đã đọc. Trả về unreadCount mới.</summary>
+        [HttpPut("{id:int}/mark-read")]
+        public async Task<IActionResult> MarkSingleRead(int id)
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int parentId))
+            {
+                return Unauthorized(new { message = "Không xác định được danh tính." });
+            }
+
+            var newUnreadCount = await _notificationService.MarkSingleAsReadAsync(id, parentId);
+            return Ok(new { unreadCount = newUnreadCount });
+        }
     }
 }

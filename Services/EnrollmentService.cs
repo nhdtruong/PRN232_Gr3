@@ -11,15 +11,18 @@ namespace PROJECT_PRN232_.Services
         private readonly IClassStudentRepository _classStudentRepository;
         private readonly IClassRepository _classRepository;
         private readonly IStudentRepository _studentRepository;
+        private readonly INotificationService _notificationService;
 
         public EnrollmentService(
             IClassStudentRepository classStudentRepository,
             IClassRepository classRepository,
-            IStudentRepository studentRepository)
+            IStudentRepository studentRepository,
+            INotificationService notificationService)
         {
             _classStudentRepository = classStudentRepository;
             _classRepository = classRepository;
             _studentRepository = studentRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<IEnumerable<Student>> GetStudentsInClassAsync(int classId)
@@ -74,6 +77,14 @@ namespace PROJECT_PRN232_.Services
             };
 
             await _classStudentRepository.AddAsync(enrollment);
+
+            // Thông báo real-time cho phụ huynh: con được nhập học vào lớp
+            await _notificationService.NotifyStudentEnrolledAsync(
+                student.ParentId,
+                student.FullName,
+                classEntity.Id,
+                classEntity.ClassName);
+
             return true;
         }
 

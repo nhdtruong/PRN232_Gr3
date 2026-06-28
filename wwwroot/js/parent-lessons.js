@@ -1,7 +1,12 @@
 let childrenData = [];
 
-document.addEventListener("DOMContentLoaded", () => {
-    loadChildrenFromServer();
+document.addEventListener("DOMContentLoaded", async () => {
+    // Parse query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramChildId = urlParams.get('ChildId');
+    const paramLessonId = urlParams.get('LessonId');
+
+    await loadChildrenFromServer();
 
     const select = document.getElementById("selectChild");
     if (select) {
@@ -13,6 +18,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             renderLessons(childId);
         });
+
+        // Tự động chọn con và tải lịch học khi được điều hướng từ thông báo
+        if (paramChildId) {
+            select.value = paramChildId;
+            await renderLessons(paramChildId, paramLessonId);
+        }
     }
 });
 
@@ -55,7 +66,7 @@ function resetView() {
 }
 
 // Tải lịch học thật của con từ database
-async function renderLessons(childId) {
+async function renderLessons(childId, targetLessonId = null) {
     const container = document.getElementById("lessonsList");
     const badge = document.getElementById("lessonBadgeCount");
     if (container) {
@@ -108,6 +119,19 @@ async function renderLessons(childId) {
                     </div>
                 `;
             }).join("");
+
+            // Tự động click chọn buổi học và cuộn tới nếu có targetLessonId
+            if (targetLessonId) {
+                setTimeout(() => {
+                    const card = [...container.querySelectorAll(".lesson-card")].find(c => 
+                        c.getAttribute("onclick") && c.getAttribute("onclick").includes(`, ${targetLessonId},`)
+                    );
+                    if (card) {
+                        card.click();
+                        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }, 100);
+            }
         } else {
             container.innerHTML = `<div class="text-center py-5 text-danger">Không có quyền xem thông tin học sinh này.</div>`;
         }

@@ -90,32 +90,35 @@ namespace PROJECT_PRN232_.Services
             await _attendanceRepository.UpsertBulkAsync(lessonId, attendances);
             await _assessmentRepository.UpsertBulkAsync(lessonId, assessments);
 
-            await SendScoreNotificationsAsync(lesson, dto.Rows);
+            await SendRollCallNotificationsAsync(lesson, dto.Rows);
 
             return true;
         }
 
-        private async Task SendScoreNotificationsAsync(Lesson lesson, List<LessonRollCallRowDto> rows)
+        private async Task SendRollCallNotificationsAsync(Lesson lesson, List<LessonRollCallRowDto> rows)
         {
-            var rowsWithScore = rows.Where(r => r.Score.HasValue).ToList();
-            if (rowsWithScore.Count == 0) return;
+            if (rows == null || rows.Count == 0) return;
 
-            var studentIds = rowsWithScore.Select(r => r.StudentId).ToList();
             var rollCallData = await _lessonRepository.GetRollCallDataAsync(lesson.Id, lesson.ClassId);
             var studentMap = rollCallData.ToDictionary(r => r.Student.Id, r => r.Student);
 
-            foreach (var row in rowsWithScore)
+            foreach (var row in rows)
             {
                 if (!studentMap.TryGetValue(row.StudentId, out var student)) continue;
+                if (student.ParentId == 0) continue; // skip student with no parent
 
-                await _notificationService.NotifyScoreUpdatedAsync(
+                await _notificationService.NotifyRollCallUpdatedAsync(
                     student.ParentId,
                     lesson.ClassId,
                     lesson.Class.ClassName,
                     lesson.Title,
                     student.FullName,
-                    row.Score);
+                    row.Status,
+                    row.Note,
+                    row.Score,
+                    row.TeacherComment);
             }
         }
     }
 }
+
