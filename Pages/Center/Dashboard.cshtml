@@ -4,15 +4,53 @@
     ViewData["Title"] = "Dashboard Chủ Trung Tâm";
 }
 
-<div class="row mt-4">
+<div class="row mt-4 mb-4">
     <div class="col-12">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0 rounded-4">
             <div class="card-body text-center p-5">
-                <h1 class="display-5 text-success mb-3">👑 Xin chào Chủ Trung Tâm!</h1>
-                <p class="lead">Chào mừng ngài đã đăng nhập thành công vào Hệ thống quản lý EduBridge.</p>
-                <hr class="my-4">
-                <p>Khu vực quản lý dành riêng cho ngài đang được xây dựng.</p>
+                <h1 class="display-5 text-success mb-3 fw-bold">👑 Xin chào Chủ Trung Tâm!</h1>
+                <p class="lead text-muted">Chào mừng ngài đã đăng nhập thành công vào Hệ thống quản lý EduBridge.</p>
             </div>
         </div>
     </div>
 </div>
+
+<div class="row g-4 mb-5">
+    <!-- Quản lý phụ huynh -->
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm border-0 rounded-4 hover-card">
+            <div class="card-body text-center p-4">
+                <div class="display-4 text-primary mb-3">
+                    📚
+                </div>
+                <h3 class="card-title fw-bold">Quản lý phụ huynh</h3>
+                <p class="card-text text-muted">Thêm, sửa, xóa, và theo dõi thông tin học sinh trong trung tâm.</p>
+                <a asp-page="/Center/Parents/Index" class="btn btn-primary rounded-pill px-4 py-2 mt-2">Truy cập</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quản lý student -->
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm border-0 rounded-4 hover-card">
+            <div class="card-body text-center p-4">
+                <div class="display-4 text-info mb-3">
+                    🎓
+                </div>
+                <h3 class="card-title fw-bold">Quản lý học sinh</h3>
+                <p class="card-text text-muted">Quản lý hồ sơ học sinh, kết quả học tập và thông tin cá nhân.</p>
+                <a asp-page="/Center/Students/Index" class="btn btn-info text-white rounded-pill px-4 py-2 mt-2">Truy cập</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+</style>

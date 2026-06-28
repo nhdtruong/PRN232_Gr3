@@ -57,8 +57,8 @@ namespace PROJECT_PRN232_.Services
         {
             var user = await AuthenticateAsync(dto.Username, dto.Password);
             
-            // Kiểm tra user tồn tại
-            if (user == null)
+            // Kiểm tra user tồn tại và đang hoạt động
+            if (user == null || !user.IsActive)
                 return null; 
 
             // Tạo danh sách Claims (Thông tin đính kèm trong thẻ token)

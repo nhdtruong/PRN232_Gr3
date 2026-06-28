@@ -58,6 +58,12 @@ namespace PROJECT_PRN232_.Pages.Auth
                 return Page();
             }
 
+            if (!user.IsActive)
+            {
+                ErrorMessage = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.";
+                return Page();
+            }
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
