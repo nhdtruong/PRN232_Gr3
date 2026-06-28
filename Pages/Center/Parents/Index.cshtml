@@ -58,6 +58,7 @@
                                 <div class="d-flex gap-1">
                                     <a asp-page="./Details" asp-route-id="@parent.Id" class="btn btn-sm btn-info text-white">Chi tiết</a>
                                     <a asp-page="./Edit" asp-route-id="@parent.Id" class="btn btn-sm btn-warning text-white">Sửa</a>
+                                    <a href="/Center/Chat/Index?parentId=@parent.Id" class="btn btn-sm btn-success" title="Nhắn tin"><i class="bi bi-chat-dots"></i> Nhắn tin</a>
                                     <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@parent.Id" onsubmit="return confirm('Bạn có chắc chắn muốn @(parent.IsActive ? "khóa" : "mở khóa") tài khoản này?');" style="display:inline;">
                                         <button type="submit" class="btn btn-sm @(parent.IsActive ? "btn-danger" : "btn-success")">
                                             @(parent.IsActive ? "Khóa" : "Mở khóa")

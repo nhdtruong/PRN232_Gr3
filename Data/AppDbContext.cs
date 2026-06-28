@@ -66,6 +66,10 @@ namespace PROJECT_PRN232_.Data
                 .Property(a => a.Score)
                 .HasColumnType("decimal(4,2)");
 
+            modelBuilder.Entity<Assessment>()
+                .HasIndex(a => new { a.StudentId, a.LessonId })
+                .IsUnique();
+
             modelBuilder.Entity<Attendance>()
                 .HasIndex(a => new { a.StudentId, a.LessonId })
                 .IsUnique();

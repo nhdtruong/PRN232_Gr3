@@ -3,9 +3,13 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.SignalR;
 using PROJECT_PRN232_.Data;
+using PROJECT_PRN232_.Hubs;
 using PROJECT_PRN232_.Repositories;
 using PROJECT_PRN232_.Services;
+using PROJECT_PRN232_.Services.Realtime;
+
 
 namespace PROJECT_PRN232_
 {
@@ -23,6 +27,20 @@ namespace PROJECT_PRN232_
             builder.Services.AddScoped<IClassService, ClassService>();
             builder.Services.AddScoped<AuthService>();
             builder.Services.AddScoped<IParentProfileService, ParentProfileService>();
+
+            builder.Services.AddScoped<ILessonRepository, LessonRepository>();
+            builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+            builder.Services.AddScoped<IAssessmentRepository, AssessmentRepository>();
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+            builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+            builder.Services.AddScoped<IAssessmentService, AssessmentService>();
+            builder.Services.AddScoped<ILessonRollCallService, LessonRollCallService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
+            builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
+            builder.Services.AddScoped<IChatRepository, ChatRepository>();
+            builder.Services.AddScoped<IChatService, ChatService>();
+            builder.Services.AddSignalR();
 
             // Configure Authentication (Cookie for Web, JWT for API)
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -43,6 +61,20 @@ namespace PROJECT_PRN232_
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],
                         ValidAudience = builder.Configuration["Jwt:Audience"],
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                    };
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) && 
+                                (path.StartsWithSegments("/notificationHub") || path.StartsWithSegments("/hubs/chat")))
+                            {
+                                context.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
+                        }
                     };
                 });
 
@@ -100,6 +132,9 @@ namespace PROJECT_PRN232_
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.MapHub<NotificationHub>("/notificationHub");
+            app.MapHub<ChatHub>("/hubs/chat");
 
             app.MapControllers();
             app.MapRazorPages(); // Map đường dẫn Razor Pages

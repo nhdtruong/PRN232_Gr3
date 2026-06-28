@@ -1,0 +1,55 @@
+@inject PROJECT_PRN232_.Repositories.INotificationRepository NotificationRepository
+@using System.Security.Claims
+
+@{
+    var unreadCount = 0;
+    if (User.Identity?.IsAuthenticated == true && User.IsInRole("Parent"))
+    {
+        var parentIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (int.TryParse(parentIdClaim, out var parentId))
+        {
+            unreadCount = await NotificationRepository.CountUnreadByParentAsync(parentId);
+        }
+    }
+}
+
+<div class="dropdown d-inline-block">
+    <a href="#" class="nav-link text-dark position-relative me-2 dropdown-toggle no-arrow" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo">
+        <i class="bi bi-bell fs-5"></i>
+        <span id="notification-badge" class="position-absolute top-1 start-100 translate-middle badge rounded-pill bg-danger" style="@(unreadCount == 0 ? "display: none;" : "")">
+            @unreadCount
+        </span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-0" aria-labelledby="notificationDropdown" id="notification-list-container" style="width: 340px; max-height: 400px; overflow-y: auto; border-radius: 8px;">
+        <li class="p-2 border-bottom d-flex justify-content-between align-items-center bg-light" style="border-top-left-radius: 8px; border-top-right-radius: 8px;">
+            <span class="fw-bold small text-dark"><i class="bi bi-bell-fill text-primary me-1"></i> Thông báo</span>
+            <button id="mark-all-read-btn" class="btn btn-sm btn-link text-primary text-decoration-none p-0 small fw-semibold" style="@(unreadCount == 0 ? "display: none;" : "")">Đọc tất cả</button>
+        </li>
+        <div id="notification-items-list" class="list-group list-group-flush" style="max-height: 320px; overflow-y: auto;">
+            <!-- Items will be loaded dynamically via JS -->
+            <div class="p-3 text-center text-muted small" id="no-notifications-placeholder">
+                <div class="spinner-border spinner-border-sm text-secondary me-1" role="status"></div> Đang tải thông báo...
+            </div>
+        </div>
+        <li class="border-top text-center bg-light p-2" style="border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
+            <span class="text-muted small" style="font-size: 0.75rem;">EduBridge System Realtime &copy; 2026</span>
+        </li>
+    </ul>
+</div>
+
+<style>
+    /* Ẩn dấu mũi tên dropdown mặc định cho quả chuông */
+    .no-arrow::after {
+        display: none !important;
+    }
+    .notification-item {
+        transition: background-color 0.2s;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .notification-item:hover {
+        background-color: #f8f9fa !important;
+    }
+    .notification-unread {
+        background-color: #eef5ff !important;
+    }
+</style>
