@@ -1,0 +1,127 @@
+@page
+@model PROJECT_PRN232_.WebApp.Pages.Center.DashboardModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Dashboard Chủ Trung Tâm";
+    
+    // Chuyển danh sách lớp học sang JSON để truyền xuống JavaScript phân trang
+    var classesJson = JsonSerializer.Serialize(Model.Classes.Select(c => new {
+        c.Id,
+        c.ClassName,
+        c.Status
+    }));
+}
+
+<!-- Metadata ẩn truyền danh sách lớp học xuống cho JavaScript -->
+<div id="classes-metadata"
+     data-classes="@classesJson"
+     style="display: none;"></div>
+
+<div class="container py-4">
+    <!-- Banner chào mừng -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 rounded-4 bg-white">
+                <div class="card-body text-center p-5">
+                    <h1 class="display-5 text-success mb-3 fw-bold">👑 Xin chào Chủ Trung Tâm!</h1>
+                    <p class="lead text-muted mb-0">Chào mừng ngài đã đăng nhập thành công vào Hệ thống quản lý EduBridge.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHU VỰC QUẢN TRỊ CỐT LÕI (Đẩy lên đầu trang) -->
+    <div class="row g-4 mb-5">
+        <!-- Quản lý phụ huynh -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 rounded-4 hover-card">
+                <div class="card-body text-center p-4">
+                    <div class="display-4 text-primary mb-3">
+                        👥
+                    </div>
+                    <h3 class="card-title fw-bold">Quản lý phụ huynh</h3>
+                    <p class="card-text text-muted">Thêm, sửa, xóa, và theo dõi thông tin tài khoản phụ huynh học sinh.</p>
+                    <a href="/Center/Parents/Index" class="btn btn-primary rounded-pill px-4 py-2 mt-2 fw-semibold shadow-sm">
+                        <i class="bi bi-person-gear me-1"></i> Truy cập quản lý
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quản lý học sinh -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 rounded-4 hover-card">
+                <div class="card-body text-center p-4">
+                    <div class="display-4 text-info mb-3">
+                        🎓
+                    </div>
+                    <h3 class="card-title fw-bold">Quản lý học sinh</h3>
+                    <p class="card-text text-muted">Quản lý danh sách, hồ sơ học sinh và kết quả học tập trong trung tâm.</p>
+                    <a href="/Center/Students/Index" class="btn btn-info text-white rounded-pill px-4 py-2 mt-2 fw-semibold shadow-sm">
+                        <i class="bi bi-mortarboard-fill me-1"></i> Truy cập quản lý
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quản lý lớp học & Nhập học (Người 3) -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 rounded-4 hover-card" style="border: 2px solid #7c3aed !important;">
+                <div class="card-body text-center p-4">
+                    <div class="display-4 text-warning mb-3">
+                        🏫
+                    </div>
+                    <h3 class="card-title fw-bold" style="color: #7c3aed;">Quản lý lớp học & Nhập học</h3>
+                    <p class="card-text text-muted">Xếp lớp học viên, chuyển lớp, đóng lớp và quản lý thành viên lớp.</p>
+                    <a asp-page="/Center/Classes/Index" class="btn text-white rounded-pill px-4 py-2 mt-2" style="background: linear-gradient(135deg, #7c3aed, #06b6d4);">
+                        <i class="bi bi-collection-fill me-1"></i> Truy cập
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHU VỰC LỚP HỌC & LỊCH GIẢNG DẠY (PHÂN TRANG Ở ĐÂY) -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <h2 class="h4 fw-bold text-dark mb-1">
+                <i class="bi bi-collection-play-fill text-success me-2"></i>Lớp học đang quản lý & Lịch giảng dạy
+            </h2>
+            <p class="text-muted small">Xem danh sách lớp học và quản lý buổi học chi tiết</p>
+        </div>
+    </div>
+
+    <!-- Grid chứa lớp học (JS sẽ render phân trang) -->
+    <div class="row g-4" id="classesGridContainer">
+        <!-- JS tự động render -->
+    </div>
+
+    <!-- Thanh phân trang cho Lớp học -->
+    <div class="d-flex justify-content-center mt-4 mb-5" id="classesPagination">
+        <!-- JS tự động tạo nút -->
+    </div>
+</div>
+
+<style>
+    .hover-card {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+    }
+    .class-card-dashboard {
+        background-color: #ffffff;
+        border-radius: 20px;
+        border: 1px solid #f0f2f5;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .class-card-dashboard:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.05) !important;
+    }
+</style>
+
+@section Scripts {
+    <script src="~/js/dashboard-center.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,32 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace PROJECT_PRN232_.Domain
+{
+    public class Material
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        public int LessonId { get; set; }
+
+        [ForeignKey(nameof(LessonId))]
+        public virtual Lesson Lesson { get; set; } = null!;
+
+        [Required]
+        [StringLength(255)]
+        public string Title { get; set; } = null!;
+
+        [Required]
+        [StringLength(50)]
+        public string MaterialType { get; set; } = null!; // 'Document', 'Video', 'Homework'
+
+        [Required]
+        [StringLength(2000)]
+        public string FileURL { get; set; } = null!;
+
+        public DateTime UploadedAt { get; set; } = DateTime.Now;
+    }
+}

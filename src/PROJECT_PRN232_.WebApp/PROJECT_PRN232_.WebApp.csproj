@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\PROJECT_PRN232_.Domain\PROJECT_PRN232_.Domain.csproj" />
+    <ProjectReference Include="..\PROJECT_PRN232_.Application\PROJECT_PRN232_.Application.csproj" />
+    <ProjectReference Include="..\PROJECT_PRN232_.Infrastructure\PROJECT_PRN232_.Infrastructure.csproj" />
+    <ProjectReference Include="..\PROJECT_PRN232_.Api\PROJECT_PRN232_.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>
