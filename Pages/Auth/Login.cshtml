@@ -30,8 +30,7 @@
         </div>
 
         <div class="p-6 pt-0">
-            <form id="form-login" method="post" class="space-y-4">
-                @Html.AntiForgeryToken()
+            <form id="form-login" class="space-y-4">
 
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
@@ -69,8 +68,6 @@
     </div>
 
     <script>
-        const loginErrorMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ErrorMessage));
-        const loginSuccessMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastMessage"] as string));
         const logoutSuccessMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
             string.Equals(HttpContext.Request.Query["loggedOut"], "true", StringComparison.OrdinalIgnoreCase)
                 ? "Đã đăng xuất."
@@ -91,8 +88,51 @@
             }, 3000);
         }
 
-        showLoginToast(logoutSuccessMessage || loginSuccessMessage, true);
-        showLoginToast(loginErrorMessage, false);
+        showLoginToast(logoutSuccessMessage, true);
+
+        document.getElementById('form-login').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            
+            const email = document.querySelector('input[name="Input.Email"]').value;
+            const password = document.querySelector('input[name="Input.Password"]').value;
+            
+            try {
+                const response = await fetch('/api/Auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username: email, password: password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Lưu JWT token vào localStorage (tùy chọn cho Mobile/SPA client)
+                    if (data.token) {
+                        localStorage.setItem('jwtToken', data.token);
+                    }
+                    
+                    showLoginToast('Đăng nhập thành công!', true);
+                    
+                    setTimeout(() => {
+                        if (data.role === 'Parent') {
+                            window.location.href = '/Parent/Dashboard';
+                        } else if (data.role === 'Center') {
+                            window.location.href = '/Center/Dashboard';
+                        } else {
+                            window.location.href = '/Index';
+                        }
+                    }, 500);
+                } else {
+                    const errorData = await response.json();
+                    showLoginToast(errorData.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.', false);
+                }
+            } catch (error) {
+                console.error('Error during login:', error);
+                showLoginToast('Lỗi kết nối đến máy chủ.', false);
+            }
+        });
 
     </script>
 </body>
