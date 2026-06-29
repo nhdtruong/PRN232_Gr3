@@ -25,7 +25,14 @@ namespace PROJECT_PRN232_.Pages.Center.Chat
             _chatService = chatService;
         }
 
-        public List<User> Parents { get; set; } = new List<User>();
+        public class ParentChatViewModel
+        {
+            public int Id { get; set; }
+            public string FullName { get; set; } = null!;
+            public int UnreadCount { get; set; }
+        }
+
+        public List<ParentChatViewModel> Parents { get; set; } = new List<ParentChatViewModel>();
         public int CurrentUserId { get; set; }
         public int? TargetParentId { get; set; }
 
@@ -34,10 +41,21 @@ namespace PROJECT_PRN232_.Pages.Center.Chat
             CurrentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             TargetParentId = parentId;
             
-            // Get all active parents
+            // Get all active parents with their unread message count
             Parents = await _context.Users
                 .Where(u => u.Role == "Parent" && u.IsActive)
-                .OrderBy(u => u.FullName)
+                .Select(u => new ParentChatViewModel
+                {
+                    Id = u.Id,
+                    FullName = u.FullName,
+                    UnreadCount = _context.ChatMessages
+                        .Count(m => m.ChatChannel.CenterId == CurrentUserId &&
+                                    m.ChatChannel.ParentId == u.Id &&
+                                    m.SenderId == u.Id &&
+                                    !m.IsRead)
+                })
+                .OrderByDescending(p => p.UnreadCount)
+                .ThenBy(p => p.FullName)
                 .ToListAsync();
         }
 
