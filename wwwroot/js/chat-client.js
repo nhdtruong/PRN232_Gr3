@@ -68,14 +68,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isChatPage && currentRole === 'Center') {
             const contactItem = document.querySelector(`.contact-item[data-parent-id="${message.senderId}"]`);
             if (contactItem && activeChannelId !== message.channelId) {
-                contactItem.classList.add('list-group-item-warning');
+                contactItem.classList.add('has-unread');
                 let badge = contactItem.querySelector('.unread-chat-badge');
-                if (!badge) {
-                    const flexWrapper = contactItem.querySelector('.flex-grow-1');
-                    badge = document.createElement('span');
-                    badge.className = 'badge bg-danger rounded-pill float-end unread-chat-badge';
-                    badge.innerText = 'New';
-                    flexWrapper.appendChild(badge);
+                if (badge) {
+                    let currentCount = parseInt(badge.innerText) || 0;
+                    badge.innerText = currentCount + 1;
+                    badge.classList.remove('d-none');
                 }
             }
         }
@@ -173,10 +171,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
 
                 contactItems.forEach(c => c.classList.remove('active', 'list-group-item-warning'));
+                item.classList.remove('has-unread');
                 item.classList.add('active');
 
                 const badge = item.querySelector('.unread-chat-badge');
-                if (badge) badge.remove();
+                if (badge) {
+                    badge.innerText = '0';
+                    badge.classList.add('d-none');
+                }
 
                 const parentId = parseInt(item.getAttribute('data-parent-id'));
                 otherUserName = item.getAttribute('data-parent-name');
@@ -392,13 +394,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Document
             const fileName = escapeHtml(message.messageContent || 'Tải tài liệu');
             contentHtml = `
-                <div class="d-flex align-items-center gap-2 p-2 bg-white rounded border">
-                    <i class="bi bi-file-earmark-text fs-4 text-danger flex-shrink-0"></i>
+                <div class="chat-doc-card">
+                    <i class="bi bi-file-earmark-text fs-3 text-danger flex-shrink-0"></i>
                     <div class="flex-grow-1 overflow-hidden">
-                        <div class="small fw-semibold text-truncate">${fileName}</div>
+                        <div class="small fw-bold text-dark text-truncate" title="${fileName}">${fileName}</div>
                         <a href="${escapeHtml(message.fileUrl)}" target="_blank"
-                           class="btn btn-sm btn-light border mt-1">
-                            <i class="bi bi-file-earmark-arrow-down me-1"></i>Tải file tài liệu
+                           class="btn btn-sm btn-light border mt-1 fw-semibold text-secondary" style="font-size: 0.72rem; border-radius: 6px;">
+                            <i class="bi bi-file-earmark-arrow-down me-1"></i>Tải file
                         </a>
                     </div>
                 </div>
