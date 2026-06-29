@@ -62,6 +62,7 @@ Các API truy xuất thông tin dành riêng cho Phụ huynh.
 - `GET /api/parent/children/{studentId}/classes`: Lấy danh sách các lớp con đang theo học.
 - `GET /api/parent/children/{studentId}/lessons`: Lấy lịch học/các buổi học của con.
 - `GET /api/parent/children/{studentId}/attendance`: Lấy lịch sử điểm danh của con.
+- `GET /api/parent/children/{studentId}/assessment`: Lấy lịch sử đánh giá học tập/nhận xét của con.
 
 ## 9. Nhắn tin (Chat)
 Quản lý kênh giao tiếp giữa Trung tâm và Phụ huynh.

@@ -131,3 +131,22 @@ Cập nhật hoặc thêm mới nhận xét đánh giá cho từng học viên s
 - `200 OK`: Đánh giá thành công.
 ### Error Cases
 - `400 Bad Request`: Lỗi validation dữ liệu.
+
+---
+
+### Endpoint
+`GET /api/parent/children/{studentId}/assessment`
+### Query Parameters
+`studentId` (Path parameter)
+### Request: (Header, Body)
+- Header: `Authorization: Bearer <token>`
+- Body: None
+### Purpose
+Dành cho Phụ huynh: Xem lại lịch sử điểm số, đánh giá, nhận xét học tập của con (các buổi đã học và đã xuất bản).
+### Roles
+`Parent`
+### Response
+- `200 OK`: Danh sách lịch sử đánh giá nhận xét (`List<AssessmentResponseDto>`).
+### Error Cases
+- `401 Unauthorized`: Lỗi xác thực.
+- `403 Forbidden`: Học viên không thuộc quyền quản lý của phụ huynh.
