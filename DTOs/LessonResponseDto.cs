@@ -10,5 +10,6 @@ namespace PROJECT_PRN232_.DTOs
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public DateTime LessonDate { get; set; }
+        public bool IsPublished { get; set; }
     }
 }

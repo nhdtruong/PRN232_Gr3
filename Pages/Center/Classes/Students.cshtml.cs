@@ -55,6 +55,12 @@ namespace PROJECT_PRN232_.Pages.Center.Classes
 
         public async Task<IActionResult> OnPostEnrollAsync()
         {
+            if (StudentId <= 0)
+            {
+                TempData["ErrorMessage"] = "Mã học sinh phải là số dương lớn hơn 0.";
+                return RedirectToPage(new { classId = ClassId });
+            }
+
             try
             {
                 await _enrollmentService.EnrollStudentAsync(ClassId, StudentId);

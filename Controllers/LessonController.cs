@@ -128,6 +128,25 @@ namespace PROJECT_PRN232_.Controllers
             return Ok(lessons);
         }
 
+        /// <summary>
+        /// Xuất bản buổi học và gửi thông báo tổng hợp tới phụ huynh
+        /// POST /api/center/lessons/{lessonId}/publish
+        /// </summary>
+        [HttpPost("api/center/lessons/{lessonId}/publish")]
+        [Authorize(Roles = "Center")]
+        public async Task<IActionResult> Publish(int lessonId)
+        {
+            var centerUserId = GetUserId();
+            var success = await _lessonService.PublishAsync(lessonId, centerUserId);
+
+            if (!success)
+            {
+                return BadRequest(new { message = "Không thể xuất bản buổi học. Vui lòng kiểm tra quyền sở hữu lớp học hoặc buổi học không tồn tại." });
+            }
+
+            return Ok(new { message = "Xuất bản buổi học và gửi thông báo tổng hợp thành công!" });
+        }
+
         // Helper lấy User ID đăng nhập từ Claims
         private int GetUserId()
         {

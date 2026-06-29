@@ -11,15 +11,18 @@ namespace PROJECT_PRN232_.Services
         private readonly IClassStudentRepository _classStudentRepository;
         private readonly IClassRepository _classRepository;
         private readonly IStudentRepository _studentRepository;
+        private readonly INotificationService _notificationService;
 
         public EnrollmentService(
             IClassStudentRepository classStudentRepository,
             IClassRepository classRepository,
-            IStudentRepository studentRepository)
+            IStudentRepository studentRepository,
+            INotificationService notificationService)
         {
             _classStudentRepository = classStudentRepository;
             _classRepository = classRepository;
             _studentRepository = studentRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<IEnumerable<Student>> GetStudentsInClassAsync(int classId)
@@ -74,12 +77,34 @@ namespace PROJECT_PRN232_.Services
             };
 
             await _classStudentRepository.AddAsync(enrollment);
+
+            // Thông báo real-time cho phụ huynh: con được nhập học vào lớp
+            await _notificationService.NotifyStudentEnrolledAsync(
+                student.ParentId,
+                student.FullName,
+                classEntity.Id,
+                classEntity.ClassName);
+
             return true;
         }
 
         public async Task<bool> RemoveStudentFromClassAsync(int classId, int studentId)
         {
-            return await _classStudentRepository.RemoveAsync(classId, studentId);
+            var student = await _studentRepository.GetByIdAsync(studentId);
+            var classEntity = await _classRepository.GetClassByIdAsync(classId);
+
+            var success = await _classStudentRepository.RemoveAsync(classId, studentId);
+
+            if (success && student != null && classEntity != null)
+            {
+                await _notificationService.NotifyStudentRemovedAsync(
+                    student.ParentId,
+                    student.FullName,
+                    classEntity.Id,
+                    classEntity.ClassName);
+            }
+
+            return success;
         }
 
         public async Task<bool> TransferStudentClassAsync(int studentId, int fromClassId, int toClassId)
@@ -94,6 +119,19 @@ namespace PROJECT_PRN232_.Services
             if (string.Equals(targetClass.Status, "Closed", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("Không thể chuyển học sinh vào lớp học đã đóng.");
+            }
+
+            // 1.5. Verify source class and student exist
+            var sourceClass = await _classRepository.GetClassByIdAsync(fromClassId);
+            if (sourceClass == null)
+            {
+                throw new ArgumentException($"Lớp học nguồn ID {fromClassId} không tồn tại.");
+            }
+
+            var student = await _studentRepository.GetByIdAsync(studentId);
+            if (student == null)
+            {
+                throw new ArgumentException($"Học sinh ID {studentId} không tồn tại.");
             }
 
             // 2. Verify target class is not duplicate
@@ -120,11 +158,29 @@ namespace PROJECT_PRN232_.Services
             };
             await _classStudentRepository.AddAsync(newEnrollment);
 
+            // Gửi thông báo chuyển lớp thành công cho Phụ huynh
+            await _notificationService.NotifyStudentTransferredAsync(
+                student.ParentId,
+                student.FullName,
+                sourceClass.Id,
+                sourceClass.ClassName,
+                targetClass.Id,
+                targetClass.ClassName);
+
             return true;
         }
 
-        public async Task<IEnumerable<Class>> GetClassesForStudentAsync(int studentId)
+        public async Task<IEnumerable<Class>> GetClassesForStudentAsync(int studentId, int? parentUserId = null)
         {
+            if (parentUserId.HasValue)
+            {
+                var student = await _studentRepository.GetByIdAsync(studentId);
+                if (student == null || student.ParentId != parentUserId.Value)
+                {
+                    return new List<Class>();
+                }
+            }
+
             var enrollments = await _classStudentRepository.GetEnrollmentsByStudentIdAsync(studentId);
             var classes = new List<Class>();
             foreach (var e in enrollments)

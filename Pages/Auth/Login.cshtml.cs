@@ -36,61 +36,14 @@ namespace PROJECT_PRN232_.Pages.Auth
         {
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
-                return RedirectToDashboard(User.FindFirst(ClaimTypes.Role)?.Value);
+                var role = User.FindFirst(ClaimTypes.Role)?.Value;
+                if (role == "Parent")
+                    return RedirectToPage("/Parent/Dashboard");
+                if (role == "Center")
+                    return RedirectToPage("/Center/Dashboard");
+                return RedirectToPage("/Index");
             }
             return Page();
-        }
-
-        public async Task<IActionResult> OnPostAsync()
-        {
-            if (!ModelState.IsValid)
-            {
-                ErrorMessage = "Vui lòng nhập đầy đủ thông tin.";
-                return Page();
-            }
-
-            // Gọi logic Auth từ Service cũ (Chấp nhận Username/Email/Phone)
-            var user = await _authService.AuthenticateAsync(Input.Email, Input.Password);
-            
-            if (user == null)
-            {
-                ErrorMessage = "Tài khoản hoặc mật khẩu không chính xác.";
-                return Page();
-            }
-
-            if (!user.IsActive)
-            {
-                ErrorMessage = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.";
-                return Page();
-            }
-
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role)
-            };
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            // Ghi thẻ Cookie vào trình duyệt
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-
-            TempData["ToastMessage"] = "Đăng nhập thành công!";
-            return RedirectToDashboard(user.Role);
-        }
-
-        private IActionResult RedirectToDashboard(string? role)
-        {
-            if (role == "Parent")
-                return RedirectToPage("/Parent/Dashboard");
-            
-            if (role == "Center")
-                return RedirectToPage("/Center/Dashboard");
-            
-            // Dành cho Role khác
-            return RedirectToPage("/Index");
         }
     }
 }

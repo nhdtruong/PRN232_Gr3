@@ -6,5 +6,6 @@ namespace PROJECT_PRN232_.DTOs
         public string ClassName { get; set; } = string.Empty;
         public int CenterId { get; set; }
         public string Status { get; set; } = "Active";
+        public int StudentCount { get; set; }
     }
 }

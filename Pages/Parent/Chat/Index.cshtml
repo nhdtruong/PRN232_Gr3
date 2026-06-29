@@ -15,26 +15,26 @@
 
 <div class="container py-2">
     <div class="row justify-content-center">
-        <div class="col-md-10 mb-4">
-            <div class="card shadow-sm border-0" id="chat-window-card" style="height: 600px; display: flex; flex-direction: column;">
+        <div class="col-md-10 mb-4 animate-message">
+            <div class="card chat-card shadow-sm border-0" id="chat-window-card" style="height: 600px; display: flex; flex-direction: column;">
                 
                 <!-- Khung chát đang hoạt động -->
                 <div class="d-flex flex-column h-100" id="chat-active-window">
-                    <div class="card-header bg-primary text-white py-3 d-flex align-items-center justify-content-between" style="border-top-left-radius: 8px; border-top-right-radius: 8px;">
+                    <div class="card-header chat-header-gradient text-white py-3 d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center">
-                            <div class="avatar bg-white text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold me-3" style="width: 42px; height: 42px;">
+                            <div class="active-avatar me-3" style="background: #ffffff !important; color: var(--eb-primary) !important;">
                                 C
                             </div>
                             <div>
                                 <h6 class="mb-0 text-white fw-bold">@Model.CenterAdmin.FullName</h6>
-                                <span class="badge bg-light text-primary rounded-pill" style="font-size: 0.65rem;">Hỗ trợ Trung tâm</span>
+                                <span class="badge bg-light text-primary rounded-pill" style="font-size: 0.65rem; background-color: rgba(255,255,255,0.15) !important; color: #ffffff !important;">Hỗ trợ Trung tâm</span>
                             </div>
                         </div>
                         <span class="text-white-50 small" style="font-size: 0.75rem;">Mã kênh chat: #@Model.ChannelId</span>
                     </div>
 
                     <!-- Vùng tin nhắn -->
-                    <div class="card-body bg-light p-4 overflow-auto flex-grow-1" id="chat-messages-container" style="height: 420px;">
+                    <div class="card-body p-4 overflow-auto flex-grow-1" id="chat-messages-container" style="height: 420px;">
                         <!-- Các tin nhắn được nạp động -->
                     </div>
 
@@ -52,15 +52,15 @@
                             <button type="button" id="file-preview-cancel" class="btn-close btn-close-sm" style="font-size: 0.6rem;"></button>
                         </div>
 
-                        <form id="chat-form" class="input-group">
+                        <form id="chat-form" class="d-flex align-items-center gap-2 w-100">
                             <!-- Nút đính kèm file -->
-                            <button type="button" id="attach-file-btn" class="btn btn-outline-secondary"
-                                    title="Đính kèm ảnh, video hoặc tài liệu">
-                                <i class="bi bi-paperclip"></i>
+                            <button type="button" id="attach-file-btn" class="btn btn-outline-secondary chat-round-btn flex-shrink-0"
+                                    title="Đính kèm ảnh, video hoặc tài liệu" style="border: 1px solid rgba(79, 70, 229, 0.15);">
+                                <i class="bi bi-paperclip fs-5"></i>
                             </button>
-                            <input type="text" id="chat-input" class="form-control" placeholder="Nhập câu hỏi hoặc phản hồi..." autocomplete="off">
-                            <button class="btn btn-primary" type="submit" id="chat-send-btn">
-                                <i class="bi bi-send-fill me-1"></i> Gửi
+                            <input type="text" id="chat-input" class="form-control chat-input-bar" placeholder="Nhập câu hỏi hoặc phản hồi..." autocomplete="off">
+                            <button class="btn btn-primary chat-round-btn flex-shrink-0" type="submit" id="chat-send-btn" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none;">
+                                <i class="bi bi-send-fill text-white"></i>
                             </button>
                         </form>
                     </div>
@@ -71,45 +71,156 @@
 </div>
 
 <style>
-    /* Tin nhắn bong bóng */
+    /* Custom layout styling */
+    .chat-card {
+        border-radius: 20px !important;
+        overflow: hidden;
+        border: 1px solid rgba(79, 70, 229, 0.08) !important;
+        box-shadow: 0 10px 30px rgba(30, 27, 75, 0.08) !important;
+        background: #fff;
+    }
+
+    .chat-header-gradient {
+        background: linear-gradient(135deg, var(--eb-primary-dark) 0%, var(--eb-primary) 100%) !important;
+        border: none !important;
+    }
+
+    .active-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #818cf8 0%, #4f46e5 100%) !important;
+        color: #fff !important;
+        font-weight: 700;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 3px 8px rgba(79, 70, 229, 0.3);
+    }
+
+    #chat-messages-container {
+        background-color: #f8fafc;
+        background-image: radial-gradient(rgba(79, 70, 229, 0.06) 1.2px, transparent 1.2px);
+        background-size: 24px 24px;
+        padding: 1.5rem !important;
+        border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+
+    /* Spring animation for messages */
+    @@keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(16px) scale(0.96);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
     .message-bubble-wrapper {
         display: flex;
-        margin-bottom: 15px;
+        margin-bottom: 1rem;
         width: 100%;
+        animation: slideInUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
+    
     .message-bubble-wrapper.sent {
         justify-content: flex-end;
     }
     .message-bubble-wrapper.received {
         justify-content: flex-start;
     }
+
     .message-bubble {
-        max-width: 70%;
-        padding: 10px 14px;
+        max-width: 68%;
+        padding: 0.75rem 1rem;
         border-radius: 16px;
         font-size: 0.9rem;
         word-break: break-word;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.03);
+        position: relative;
     }
+
     .message-bubble-wrapper.sent .message-bubble {
-        background-color: #0d6efd;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
         color: white;
         border-bottom-right-radius: 4px;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.18);
     }
+
     .message-bubble-wrapper.received .message-bubble {
-        background-color: #e9ecef;
-        color: #212529;
+        background-color: #ffffff;
+        color: #1f2937;
         border-bottom-left-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.02);
     }
+
     .message-meta {
-        font-size: 0.7rem;
-        margin-top: 4px;
+        font-size: 0.68rem;
+        margin-top: 5px;
         display: block;
-        opacity: 0.8;
+        opacity: 0.7;
     }
     .message-bubble-wrapper.sent .message-meta {
         text-align: right;
+        color: rgba(255, 255, 255, 0.85);
+    }
+    .message-bubble-wrapper.received .message-meta {
+        text-align: left;
+        color: #6b7280;
+    }
+
+    /* Custom chat doc card inside message bubble */
+    .chat-doc-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.06);
+        padding: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-width: 220px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.03);
+        transition: all 0.2s ease;
+    }
+    .chat-doc-card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.06);
+        transform: translateY(-1px);
+    }
+
+    .chat-media {
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transition: all 0.25s ease;
+    }
+    .chat-media:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    /* Custom form elements input styling */
+    .chat-input-bar {
+        border-radius: 24px !important;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+        border: 1px solid rgba(79, 70, 229, 0.15) !important;
+        transition: all 0.2s ease;
+    }
+    .chat-input-bar:focus {
+        border-color: var(--eb-primary) !important;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12) !important;
+    }
+
+    .chat-round-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 50% !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 !important;
+        transition: all 0.2s ease;
     }
 </style>
-
-

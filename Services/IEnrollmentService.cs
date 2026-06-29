@@ -10,6 +10,6 @@ namespace PROJECT_PRN232_.Services
         Task<bool> EnrollStudentAsync(int classId, int studentId);
         Task<bool> RemoveStudentFromClassAsync(int classId, int studentId);
         Task<bool> TransferStudentClassAsync(int studentId, int fromClassId, int toClassId);
-        Task<IEnumerable<Class>> GetClassesForStudentAsync(int studentId);
+        Task<IEnumerable<Class>> GetClassesForStudentAsync(int studentId, int? parentUserId = null);
     }
 }

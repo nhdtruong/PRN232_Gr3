@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +20,12 @@ namespace PROJECT_PRN232_.Controllers
         [HttpGet("api/parent/children/{studentId}/classes")]
         public async Task<IActionResult> GetChildClasses(int studentId)
         {
-            var classes = await _enrollmentService.GetClassesForStudentAsync(studentId);
+            var parentIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(parentIdString, out int parentId))
+            {
+                return Unauthorized(new { message = "Không xác định được người dùng." });
+            }
+            var classes = await _enrollmentService.GetClassesForStudentAsync(studentId, parentId);
             return Ok(classes);
         }
     }

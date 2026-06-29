@@ -48,5 +48,18 @@ namespace PROJECT_PRN232_.Repositories
 
             await _context.SaveChangesAsync();
         }
+
+        public async Task<bool> MarkSingleAsReadAsync(int notificationId, int parentId)
+        {
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.Id == notificationId && n.ParentId == parentId);
+
+            if (notification == null) return false;
+            if (notification.IsRead) return true; // Đã đọc rồi, không cần update
+
+            notification.IsRead = true;
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

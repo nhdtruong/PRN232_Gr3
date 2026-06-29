@@ -21,7 +21,8 @@ namespace PROJECT_PRN232_.Services
                 Id = c.Id,
                 ClassName = c.ClassName,
                 CenterId = c.CenterId,
-                Status = c.Status
+                Status = c.Status,
+                StudentCount = c.ClassStudents?.Count ?? 0
             });
         }
 
@@ -35,7 +36,8 @@ namespace PROJECT_PRN232_.Services
                 Id = classEntity.Id,
                 ClassName = classEntity.ClassName,
                 CenterId = classEntity.CenterId,
-                Status = classEntity.Status
+                Status = classEntity.Status,
+                StudentCount = classEntity.ClassStudents?.Count ?? 0
             };
         }
 
@@ -54,7 +56,8 @@ namespace PROJECT_PRN232_.Services
                 Id = createdClass.Id,
                 ClassName = createdClass.ClassName,
                 CenterId = createdClass.CenterId,
-                Status = createdClass.Status
+                Status = createdClass.Status,
+                StudentCount = 0
             };
         }
 

@@ -15,12 +15,16 @@ namespace PROJECT_PRN232_.Repositories
 
         public async Task<IEnumerable<Class>> GetAllClassesAsync()
         {
-            return await _context.Classes.ToListAsync();
+            return await _context.Classes
+                .Include(c => c.ClassStudents)
+                .ToListAsync();
         }
 
         public async Task<Class?> GetClassByIdAsync(int id)
         {
-            return await _context.Classes.FindAsync(id);
+            return await _context.Classes
+                .Include(c => c.ClassStudents)
+                .FirstOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task<Class> AddClassAsync(Class classEntity)

@@ -14,12 +14,17 @@ namespace PROJECT_PRN232_.Services
     public class LessonService : ILessonService
     {
         private readonly ILessonRepository _lessonRepository;
-        private readonly AppDbContext _context; // Dùng để kiểm tra mối quan hệ Parent-Student và Lớp học nhanh gọn
+        private readonly AppDbContext _context;
+        private readonly INotificationService _notificationService;
 
-        public LessonService(ILessonRepository lessonRepository, AppDbContext context)
+        public LessonService(
+            ILessonRepository lessonRepository,
+            AppDbContext context,
+            INotificationService notificationService)
         {
             _lessonRepository = lessonRepository;
             _context = context;
+            _notificationService = notificationService;
         }
 
         // Lấy danh sách buổi học của Lớp học
@@ -131,7 +136,41 @@ namespace PROJECT_PRN232_.Services
             }
 
             var lessons = await _lessonRepository.GetLessonsByStudentIdAsync(studentId);
-            return lessons.Select(MapToDto);
+            return lessons.Where(l => l.IsPublished).Select(MapToDto);
+        }
+
+        // Center xuất bản buổi học và gửi thông báo tổng hợp tới phụ huynh
+        public async Task<bool> PublishAsync(int lessonId, int centerUserId)
+        {
+            var lesson = await _context.Lessons
+                .Include(l => l.Class)
+                .Include(l => l.Materials)
+                .FirstOrDefaultAsync(l => l.Id == lessonId);
+
+            if (lesson == null) return false;
+
+            // Bảo mật: Center sở hữu lớp này mới được quyền publish
+            if (lesson.Class.CenterId != centerUserId) return false;
+
+            bool isRebroadcast = lesson.IsPublished;
+
+            lesson.IsPublished = true;
+            await _context.SaveChangesAsync();
+
+            // Tổng hợp danh sách tên tài liệu đã đính kèm
+            var materialTitles = lesson.Materials.Select(m => m.Title).ToList();
+
+            // Gửi một thông báo tổng hợp duy nhất qua SignalR
+            await _notificationService.NotifyPublishedLessonAsync(
+                lesson.Id,
+                lesson.ClassId,
+                lesson.Class.ClassName,
+                lesson.Title,
+                lesson.LessonDate,
+                materialTitles,
+                isRebroadcast);
+
+            return true;
         }
 
         // Mapper Helper chuyển đổi Entity sang DTO
@@ -142,7 +181,8 @@ namespace PROJECT_PRN232_.Services
             ClassName = l.Class?.ClassName ?? string.Empty,
             Title = l.Title,
             Description = l.Description,
-            LessonDate = l.LessonDate
+            LessonDate = l.LessonDate,
+            IsPublished = l.IsPublished
         };
     }
 }
