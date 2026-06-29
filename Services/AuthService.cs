@@ -86,5 +86,19 @@ namespace PROJECT_PRN232_.Services
 
             return tokenHandler.WriteToken(createdToken); // Trả về chuỗi Token dạng String
         }
+
+        // 3. Logic Đổi mật khẩu
+        public async Task<bool> ChangePasswordAsync(int userId, string oldPassword, string newPassword)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return false;
+
+            if (!BCrypt.Net.BCrypt.Verify(oldPassword, user.PasswordHash))
+                return false;
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }
