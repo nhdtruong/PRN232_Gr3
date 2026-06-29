@@ -58,5 +58,16 @@ namespace PROJECT_PRN232_.Repositories
 
             await _context.SaveChangesAsync();
         }
+
+        public async Task<IEnumerable<Assessment>> GetByStudentIdAsync(int studentId)
+        {
+            return await _context.Assessments
+                .Include(a => a.Student)
+                .Include(a => a.Lesson)
+                    .ThenInclude(l => l.Class)
+                .Where(a => a.StudentId == studentId)
+                .OrderBy(a => a.Lesson.LessonDate)
+                .ToListAsync();
+        }
     }
 }

@@ -48,12 +48,12 @@ namespace PROJECT_PRN232_.Pages.Parent
 
             if (Children.Any())
             {
-                if (!SelectedStudentId.HasValue)
+                if (!SelectedStudentId.HasValue || !Children.Any(c => c.Id == SelectedStudentId.Value))
                 {
                     SelectedStudentId = Children.First().Id;
                 }
 
-                EnrolledClasses = await _enrollmentService.GetClassesForStudentAsync(SelectedStudentId.Value);
+                EnrolledClasses = await _enrollmentService.GetClassesForStudentAsync(SelectedStudentId.Value, parentUser.Id);
             }
 
             return Page();

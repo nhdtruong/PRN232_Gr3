@@ -47,5 +47,18 @@ namespace PROJECT_PRN232_.Controllers
                 return int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             return null;
         }
+
+        /// <summary>
+        /// Phụ huynh xem lịch sử đánh giá nhận xét của con mình
+        /// GET /api/parent/children/{studentId}/assessment
+        /// </summary>
+        [HttpGet("/api/parent/children/{studentId}/assessment")]
+        [Authorize(Roles = "Parent")]
+        public async Task<IActionResult> GetForParent(int studentId)
+        {
+            var parentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _assessmentService.GetByStudentIdAsync(studentId, parentId);
+            return Ok(result);
+        }
     }
 }

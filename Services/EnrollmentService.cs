@@ -170,8 +170,17 @@ namespace PROJECT_PRN232_.Services
             return true;
         }
 
-        public async Task<IEnumerable<Class>> GetClassesForStudentAsync(int studentId)
+        public async Task<IEnumerable<Class>> GetClassesForStudentAsync(int studentId, int? parentUserId = null)
         {
+            if (parentUserId.HasValue)
+            {
+                var student = await _studentRepository.GetByIdAsync(studentId);
+                if (student == null || student.ParentId != parentUserId.Value)
+                {
+                    return new List<Class>();
+                }
+            }
+
             var enrollments = await _classStudentRepository.GetEnrollmentsByStudentIdAsync(studentId);
             var classes = new List<Class>();
             foreach (var e in enrollments)

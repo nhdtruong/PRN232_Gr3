@@ -1,6 +1,11 @@
 using PROJECT_PRN232_.Data.Entities;
 using PROJECT_PRN232_.DTOs;
 using PROJECT_PRN232_.Repositories;
+using PROJECT_PRN232_.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PROJECT_PRN232_.Services
 {
@@ -8,11 +13,13 @@ namespace PROJECT_PRN232_.Services
     {
         private readonly IAssessmentRepository _assessmentRepository;
         private readonly ILessonRepository _lessonRepository;
+        private readonly AppDbContext _context;
 
-        public AssessmentService(IAssessmentRepository assessmentRepository, ILessonRepository lessonRepository)
+        public AssessmentService(IAssessmentRepository assessmentRepository, ILessonRepository lessonRepository, AppDbContext context)
         {
             _assessmentRepository = assessmentRepository;
             _lessonRepository = lessonRepository;
+            _context = context;
         }
 
         public async Task<IEnumerable<AssessmentResponseDto>> GetByLessonIdAsync(int lessonId, int? parentIdFilter = null)
@@ -60,12 +67,34 @@ namespace PROJECT_PRN232_.Services
             return items.All(i => !i.Score.HasValue || (i.Score >= 0 && i.Score <= 10));
         }
 
+        public async Task<IEnumerable<AssessmentResponseDto>> GetByStudentIdAsync(int studentId, int? parentIdFilter = null)
+        {
+            if (parentIdFilter.HasValue)
+            {
+                var isOwnChild = await _context.Students
+                    .AnyAsync(s => s.Id == studentId && s.ParentId == parentIdFilter.Value);
+                if (!isOwnChild)
+                {
+                    return Enumerable.Empty<AssessmentResponseDto>();
+                }
+            }
+
+            var list = await _assessmentRepository.GetByStudentIdAsync(studentId);
+            if (parentIdFilter.HasValue)
+            {
+                list = list.Where(a => a.Lesson != null && a.Lesson.IsPublished);
+            }
+            return list.Select(MapToDto);
+        }
+
         private static AssessmentResponseDto MapToDto(Assessment a) => new()
         {
             Id = a.Id,
             StudentId = a.StudentId,
-            StudentName = a.Student.FullName,
+            StudentName = a.Student?.FullName ?? string.Empty,
             LessonId = a.LessonId,
+            LessonTitle = a.Lesson?.Title ?? string.Empty,
+            ClassName = a.Lesson?.Class?.ClassName ?? string.Empty,
             Score = a.Score,
             TeacherComment = a.TeacherComment,
             DateAssessed = a.DateAssessed

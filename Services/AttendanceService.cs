@@ -76,6 +76,10 @@ namespace PROJECT_PRN232_.Services
             }
 
             var list = await _attendanceRepository.GetByStudentIdAsync(studentId);
+            if (parentIdFilter.HasValue)
+            {
+                list = list.Where(a => a.Lesson != null && a.Lesson.IsPublished);
+            }
             return list.Select(MapToDto);
         }
 

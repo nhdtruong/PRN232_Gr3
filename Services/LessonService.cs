@@ -136,7 +136,7 @@ namespace PROJECT_PRN232_.Services
             }
 
             var lessons = await _lessonRepository.GetLessonsByStudentIdAsync(studentId);
-            return lessons.Select(MapToDto);
+            return lessons.Where(l => l.IsPublished).Select(MapToDto);
         }
 
         // Center xuất bản buổi học và gửi thông báo tổng hợp tới phụ huynh

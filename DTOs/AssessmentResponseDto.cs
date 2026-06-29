@@ -8,6 +8,8 @@ namespace PROJECT_PRN232_.DTOs
         public int LessonId { get; set; }
         public decimal? Score { get; set; }
         public string? TeacherComment { get; set; }
+        public string LessonTitle { get; set; } = string.Empty;
+        public string ClassName { get; set; } = string.Empty;
         public DateTime DateAssessed { get; set; }
     }
 }
