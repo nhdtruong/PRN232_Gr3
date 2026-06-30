@@ -755,20 +755,62 @@
                     if (data.maxCapacity) {
                         document.getElementById('editMaxCapacity').value = data.maxCapacity;
                     }
-                    if (data.roomId) {
-                        document.getElementById('editClassRoom').value = data.roomId;
+                    
+                    // Fallback to model data values if database seed details are missing
+                    const roomEl = document.getElementById('editClassRoom');
+                    if (roomEl) {
+                        if (data.roomId) {
+                            roomEl.value = data.roomId;
+                        } else {
+                            // Select first option by default
+                            roomEl.selectedIndex = 0;
+                        }
                     }
-                    if (data.totalLessons) {
-                        document.getElementById('editTotalLessons').value = data.totalLessons;
+
+                    const totalLessonsEl = document.getElementById('editTotalLessons');
+                    if (totalLessonsEl) {
+                        totalLessonsEl.value = data.totalLessons && data.totalLessons > 0 ? data.totalLessons : 24;
                     }
 
                     const lessons = data.lessons;
                     if (!lessons || lessons.length === 0) {
-                        container.innerHTML = '<div class="text-muted small text-center py-2">Chưa thiết lập lịch học cho lớp này. Hãy bấm Thêm lịch để tạo!</div>';
+                        // Render a single blank default schedule row to prevent empty visual space
+                        container.innerHTML = `
+                            <div class="row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom">
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm edit-day-select" required>
+                                        <option value="Thứ 2" selected>Thứ 2</option>
+                                        <option value="Thứ 3">Thứ 3</option>
+                                        <option value="Thứ 4">Thứ 4</option>
+                                        <option value="Thứ 5">Thứ 5</option>
+                                        <option value="Thứ 6">Thứ 6</option>
+                                        <option value="Thứ 7">Thứ 7</option>
+                                        <option value="Chủ nhật">Chủ nhật</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                                        <option value="" selected>Tự chọn giờ</option>
+                                        ${document.querySelector('.slot-suggestion-select') ? document.querySelector('.slot-suggestion-select').innerHTML : ''}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="time" class="form-control form-control-sm start-time-input" required />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="time" class="form-control form-control-sm end-time-input" required />
+                                </div>
+                                <div class="col-md-1 text-end">
+                                    <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeEditScheduleRow(this)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
                         return;
                     }
 
-                    const slotsOptions = document.querySelector('.slot-suggestion-select').innerHTML;
+                    const slotsOptions = document.querySelector('.slot-suggestion-select') ? document.querySelector('.slot-suggestion-select').innerHTML : '';
 
                     lessons.forEach((l, idx) => {
                         const newRow = document.createElement('div');
