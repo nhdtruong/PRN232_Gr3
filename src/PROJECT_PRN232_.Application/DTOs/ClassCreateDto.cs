@@ -12,5 +12,9 @@ namespace PROJECT_PRN232_.Application.DTOs
         public int CenterId { get; set; }
 
         public int MaxCapacity { get; set; } = 30;
+
+        public string? Subject { get; set; }
+
+        public int TotalLessons { get; set; } = 24;
     }
 }

@@ -306,7 +306,7 @@
                                         <a asp-page="/Center/Classes/Students" asp-route-classId="@c.Id" class="eb-action-btn view" title="Học viên">
                                             <i class="bi bi-people"></i>
                                         </a>
-                                        <button class="eb-action-btn edit" onclick="openEditModal(@c.Id, '@c.ClassName', @c.CenterId, @c.MaxCapacity)" data-bs-toggle="modal" data-bs-target="#editClassModal" title="Sửa">
+                                        <button class="eb-action-btn edit" onclick="openEditModal(@c.Id, '@c.ClassName', @c.CenterId, @c.MaxCapacity, '@c.Subject', @c.TotalLessons)" data-bs-toggle="modal" data-bs-target="#editClassModal" title="Sửa">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
                                         <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" onsubmit="return confirm('Bạn có chắc chắn muốn xóa lớp học này?');" style="display:inline;">
@@ -486,8 +486,8 @@
 
                             <!-- Môn học -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
-                                <select class="form-select" required>
+                                <label asp-for="CreateDto.Subject" class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
+                                <select asp-for="CreateDto.Subject" class="form-select" required>
                                     <option value="" selected disabled>Chọn môn học</option>
                                     <option value="ielts">IELTS General</option>
                                     <option value="toeic">TOEIC Intensive</option>
@@ -497,14 +497,14 @@
 
                             <!-- Tổng số buổi -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
-                                <input class="form-control" type="number" placeholder="Ví dụ: 24" value="24" required />
+                                <label asp-for="CreateDto.TotalLessons" class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
+                                <input asp-for="CreateDto.TotalLessons" class="form-control" type="number" placeholder="Ví dụ: 24" value="24" required />
                             </div>
 
                             <!-- Phòng học -->
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Phòng học (*)</label>
-                                <select class="form-select" required>
+                                <select class="form-select" name="CreateRoomId" required>
                                     <option value="" selected disabled>Chọn phòng học</option>
                                     @foreach (var r in Model.Rooms)
                                     {
@@ -618,24 +618,24 @@
 
                             <!-- Môn học -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
-                                <select class="form-select" id="editClassSubject" required>
+                                <label asp-for="UpdateDto.Subject" class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
+                                <select asp-for="UpdateDto.Subject" class="form-select" id="editClassSubject" required>
                                     <option value="ielts">IELTS General</option>
                                     <option value="toeic">TOEIC Intensive</option>
-                                    <option value="comm" selected>Tiếng Anh Giao Tiếp</option>
+                                    <option value="comm">Tiếng Anh Giao Tiếp</option>
                                 </select>
                             </div>
 
                             <!-- Tổng số buổi -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
-                                <input class="form-control" type="number" id="editTotalLessons" value="24" required />
+                                <label asp-for="UpdateDto.TotalLessons" class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
+                                <input asp-for="UpdateDto.TotalLessons" class="form-control" type="number" id="editTotalLessons" value="24" required />
                             </div>
 
                             <!-- Phòng học -->
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Phòng học (*)</label>
-                                <select class="form-select" id="editClassRoom" required>
+                                <select class="form-select" id="editClassRoom" name="UpdateRoomId" required>
                                     @foreach (var r in Model.Rooms)
                                     {
                                         <option value="@r.Id">@r.RoomName (Sức chứa: @r.Capacity)</option>
@@ -726,7 +726,7 @@
             $(el).addClass('active');
         }
 
-        function openEditModal(id, name, centerId, maxCapacity) {
+        function openEditModal(id, name, centerId, maxCapacity, subject, totalLessons) {
             document.getElementById('editClassId').value = id;
             document.getElementById('editClassName').value = name;
             document.getElementById('editCenterId').value = centerId;
@@ -735,6 +735,17 @@
             const maxCapInput = document.getElementById('editMaxCapacity');
             if (maxCapInput) {
                 maxCapInput.value = maxCapacity || 30;
+            }
+
+            // Set Subject and TotalLessons synchronously from list model
+            const subjectEl = document.getElementById('editClassSubject');
+            if (subjectEl) {
+                subjectEl.value = subject || "comm";
+            }
+
+            const totalLessonsEl = document.getElementById('editTotalLessons');
+            if (totalLessonsEl) {
+                totalLessonsEl.value = totalLessons || 24;
             }
 
             // Generate class code representation
