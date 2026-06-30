@@ -792,9 +792,9 @@
 
                         container.appendChild(newRow);
 
-                        // If slot ID is present, trigger automatic slot value population
+                        // If slot ID is present, trigger automatic slot value population AFTER append
                         const selectElement = newRow.querySelector('.slot-suggestion-select');
-                        if (l.slotId) {
+                        if (l.slotId && selectElement) {
                             selectElement.value = l.slotId;
                             onSlotSuggestionChanged(selectElement);
                         }
