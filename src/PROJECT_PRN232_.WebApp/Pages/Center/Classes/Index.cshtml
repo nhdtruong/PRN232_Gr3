@@ -538,7 +538,7 @@
                             <div class="row g-2 align-items-center schedule-row-item mb-2 pb-2 border-bottom">
                                 <div class="col-md-3">
                                     <label class="small text-muted fw-semibold d-block mb-1">Thứ (*)</label>
-                                    <select class="form-select form-select-sm" required>
+                                    <select class="form-select form-select-sm" name="CreateDayOfWeek[]" required>
                                         <option value="Thứ 2">Thứ 2</option>
                                         <option value="Thứ 3">Thứ 3</option>
                                         <option value="Thứ 4">Thứ 4</option>
@@ -550,7 +550,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="small text-muted fw-semibold d-block mb-1">Ca học gợi ý</label>
-                                    <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                                    <select class="form-select form-select-sm slot-suggestion-select" name="CreateSlotId[]" onchange="onSlotSuggestionChanged(this)">
                                         <option value="" selected>Tự chọn giờ</option>
                                         @foreach (var s in Model.Slots)
                                         {
@@ -668,7 +668,7 @@
                             <div class="row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom">
                                 <div class="col-md-3">
                                     <label class="small text-muted fw-semibold d-block mb-1">Thứ (*)</label>
-                                    <select class="form-select form-select-sm" required>
+                                    <select class="form-select form-select-sm" name="UpdateDayOfWeek[]" required>
                                         <option value="Thứ 2">Thứ 2</option>
                                         <option value="Thứ 3">Thứ 3</option>
                                         <option value="Thứ 4">Thứ 4</option>
@@ -680,7 +680,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="small text-muted fw-semibold d-block mb-1">Ca học gợi ý</label>
-                                    <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                                    <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
                                         <option value="" selected>Tự chọn giờ</option>
                                         @foreach (var s in Model.Slots)
                                         {
@@ -833,7 +833,7 @@
 
                         newRow.innerHTML = `
                             <div class="col-md-3">
-                                <select class="form-select form-select-sm edit-day-select" required>
+                                <select class="form-select form-select-sm edit-day-select" name="UpdateDayOfWeek[]" required>
                                     <option value="Thứ 2" ${vnDay === "Thứ 2" ? "selected" : ""}>Thứ 2</option>
                                     <option value="Thứ 3" ${vnDay === "Thứ 3" ? "selected" : ""}>Thứ 3</option>
                                     <option value="Thứ 4" ${vnDay === "Thứ 4" ? "selected" : ""}>Thứ 4</option>
@@ -844,7 +844,7 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                                <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
                                     ${slotsOptions}
                                 </select>
                             </div>
@@ -923,7 +923,7 @@
 
             newRow.innerHTML = `
                 <div class="col-md-3">
-                    <select class="form-select form-select-sm" required>
+                    <select class="form-select form-select-sm" name="CreateDayOfWeek[]" required>
                         <option value="Thứ 2">Thứ 2</option>
                         <option value="Thứ 3">Thứ 3</option>
                         <option value="Thứ 4">Thứ 4</option>
@@ -934,7 +934,7 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                    <select class="form-select form-select-sm slot-suggestion-select" name="CreateSlotId[]" onchange="onSlotSuggestionChanged(this)">
                         ${slotsOptions}
                     </select>
                 </div>
@@ -992,7 +992,7 @@
 
                 newRow.innerHTML = `
                     <div class="col-md-3">
-                        <select class="form-select form-select-sm" required>
+                        <select class="form-select form-select-sm" name="UpdateDayOfWeek[]" required>
                             <option value="Thứ 2">Thứ 2</option>
                             <option value="Thứ 3">Thứ 3</option>
                             <option value="Thứ 4">Thứ 4</option>
@@ -1003,7 +1003,7 @@
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                        <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
                             ${slotsOptions}
                         </select>
                     </div>
