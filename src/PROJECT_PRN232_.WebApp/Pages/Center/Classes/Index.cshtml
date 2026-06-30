@@ -75,6 +75,7 @@
         box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
         transition: all 0.25s ease;
         text-decoration: none;
+        cursor: pointer;
     }
 
     .eb-btn-primary:hover {
@@ -93,6 +94,7 @@
         font-weight: 600;
         font-size: 0.9rem;
         transition: all 0.25s ease;
+        cursor: pointer;
     }
 
     .eb-btn-outline:hover {
@@ -162,6 +164,7 @@
         color: var(--eb-text-muted);
         transition: all 0.25s ease;
         text-decoration: none;
+        cursor: pointer;
     }
 
     .eb-action-btn:hover {
@@ -185,22 +188,13 @@
         color: #DC2626;
         border-color: #FECACA;
     }
-
-    .pagination-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-top: 24px;
-        border-top: 1px solid #E2E8F0;
-        padding-top: 16px;
-    }
 </style>
 
 <div class="container-fluid py-4" style="max-width: 1400px;">
     <!-- Title Section -->
     <div class="mb-4">
         <h1 class="fw-bold text-dark mb-1" style="font-size: 1.85rem;">Quản lý lớp học</h1>
-        <p class="text-muted mb-0">Thiết lập và đồng bộ thông tin phòng học, ca học và lịch học trung tâm.</p>
+        <p class="text-muted mb-0">Thiết lập và đồng bộ thông tin phòng học, ca học và lịch học trung tâm bằng REST API.</p>
     </div>
 
     <!-- Navigation Tabs -->
@@ -210,21 +204,8 @@
         <span onclick="switchTab('slots-tab', this)" class="eb-nav-tab">Quản lý ca học</span>
     </div>
 
-    <!-- Alert Messages -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm border-0" role="alert" style="background-color: #DCFCE7; color: #15803D;">
-            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0" role="alert" style="background-color: #FEE2E2; color: #B91C1C;">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
+    <!-- Top Alert Messages Container -->
+    <div id="alertContainer"></div>
 
     <!-- TAB 1: CLASSES MANAGEMENT -->
     <div id="classes-tab" class="tab-content">
@@ -233,10 +214,10 @@
             <h5 class="fw-bold mb-3" style="color: var(--eb-text-dark);">Danh sách lớp học</h5>
             <div class="row g-3">
                 <div class="col-md-3">
-                    <input type="text" id="filterClassName" class="form-control" placeholder="Tìm tên/mã lớp...">
+                    <input type="text" id="filterClassName" class="form-control" placeholder="Tìm tên/mã lớp..." oninput="applyFilters()">
                 </div>
                 <div class="col-md-3">
-                    <select id="filterStatus" class="form-select">
+                    <select id="filterStatus" class="form-select" onchange="applyFilters()">
                         <option value="">Trạng thái lớp</option>
                         <option value="Active">Đang hoạt động</option>
                         <option value="Closed">Đã đóng</option>
@@ -248,9 +229,6 @@
                     </button>
                     <div class="d-flex gap-2">
                         <button class="eb-btn-outline" onclick="resetFilters()">Làm mới bộ lọc</button>
-                        <button class="eb-btn-primary" onclick="applyFilters()">
-                            <i class="bi bi-search"></i> Tìm kiếm
-                        </button>
                     </div>
                 </div>
             </div>
@@ -273,64 +251,12 @@
                             <th class="text-center" style="width: 180px;">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @{ int classIdx = 1; }
-                        @foreach (var c in Model.Classes)
-                        {
-                            var classCode = $"CLS{c.Id:D4}";
-                            <tr class="class-row" data-class-name="@c.ClassName" data-class-id="@c.Id" data-status="@c.Status">
-                                <td class="text-center fw-semibold text-muted">@classIdx</td>
-                                <td class="fw-semibold">@c.Id</td>
-                                <td><span class="text-primary fw-bold">@classCode</span></td>
-                                <td class="fw-bold" style="color: var(--eb-text-dark);">@c.ClassName</td>
-                                <td class="text-center">
-                                    <span class="badge bg-light text-dark border px-2 py-1"><i class="bi bi-people me-1"></i>@c.StudentCount</span>
-                                </td>
-                                <td class="small">
-                                    @{
-                                        var subjectDisplay = c.Subject switch {
-                                            "ielts" => "IELTS General",
-                                            "toeic" => "TOEIC Intensive",
-                                            "comm" => "Tiếng Anh Giao Tiếp",
-                                            _ => c.Subject ?? "—"
-                                        };
-                                    }
-                                    <span class="badge bg-primary-subtle text-primary border rounded-pill px-2 py-1">@subjectDisplay</span>
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge bg-info-subtle text-info border px-2 py-1"><i class="bi bi-book me-1"></i>@c.TotalLessons buổi</span>
-                                </td>
-                                <td>
-                                    @if (c.Status == "Active")
-                                    {
-                                        <span class="badge-active">Đang hoạt động</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge-closed">Đã đóng</span>
-                                    }
-                                </td>
-                                <td class="text-center">
-                                    <div class="d-inline-flex gap-2">
-                                        <a href="/Center/Lessons/@c.Id" class="eb-action-btn view" title="Xếp lịch học & Quản lý buổi học">
-                                            <i class="bi bi-calendar-event"></i>
-                                        </a>
-                                        <a asp-page="/Center/Classes/Students" asp-route-classId="@c.Id" class="eb-action-btn view" title="Học viên">
-                                            <i class="bi bi-people"></i>
-                                        </a>
-                                        <button class="eb-action-btn edit" onclick="openEditModal(@c.Id, '@c.ClassName', @c.CenterId, @c.MaxCapacity, '@c.Subject', @c.TotalLessons)" data-bs-toggle="modal" data-bs-target="#editClassModal" title="Sửa">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </button>
-                                        <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" onsubmit="return confirm('Bạn có chắc chắn muốn xóa lớp học này?');" style="display:inline;">
-                                            <button type="submit" class="eb-action-btn delete" title="Xóa">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                            classIdx++;
-                        }
+                    <tbody id="classesTableBody">
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span> Đang tải danh sách lớp học...
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -346,15 +272,15 @@
                     <form method="post" asp-page-handler="CreateRoom">
                         <div class="mb-3">
                             <label class="form-label fw-semibold small text-muted">Tên phòng học</label>
-                            <input asp-for="RoomInput.RoomName" class="form-control" placeholder="Ví dụ: Phòng 101" required />
+                            <input name="RoomInput.RoomName" class="form-control" placeholder="Ví dụ: Phòng 101" required />
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold small text-muted">Sức chứa tối đa</label>
-                            <input asp-for="RoomInput.Capacity" type="number" class="form-control" value="30" required />
+                            <input name="RoomInput.Capacity" type="number" class="form-control" value="30" required />
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold small text-muted">Trang thiết bị</label>
-                            <input asp-for="RoomInput.Equipment" class="form-control" placeholder="Ví dụ: Điều hòa, Máy chiếu..." />
+                            <input name="RoomInput.Equipment" class="form-control" placeholder="Ví dụ: Điều hòa, Máy chiếu..." />
                         </div>
                         <button type="submit" class="eb-btn-primary w-100 justify-content-center">Lưu phòng học</button>
                     </form>
@@ -411,15 +337,15 @@
                     <form method="post" asp-page-handler="CreateSlot">
                         <div class="mb-3">
                             <label class="form-label fw-semibold small text-muted">Tên ca học</label>
-                            <input asp-for="SlotInput.SlotName" class="form-control" placeholder="Ví dụ: Ca 1 (Sáng)" required />
+                            <input name="SlotInput.SlotName" class="form-control" placeholder="Ví dụ: Ca 1 (Sáng)" required />
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold small text-muted">Giờ bắt đầu</label>
-                            <input asp-for="SlotInput.StartTime" type="time" class="form-control" required />
+                            <input name="SlotInput.StartTime" type="time" class="form-control" required />
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold small text-muted">Giờ kết thúc</label>
-                            <input asp-for="SlotInput.EndTime" type="time" class="form-control" required />
+                            <input name="SlotInput.EndTime" type="time" class="form-control" required />
                         </div>
                         <button type="submit" class="eb-btn-primary w-100 justify-content-center">Lưu ca học</button>
                     </form>
@@ -474,49 +400,45 @@
                 <h5 class="modal-title fw-bold text-dark" style="font-size: 1.35rem;">📝 Thêm lớp học</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" asp-page-handler="Create">
+            <form id="createClassForm">
                 <div class="modal-body px-4 py-4" style="background-color: #F8FAFC;">
+                    <div class="create-error-container"></div>
                     
                     <!-- Section: Thông tin lớp học -->
                     <div class="bg-white rounded-3 p-4 border mb-4">
                         <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Thông tin lớp học</h6>
                         
                         <div class="row g-3">
-                            <!-- Mã lớp -->
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Mã lớp</label>
                                 <input class="form-control bg-light" type="text" value="CLS-1-@DateTime.Now.ToString("yyyyMM")-xxxx" readonly disabled style="cursor: not-allowed;" />
                                 <span class="text-muted small d-block mt-1">Hệ thống cấp mã chính thức khi lưu lớp.</span>
                             </div>
                             
-                            <!-- Tên lớp -->
                             <div class="col-md-6">
-                                <label asp-for="CreateDto.ClassName" class="form-label fw-semibold text-muted small mb-1">Tên lớp (*)</label>
-                                <input asp-for="CreateDto.ClassName" class="form-control" placeholder="Nhập tên lớp..." required />
-                                <span asp-validation-for="CreateDto.ClassName" class="text-danger small"></span>
+                                <label class="form-label fw-semibold text-muted small mb-1">Tên lớp (*)</label>
+                                <input id="createClassName" class="form-control" placeholder="Nhập tên lớp..." required />
                             </div>
 
-                            <!-- Môn học -->
                             <div class="col-md-6">
-                                <label asp-for="CreateDto.Subject" class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
-                                <select asp-for="CreateDto.Subject" class="form-select" required>
+                                <label class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
+                                <select class="form-select" id="createClassSubject" required onchange="updateCreateTotalLessons()">
                                     <option value="" selected disabled>Chọn môn học</option>
-                                    <option value="ielts">IELTS General</option>
-                                    <option value="toeic">TOEIC Intensive</option>
-                                    <option value="comm">Tiếng Anh Giao Tiếp</option>
+                                    @foreach (var s in Model.Subjects)
+                                    {
+                                        <option value="@s.SubjectCode" data-sessions="@s.NumberOfSessions">@s.SubjectName (@s.SubjectCode)</option>
+                                    }
                                 </select>
                             </div>
 
-                            <!-- Tổng số buổi -->
                             <div class="col-md-6">
-                                <label asp-for="CreateDto.TotalLessons" class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
-                                <input asp-for="CreateDto.TotalLessons" class="form-control" type="number" placeholder="Ví dụ: 24" value="24" required />
+                                <label class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
+                                <input class="form-control" type="number" id="createTotalLessons" placeholder="Ví dụ: 24" value="24" required />
                             </div>
 
-                            <!-- Phòng học -->
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Phòng học (*)</label>
-                                <select class="form-select" name="CreateRoomId" required>
+                                <select class="form-select" id="createRoomId" required>
                                     <option value="" selected disabled>Chọn phòng học</option>
                                     @foreach (var r in Model.Rooms)
                                     {
@@ -525,14 +447,10 @@
                                 </select>
                             </div>
 
-                            <!-- Sĩ số tối đa -->
                             <div class="col-md-6">
-                                <label asp-for="CreateDto.MaxCapacity" class="form-label fw-semibold text-muted small mb-1">Sĩ số tối đa (*)</label>
-                                <input asp-for="CreateDto.MaxCapacity" class="form-control" type="number" value="30" required />
-                                <span asp-validation-for="CreateDto.MaxCapacity" class="text-danger small"></span>
+                                <label class="form-label fw-semibold text-muted small mb-1">Sĩ số tối đa (*)</label>
+                                <input id="createMaxCapacity" class="form-control" type="number" value="30" required />
                             </div>
-                            
-                            <input asp-for="CreateDto.CenterId" type="hidden" value="1" />
                         </div>
                     </div>
 
@@ -606,48 +524,44 @@
                 <h5 class="modal-title fw-bold text-dark" style="font-size: 1.35rem;">✏️ Sửa lớp học</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" asp-page-handler="Update">
-                <input type="hidden" asp-for="UpdateDto.Id" id="editClassId" />
+            <form id="editClassForm">
+                <input type="hidden" id="editClassId" />
                 <div class="modal-body px-4 py-4" style="background-color: #F8FAFC;">
+                    <div class="edit-error-container"></div>
                     
                     <!-- Section: Thông tin lớp học -->
                     <div class="bg-white rounded-3 p-4 border mb-4">
                         <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Thông tin lớp học</h6>
                         
                         <div class="row g-3">
-                            <!-- Mã lớp -->
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Mã lớp</label>
                                 <input class="form-control bg-light" type="text" id="editClassCode" readonly disabled style="cursor: not-allowed;" />
                             </div>
                             
-                            <!-- Tên lớp -->
                             <div class="col-md-6">
-                                <label asp-for="UpdateDto.ClassName" class="form-label fw-semibold text-muted small mb-1">Tên lớp (*)</label>
-                                <input asp-for="UpdateDto.ClassName" class="form-control" id="editClassName" required />
-                                <span asp-validation-for="UpdateDto.ClassName" class="text-danger small"></span>
+                                <label class="form-label fw-semibold text-muted small mb-1">Tên lớp (*)</label>
+                                <input class="form-control" id="editClassName" required />
                             </div>
 
-                            <!-- Môn học -->
                             <div class="col-md-6">
-                                <label asp-for="UpdateDto.Subject" class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
-                                <select asp-for="UpdateDto.Subject" class="form-select" id="editClassSubject" required>
-                                    <option value="ielts">IELTS General</option>
-                                    <option value="toeic">TOEIC Intensive</option>
-                                    <option value="comm">Tiếng Anh Giao Tiếp</option>
+                                <label class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
+                                <select class="form-select" id="editClassSubject" required onchange="updateEditTotalLessons()">
+                                    @foreach (var s in Model.Subjects)
+                                    {
+                                        <option value="@s.SubjectCode" data-sessions="@s.NumberOfSessions">@s.SubjectName (@s.SubjectCode)</option>
+                                    }
                                 </select>
                             </div>
 
-                            <!-- Tổng số buổi -->
                             <div class="col-md-6">
-                                <label asp-for="UpdateDto.TotalLessons" class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
-                                <input asp-for="UpdateDto.TotalLessons" class="form-control" type="number" id="editTotalLessons" value="24" required />
+                                <label class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
+                                <input class="form-control" type="number" id="editTotalLessons" value="24" required />
                             </div>
 
-                            <!-- Phòng học -->
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Phòng học (*)</label>
-                                <select class="form-select" id="editClassRoom" name="UpdateRoomId" required>
+                                <select class="form-select" id="editClassRoom" required>
                                     @foreach (var r in Model.Rooms)
                                     {
                                         <option value="@r.Id">@r.RoomName (Sức chứa: @r.Capacity)</option>
@@ -655,14 +569,10 @@
                                 </select>
                             </div>
 
-                            <!-- Sĩ số tối đa -->
                             <div class="col-md-6">
-                                <label asp-for="UpdateDto.MaxCapacity" class="form-label fw-semibold text-muted small mb-1">Sĩ số tối đa (*)</label>
-                                <input asp-for="UpdateDto.MaxCapacity" class="form-control" type="number" id="editMaxCapacity" required />
-                                <span asp-validation-for="UpdateDto.MaxCapacity" class="text-danger small"></span>
+                                <label class="form-label fw-semibold text-muted small mb-1">Sĩ số tối đa (*)</label>
+                                <input class="form-control" type="number" id="editMaxCapacity" required />
                             </div>
-                            
-                            <input asp-for="UpdateDto.CenterId" type="hidden" id="editCenterId" value="1" />
                         </div>
                     </div>
 
@@ -731,6 +641,15 @@
 @section Scripts {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // Danh sách môn học và phòng học để tra cứu trên client
+        const subjectsData = [
+            @foreach(var s in Model.Subjects) {
+                <text>{ code: "@s.SubjectCode", name: "@s.SubjectName" },</text>
+            }
+        ];
+
+        let allClasses = [];
+
         function switchTab(tabId, el) {
             $('.tab-content').hide();
             $('#' + tabId).show();
@@ -738,70 +657,193 @@
             $(el).addClass('active');
         }
 
-        function openEditModal(id, name, centerId, maxCapacity, subject, totalLessons) {
+        // Tải danh sách lớp từ API
+        function loadClasses() {
+            fetch('/api/center/classes')
+                .then(res => res.json())
+                .then(data => {
+                    allClasses = data;
+                    renderClassesTable(data);
+                })
+                .catch(err => {
+                    console.error("Lỗi tải lớp học:", err);
+                    $('#classesTableBody').html('<tr><td colspan="9" class="text-center text-danger py-4">Không thể tải danh sách lớp học.</td></tr>');
+                });
+        }
+
+        function renderClassesTable(classes) {
+            const tbody = document.getElementById('classesTableBody');
+            if (classes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">Chưa có lớp học nào được tạo.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            classes.forEach((c, idx) => {
+                const classCode = `CLS${c.id.toString().padStart(4, '0')}`;
+                const subjectObj = subjectsData.find(s => s.code === c.subject);
+                const subjectDisplay = subjectObj ? subjectObj.name : (c.subject || '—');
+                
+                const statusBadge = c.status === 'Active' 
+                    ? '<span class="badge-active">Đang hoạt động</span>'
+                    : '<span class="badge-closed">Đã đóng</span>';
+
+                html += `
+                    <tr class="class-row" data-class-name="${c.className}" data-class-id="${c.id}" data-status="${c.status}">
+                        <td class="text-center fw-semibold text-muted">${idx + 1}</td>
+                        <td class="fw-semibold">${c.id}</td>
+                        <td><span class="text-primary fw-bold">${classCode}</span></td>
+                        <td class="fw-bold" style="color: var(--eb-text-dark);">${c.className}</td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark border px-2 py-1"><i class="bi bi-people me-1"></i>${c.studentCount}</span>
+                        </td>
+                        <td class="small">
+                            <span class="badge bg-primary-subtle text-primary border rounded-pill px-2 py-1">${subjectDisplay}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-info-subtle text-info border px-2 py-1"><i class="bi bi-book me-1"></i>${c.totalLessons} buổi</span>
+                        </td>
+                        <td>${statusBadge}</td>
+                        <td class="text-center">
+                            <div class="d-inline-flex gap-2">
+                                <a href="/Center/Lessons/${c.id}" class="eb-action-btn view" title="Xếp lịch học & Quản lý buổi học">
+                                    <i class="bi bi-calendar-event"></i>
+                                </a>
+                                <a href="/Center/Classes/Students?classId=${c.id}" class="eb-action-btn view" title="Học viên">
+                                    <i class="bi bi-people"></i>
+                                </a>
+                                <button class="eb-action-btn edit" onclick="openEditModal(${c.id})" data-bs-toggle="modal" data-bs-target="#editClassModal" title="Sửa">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="eb-action-btn delete" onclick="deleteClass(${c.id})" title="Xóa">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // Tạo lớp học mới bằng Rest API
+        document.getElementById('createClassForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            $('.create-error-container').html('');
+
+            // Thu thập dữ liệu Lịch học
+            const dayOfWeeks = [];
+            const slotIds = [];
+            document.querySelectorAll('#scheduleRowsContainer select[name="CreateDayOfWeek[]"]').forEach(el => {
+                dayOfWeeks.push(el.value);
+            });
+            document.querySelectorAll('#scheduleRowsContainer select[name="CreateSlotId[]"]').forEach(el => {
+                if (el.value) slotIds.push(parseInt(el.value));
+            });
+
+            const bodyData = {
+                createDto: {
+                    className: document.getElementById('createClassName').value,
+                    subject: document.getElementById('createClassSubject').value,
+                    totalLessons: parseInt(document.getElementById('createTotalLessons').value),
+                    maxCapacity: parseInt(document.getElementById('createMaxCapacity').value),
+                    centerId: 1
+                },
+                createRoomId: parseInt(document.getElementById('createRoomId').value),
+                dayOfWeek: dayOfWeeks,
+                slotId: slotIds
+            };
+
+            fetch('/api/center/classes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(bodyData)
+            })
+            .then(async res => {
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.message || "Tạo lớp học thất bại.");
+                }
+                return res.json();
+            })
+            .then(data => {
+                bootstrap.Modal.getInstance(document.getElementById('createClassModal')).hide();
+                showAlert("Tạo lớp học thành công!", "success");
+                loadClasses();
+                document.getElementById('createClassForm').reset();
+            })
+            .catch(err => {
+                console.error("Lỗi khi tạo lớp:", err);
+                $('.create-error-container').html(`
+                    <div class="alert alert-danger alert-dismissible fade show rounded-3 border-0" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> ${err.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `);
+            });
+        });
+
+        // Xóa lớp học
+        function deleteClass(classId) {
+            if (!confirm('Bạn có chắc chắn muốn xóa lớp học này?')) return;
+
+            fetch(`/api/center/classes/${classId}`, {
+                method: 'DELETE'
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Xóa lớp học thất bại.");
+                showAlert("Xóa lớp học thành công!", "success");
+                loadClasses();
+            })
+            .catch(err => {
+                console.error("Lỗi xóa lớp:", err);
+                showAlert(err.message, "danger");
+            });
+        }
+
+        // Mở popup Sửa lớp học & gọi API
+        function openEditModal(id) {
+            $('.edit-error-container').html('');
             document.getElementById('editClassId').value = id;
-            document.getElementById('editClassName').value = name;
-            document.getElementById('editCenterId').value = centerId;
             
-            // Set Max Capacity securely with numeric default fallback
-            const maxCapInput = document.getElementById('editMaxCapacity');
-            if (maxCapInput) {
-                maxCapInput.value = maxCapacity || 30;
-            }
+            document.getElementById('editClassName').value = '';
+            document.getElementById('editMaxCapacity').value = 30;
+            document.getElementById('editClassSubject').value = '';
+            document.getElementById('editTotalLessons').value = 24;
+            document.getElementById('editClassCode').value = '';
 
-            // Set Subject and TotalLessons synchronously from list model
-            const subjectEl = document.getElementById('editClassSubject');
-            if (subjectEl) {
-                subjectEl.value = subject || "comm";
-            }
-
-            const totalLessonsEl = document.getElementById('editTotalLessons');
-            if (totalLessonsEl) {
-                totalLessonsEl.value = totalLessons || 24;
-            }
-
-            // Generate class code representation
-            const formattedId = ("0000" + id).slice(-4);
-            document.getElementById('editClassCode').value = `CLS-${centerId}-${new Date().getFullYear()}${("0" + (new Date().getMonth() + 1)).slice(-2)}-${formattedId}`;
-
-            // Fetch dynamic schedule and slots
             const container = document.getElementById('editScheduleRowsContainer');
             container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading schedule...</div>';
 
-            fetch(`${window.location.pathname}?handler=ClassLessons&classId=${id}`)
+            fetch(`/api/center/classes/${id}/lessons`)
                 .then(res => res.json())
                 .then(data => {
-                    console.log("Class data retrieved:", data);
                     container.innerHTML = '';
                     
-                    // Bind Class details directly to edit modal inputs
-                    if (data.maxCapacity) {
-                        document.getElementById('editMaxCapacity').value = data.maxCapacity;
-                    }
-                    
-                    // Fallback to model data values if database seed details are missing
+                    document.getElementById('editClassName').value = data.className || '';
+                    document.getElementById('editMaxCapacity').value = data.maxCapacity || 30;
+                    document.getElementById('editClassSubject').value = data.subject || '';
+                    document.getElementById('editTotalLessons').value = data.totalLessons || 24;
+
+                    const formattedId = ("0000" + id).slice(-4);
+                    document.getElementById('editClassCode').value = `CLS-${data.centerId || 1}-${new Date().getFullYear()}${("0" + (new Date().getMonth() + 1)).slice(-2)}-${formattedId}`;
+
                     const roomEl = document.getElementById('editClassRoom');
                     if (roomEl) {
                         if (data.roomId) {
                             roomEl.value = data.roomId;
                         } else {
-                            // Select first option by default
                             roomEl.selectedIndex = 0;
                         }
                     }
 
-                    const totalLessonsEl = document.getElementById('editTotalLessons');
-                    if (totalLessonsEl) {
-                        totalLessonsEl.value = data.totalLessons && data.totalLessons > 0 ? data.totalLessons : 24;
-                    }
-
                     const lessons = data.lessons;
-                    // Lấy slotsOptions từ Create modal (đảm bảo lấy đúng)
                     const allSlotSelects = document.querySelectorAll('#scheduleRowsContainer .slot-suggestion-select');
                     const slotsOptionsRef = allSlotSelects.length > 0 ? allSlotSelects[0].innerHTML : '';
 
                     if (!lessons || lessons.length === 0) {
-                        // Render a single blank default schedule row with proper name attributes
                         container.innerHTML = `
                             <div class="row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom">
                                 <div class="col-md-3">
@@ -840,7 +882,6 @@
                         const newRow = document.createElement('div');
                         newRow.className = 'row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom';
                         
-                        // Map DayOfWeek number to Vietnam Day String
                         const daysMap = { 0: "Chủ nhật", 1: "Thứ 2", 2: "Thứ 3", 3: "Thứ 4", 4: "Thứ 5", 5: "Thứ 6", 6: "Thứ 7" };
                         const vnDay = daysMap[l.dayOfWeek] || "Thứ 2";
 
@@ -876,7 +917,6 @@
 
                         container.appendChild(newRow);
 
-                        // If slot ID is present, trigger automatic slot value population AFTER append
                         const selectElement = newRow.querySelector('.slot-suggestion-select');
                         if (l.slotId && selectElement) {
                             selectElement.value = l.slotId;
@@ -885,53 +925,107 @@
                     });
                 })
                 .catch(err => {
-                    console.error("Fetch schedule error:", err);
+                    console.error("Lỗi lấy lịch học:", err);
                     container.innerHTML = '<div class="text-danger small text-center py-2">Không thể tải lịch học.</div>';
                 });
         }
 
-        function applyFilters() {
-            var classNameFilter = $('#filterClassName').val().toLowerCase().trim();
-            var statusFilter = $('#filterStatus').val();
+        // Lưu cập nhật lớp học bằng Rest API
+        document.getElementById('editClassForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            $('.edit-error-container').html('');
 
-            $('.class-row').each(function() {
-                var row = $(this);
-                var cName = row.data('class-name').toLowerCase();
-                var cId = row.data('class-id').toString();
-                var status = row.data('status');
-
-                var matches = true;
-
-                if (classNameFilter && !cName.includes(classNameFilter) && !cId.includes(classNameFilter)) {
-                    matches = false;
-                }
-                if (statusFilter && status !== statusFilter) {
-                    matches = false;
-                }
-
-                if (matches) {
-                    row.show();
-                } else {
-                    row.hide();
-                }
+            const classId = parseInt(document.getElementById('editClassId').value);
+            const dayOfWeeks = [];
+            const slotIds = [];
+            document.querySelectorAll('#editScheduleRowsContainer select[name="UpdateDayOfWeek[]"]').forEach(el => {
+                dayOfWeeks.push(el.value);
             });
+            document.querySelectorAll('#editScheduleRowsContainer select[name="UpdateSlotId[]"]').forEach(el => {
+                if (el.value) slotIds.push(parseInt(el.value));
+            });
+
+            const bodyData = {
+                updateDto: {
+                    id: classId,
+                    className: document.getElementById('editClassName').value,
+                    subject: document.getElementById('editClassSubject').value,
+                    totalLessons: parseInt(document.getElementById('editTotalLessons').value),
+                    maxCapacity: parseInt(document.getElementById('editMaxCapacity').value),
+                    centerId: 1
+                },
+                updateRoomId: parseInt(document.getElementById('editClassRoom').value),
+                dayOfWeek: dayOfWeeks,
+                slotId: slotIds
+            };
+
+            fetch(`/api/center/classes/${classId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(bodyData)
+            })
+            .then(async res => {
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.message || "Cập nhật lớp học thất bại.");
+                }
+            })
+            .then(() => {
+                bootstrap.Modal.getInstance(document.getElementById('editClassModal')).hide();
+                showAlert("Cập nhật lớp học thành công!", "success");
+                loadClasses();
+            })
+            .catch(err => {
+                console.error("Lỗi cập nhật lớp:", err);
+                $('.edit-error-container').html(`
+                    <div class="alert alert-danger alert-dismissible fade show rounded-3 border-0" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> ${err.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `);
+            });
+        });
+
+        // Hộp thông báo top-page
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            container.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show rounded-3 shadow-sm border-0" role="alert">
+                    <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} me-2"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            setTimeout(() => {
+                $(`.alert`).alert('close');
+            }, 5000);
+        }
+
+        // Lọc trên Client-side nhanh hơn
+        function applyFilters() {
+            const filterName = document.getElementById('filterClassName').value.toLowerCase().trim();
+            const filterStatus = document.getElementById('filterStatus').value;
+
+            const filtered = allClasses.filter(c => {
+                const matchesName = !filterName || c.className.toLowerCase().includes(filterName) || c.id.toString().includes(filterName);
+                const matchesStatus = !filterStatus || c.status === filterStatus;
+                return matchesName && matchesStatus;
+            });
+            renderClassesTable(filtered);
         }
 
         function resetFilters() {
-            $('#filterClassName').val('');
-            $('#filterStatus').val('');
-            $('.class-row').show();
+            document.getElementById('filterClassName').value = '';
+            document.getElementById('filterStatus').value = '';
+            renderClassesTable(allClasses);
         }
 
-        // --- DYNAMIC SCHEDULING INTERACTION SCRIPTS ---
+        // --- SCRIPTS THÊM HÀNG LỊCH ĐỘNG ---
         document.getElementById('btnAddScheduleRow').addEventListener('click', function() {
             const container = document.getElementById('scheduleRowsContainer');
-            
-            // Clone first row structure
             const newRow = document.createElement('div');
             newRow.className = 'row g-2 align-items-center schedule-row-item mb-2 pb-2 border-bottom';
-            
-            // Get slots dropdown options dynamically
             const slotsOptions = document.querySelector('.slot-suggestion-select').innerHTML;
 
             newRow.innerHTML = `
@@ -982,59 +1076,51 @@
             const endTimeInput = row.querySelector('.end-time-input');
 
             if (selectedOption && selectedOption.value !== "") {
-                const startVal = selectedOption.getAttribute('data-start');
-                const endVal = selectedOption.getAttribute('data-end');
-                startTimeInput.value = startVal;
-                endTimeInput.value = endVal;
+                startTimeInput.value = selectedOption.getAttribute('data-start');
+                endTimeInput.value = selectedOption.getAttribute('data-end');
             } else {
                 startTimeInput.value = "";
                 endTimeInput.value = "";
             }
         }
 
-        // --- EDIT MODAL DYNAMIC SCHEDULING SCRIPTS ---
-        const btnEditAdd = document.getElementById('btnEditAddScheduleRow');
-        if (btnEditAdd) {
-            btnEditAdd.addEventListener('click', function() {
-                const container = document.getElementById('editScheduleRowsContainer');
-                const newRow = document.createElement('div');
-                newRow.className = 'row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom';
-                
-                // Reuse slot options
-                const slotsOptions = document.querySelector('.slot-suggestion-select').innerHTML;
+        document.getElementById('btnEditAddScheduleRow').addEventListener('click', function() {
+            const container = document.getElementById('editScheduleRowsContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom';
+            const slotsOptions = document.querySelector('.slot-suggestion-select').innerHTML;
 
-                newRow.innerHTML = `
-                    <div class="col-md-3">
-                        <select class="form-select form-select-sm" name="UpdateDayOfWeek[]" required>
-                            <option value="Thứ 2">Thứ 2</option>
-                            <option value="Thứ 3">Thứ 3</option>
-                            <option value="Thứ 4">Thứ 4</option>
-                            <option value="Thứ 5">Thứ 5</option>
-                            <option value="Thứ 6">Thứ 6</option>
-                            <option value="Thứ 7">Thứ 7</option>
-                            <option value="Chủ nhật">Chủ nhật</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
-                            ${slotsOptions}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="time" class="form-control form-control-sm start-time-input" required />
-                    </div>
-                    <div class="col-md-2">
-                        <input type="time" class="form-control form-control-sm end-time-input" required />
-                    </div>
-                    <div class="col-md-1 text-end">
-                        <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeEditScheduleRow(this)">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                `;
-                container.appendChild(newRow);
-            });
-        }
+            newRow.innerHTML = `
+                <div class="col-md-3">
+                    <select class="form-select form-select-sm" name="UpdateDayOfWeek[]" required>
+                        <option value="Thứ 2">Thứ 2</option>
+                        <option value="Thứ 3">Thứ 3</option>
+                        <option value="Thứ 4">Thứ 4</option>
+                        <option value="Thứ 5">Thứ 5</option>
+                        <option value="Thứ 6">Thứ 6</option>
+                        <option value="Thứ 7">Thứ 7</option>
+                        <option value="Chủ nhật">Chủ nhật</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
+                        ${slotsOptions}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="time" class="form-control form-control-sm start-time-input" required />
+                </div>
+                <div class="col-md-2">
+                    <input type="time" class="form-control form-control-sm end-time-input" required />
+                </div>
+                <div class="col-md-1 text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeEditScheduleRow(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(newRow);
+        });
 
         function removeEditScheduleRow(button) {
             const rows = document.querySelectorAll('.edit-schedule-row-item');
@@ -1044,5 +1130,29 @@
                 alert("Lớp học phải đăng ký tối thiểu một lịch học!");
             }
         }
+
+        function updateCreateTotalLessons() {
+            const subjectSelect = document.getElementById('createClassSubject');
+            const totalLessonsInput = document.getElementById('createTotalLessons');
+            if (subjectSelect && totalLessonsInput) {
+                const selectedOption = subjectSelect.options[subjectSelect.selectedIndex];
+                const sessions = selectedOption.getAttribute('data-sessions');
+                if (sessions) totalLessonsInput.value = sessions;
+            }
+        }
+
+        function updateEditTotalLessons() {
+            const subjectSelect = document.getElementById('editClassSubject');
+            const totalLessonsInput = document.getElementById('editTotalLessons');
+            if (subjectSelect && totalLessonsInput) {
+                const selectedOption = subjectSelect.options[subjectSelect.selectedIndex];
+                const sessions = selectedOption.getAttribute('data-sessions');
+                if (sessions) totalLessonsInput.value = sessions;
+            }
+        }
+
+        $(document).ready(function () {
+            loadClasses();
+        });
     </script>
 }
