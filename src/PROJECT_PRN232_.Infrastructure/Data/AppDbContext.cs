@@ -14,6 +14,7 @@ namespace PROJECT_PRN232_.Infrastructure.Data
         public DbSet<Class> Classes { get; set; }
         public DbSet<ClassStudent> ClassStudents { get; set; }
         public DbSet<Lesson> Lessons { get; set; }
+        public DbSet<Subject> Subjects { get; set; }
         public DbSet<Material> Materials { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<Assessment> Assessments { get; set; }
@@ -108,6 +109,32 @@ namespace PROJECT_PRN232_.Infrastructure.Data
                 .HasOne(l => l.Slot)
                 .WithMany(s => s.Lessons)
                 .HasForeignKey(l => l.SlotId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ---- Subject (Môn học) ----
+            modelBuilder.Entity<Subject>()
+                .HasOne(sub => sub.Center)
+                .WithMany()
+                .HasForeignKey(sub => sub.CenterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Mã môn học phải duy nhất trong phạm vi từng trung tâm
+            modelBuilder.Entity<Subject>()
+                .HasIndex(sub => new { sub.CenterId, sub.SubjectCode })
+                .IsUnique();
+
+            // Subject <-> Material (1 môn có nhiều tài liệu)
+            modelBuilder.Entity<Material>()
+                .HasOne(m => m.Subject)
+                .WithMany(sub => sub.Materials)
+                .HasForeignKey(m => m.SubjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Material -> Lesson (optional, nullable)
+            modelBuilder.Entity<Material>()
+                .HasOne(m => m.Lesson)
+                .WithMany(l => l.Materials)
+                .HasForeignKey(m => m.LessonId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

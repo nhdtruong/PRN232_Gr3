@@ -1,0 +1,233 @@
+@page
+@model PROJECT_PRN232_.WebApp.Pages.Center.Subjects.SubjectModel
+@{
+    ViewData["Title"] = "Quản lý Môn học";
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1 small">
+            <li class="breadcrumb-item"><a href="/Center/Dashboard" class="text-decoration-none">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Quản lý Môn học</li>
+        </ol>
+    </nav>
+
+    <!-- Header & Nút tạo -->
+    <div class="row align-items-center mb-4 g-3">
+        <div class="col-md-8">
+            <h1 class="h3 fw-bold text-dark mb-1">
+                <i class="bi bi-book-half text-primary me-2"></i>Quản lý Môn học
+            </h1>
+            <p class="text-muted mb-0">Thêm, chỉnh sửa và xóa các môn học của trung tâm. Mỗi môn học chứa mã môn, tên môn và số buổi học.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <button id="btn-create-subject" class="btn btn-primary rounded-pill px-4 py-2 shadow-sm fw-semibold"
+                    data-bs-toggle="modal" data-bs-target="#createSubjectModal">
+                <i class="bi bi-plus-lg me-1"></i> Thêm môn học mới
+            </button>
+        </div>
+    </div>
+
+    <!-- Thanh tìm kiếm & đếm môn học -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-3">
+            <div class="row align-items-center g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0 rounded-start-pill text-muted px-3"><i class="bi bi-search"></i></span>
+                        <input type="text" id="searchSubjectInput" class="form-control bg-light border-0 rounded-end-pill py-2"
+                               placeholder="Tìm theo mã môn hoặc tên môn học..." style="font-size: 0.9rem;" />
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end text-muted small">
+                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
+                        <i class="bi bi-collection me-1"></i>Tổng số: <strong class="text-primary" id="subjectsCount">0</strong> môn học
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Khu vực hiển thị dạng Lưới Card -->
+    <div class="row g-4" id="subjectsGridContainer">
+        <div class="col-12 text-center py-5 text-muted">
+            <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span> Đang tải danh sách môn học...
+        </div>
+    </div>
+
+    <!-- Thanh phân trang -->
+    <div class="d-flex justify-content-center mt-4 mb-5" id="subjectsPagination"></div>
+</div>
+
+<!-- Modal Thêm môn học -->
+<div class="modal fade" id="createSubjectModal" tabindex="-1" aria-labelledby="createSubjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold" id="createSubjectModalLabel">
+                    <i class="bi bi-book-half text-primary me-2"></i>Thêm môn học mới
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createSubjectForm">
+                    <div class="mb-3">
+                        <label for="createSubjectCode" class="form-label fw-semibold">Mã môn học <span class="text-danger">*</span></label>
+                        <input type="text" id="createSubjectCode" class="form-control rounded-3"
+                               placeholder="Ví dụ: ENG101, MATH_BASIC" maxlength="50" required />
+                        <div class="form-text text-muted">Mã môn học phải duy nhất trong trung tâm. Tự động chuyển thành chữ hoa.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="createSubjectName" class="form-label fw-semibold">Tên môn học <span class="text-danger">*</span></label>
+                        <input type="text" id="createSubjectName" class="form-control rounded-3"
+                               placeholder="Ví dụ: Tiếng Anh cơ bản, Lập trình C#..." maxlength="255" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="createNumberOfSessions" class="form-label fw-semibold">Số buổi học <span class="text-danger">*</span></label>
+                        <input type="number" id="createNumberOfSessions" class="form-control rounded-3"
+                               placeholder="Nhập số buổi học" min="1" max="500" value="1" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="createDescription" class="form-label fw-semibold">Mô tả môn học</label>
+                        <textarea id="createDescription" class="form-control rounded-3" rows="3"
+                                  placeholder="Mô tả ngắn về nội dung, mục tiêu của môn học..."></textarea>
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="button" class="btn btn-light rounded-pill px-4 me-2" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" id="createSubjectSubmitBtn" class="btn btn-primary rounded-pill px-4">
+                            <i class="bi bi-plus-lg me-1"></i>Tạo môn học
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Sửa môn học -->
+<div class="modal fade" id="editSubjectModal" tabindex="-1" aria-labelledby="editSubjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold" id="editSubjectModalLabel">
+                    <i class="bi bi-pencil-square text-warning me-2"></i>Chỉnh sửa môn học
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editSubjectForm">
+                    <input type="hidden" id="editSubjectId" />
+                    <div class="mb-3">
+                        <label for="editSubjectCode" class="form-label fw-semibold">Mã môn học <span class="text-danger">*</span></label>
+                        <input type="text" id="editSubjectCode" class="form-control rounded-3" maxlength="50" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSubjectName" class="form-label fw-semibold">Tên môn học <span class="text-danger">*</span></label>
+                        <input type="text" id="editSubjectName" class="form-control rounded-3" maxlength="255" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editNumberOfSessions" class="form-label fw-semibold">Số buổi học <span class="text-danger">*</span></label>
+                        <input type="number" id="editNumberOfSessions" class="form-control rounded-3" min="1" max="500" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label fw-semibold">Mô tả môn học</label>
+                        <textarea id="editDescription" class="form-control rounded-3" rows="3"></textarea>
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="button" class="btn btn-light rounded-pill px-4 me-2" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" id="editSubjectSubmitBtn" class="btn btn-warning rounded-pill px-4 text-white">
+                            <i class="bi bi-save me-1"></i>Lưu thay đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Xác nhận Xóa -->
+<div class="modal fade" id="deleteSubjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Xóa môn học
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Bạn có chắc chắn muốn xóa môn học:</p>
+                <p class="fw-bold" id="deleteSubjectName"></p>
+                <p class="text-danger small mb-0">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    Toàn bộ tài liệu học tập liên kết với môn học này cũng sẽ bị xóa. Hành động này không thể hoàn tác.
+                </p>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <input type="hidden" id="deleteSubjectId" />
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" id="confirmDeleteSubjectBtn" class="btn btn-danger rounded-pill px-4">
+                    <i class="bi bi-trash me-1"></i>Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Style -->
+<style>
+    .subject-card {
+        background-color: #ffffff;
+        border-radius: 20px;
+        border: 1px solid #f0f2f5;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+    }
+    .subject-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07) !important;
+        border-color: #dbeafe;
+    }
+    .subject-code-badge {
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+    }
+    .card-footer-buttons {
+        border-top: 1px dashed #f0f2f5;
+        padding-top: 14px;
+        margin-top: auto;
+    }
+    .btn-action-circle {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50% !important;
+    }
+    #searchSubjectInput:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+        background-color: #fff !important;
+        border-color: #86b7fe;
+    }
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.82rem;
+        color: #6c757d;
+    }
+    .stat-item i {
+        font-size: 0.95rem;
+    }
+</style>
+
+@section Scripts {
+    <script src="~/js/subjects.js" asp-append-version="true"></script>
+}
