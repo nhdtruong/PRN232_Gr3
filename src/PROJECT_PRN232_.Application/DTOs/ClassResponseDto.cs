@@ -7,6 +7,7 @@ namespace PROJECT_PRN232_.Application.DTOs
         public int CenterId { get; set; }
         public string Status { get; set; } = "Active";
         public int StudentCount { get; set; }
+        public int MaxCapacity { get; set; }
         public System.DateTime? StartDate { get; set; }
         public System.DateTime? EndDate { get; set; }
     }

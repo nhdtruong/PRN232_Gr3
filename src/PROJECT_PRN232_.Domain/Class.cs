@@ -26,6 +26,8 @@ namespace PROJECT_PRN232_.Domain
         [StringLength(50)]
         public string Status { get; set; } = "Active";
 
+        public int MaxCapacity { get; set; } = 30;
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Navigation Properties

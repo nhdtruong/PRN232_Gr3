@@ -23,6 +23,7 @@ namespace PROJECT_PRN232_.Application.Services
                 CenterId = c.CenterId,
                 Status = c.Status,
                 StudentCount = c.ClassStudents?.Count ?? 0,
+                MaxCapacity = c.MaxCapacity,
                 StartDate = c.StartDate,
                 EndDate = c.EndDate
             });
@@ -40,6 +41,7 @@ namespace PROJECT_PRN232_.Application.Services
                 CenterId = classEntity.CenterId,
                 Status = classEntity.Status,
                 StudentCount = classEntity.ClassStudents?.Count ?? 0,
+                MaxCapacity = classEntity.MaxCapacity,
                 StartDate = classEntity.StartDate,
                 EndDate = classEntity.EndDate
             };
@@ -50,7 +52,8 @@ namespace PROJECT_PRN232_.Application.Services
             var classEntity = new Class
             {
                 ClassName = dto.ClassName,
-                CenterId = dto.CenterId
+                CenterId = dto.CenterId,
+                MaxCapacity = dto.MaxCapacity
             };
 
             var createdClass = await _classRepository.AddClassAsync(classEntity);
@@ -62,6 +65,7 @@ namespace PROJECT_PRN232_.Application.Services
                 CenterId = createdClass.CenterId,
                 Status = createdClass.Status,
                 StudentCount = 0,
+                MaxCapacity = createdClass.MaxCapacity,
                 StartDate = createdClass.StartDate,
                 EndDate = createdClass.EndDate
             };
@@ -74,6 +78,7 @@ namespace PROJECT_PRN232_.Application.Services
 
             classEntity.ClassName = dto.ClassName;
             classEntity.CenterId = dto.CenterId;
+            classEntity.MaxCapacity = dto.MaxCapacity;
 
             return await _classRepository.UpdateClassAsync(classEntity);
         }

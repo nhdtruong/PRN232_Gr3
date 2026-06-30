@@ -306,7 +306,7 @@
                                         <a asp-page="/Center/Classes/Students" asp-route-classId="@c.Id" class="eb-action-btn view" title="Học viên">
                                             <i class="bi bi-people"></i>
                                         </a>
-                                        <button class="eb-action-btn edit" onclick="openEditModal(@c.Id, '@c.ClassName', @c.CenterId)" data-bs-toggle="modal" data-bs-target="#editClassModal" title="Sửa">
+                                        <button class="eb-action-btn edit" onclick="openEditModal(@c.Id, '@c.ClassName', @c.CenterId, @c.MaxCapacity)" data-bs-toggle="modal" data-bs-target="#editClassModal" title="Sửa">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
                                         <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" onsubmit="return confirm('Bạn có chắc chắn muốn xóa lớp học này?');" style="display:inline;">
@@ -474,6 +474,11 @@
                         <input asp-for="CreateDto.CenterId" class="form-control" type="number" value="1" readonly required>
                         <span asp-validation-for="CreateDto.CenterId" class="text-danger small"></span>
                     </div>
+                    <div class="mb-3">
+                        <label asp-for="CreateDto.MaxCapacity" class="form-label fw-semibold text-muted small">Sĩ số tối đa</label>
+                        <input asp-for="CreateDto.MaxCapacity" class="form-control" type="number" value="30" required>
+                        <span asp-validation-for="CreateDto.MaxCapacity" class="text-danger small"></span>
+                    </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="eb-btn-outline py-2" data-bs-dismiss="modal">Hủy</button>
@@ -505,6 +510,11 @@
                         <input asp-for="UpdateDto.CenterId" class="form-control" type="number" id="editCenterId" readonly required>
                         <span asp-validation-for="UpdateDto.CenterId" class="text-danger small"></span>
                     </div>
+                    <div class="mb-3">
+                        <label asp-for="UpdateDto.MaxCapacity" class="form-label fw-semibold text-muted small">Sĩ số tối đa</label>
+                        <input asp-for="UpdateDto.MaxCapacity" class="form-control" type="number" id="editMaxCapacity" required>
+                        <span asp-validation-for="UpdateDto.MaxCapacity" class="text-danger small"></span>
+                    </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="eb-btn-outline py-2" data-bs-dismiss="modal">Hủy</button>
@@ -525,10 +535,11 @@
             $(el).addClass('active');
         }
 
-        function openEditModal(id, name, centerId) {
+        function openEditModal(id, name, centerId, maxCapacity) {
             document.getElementById('editClassId').value = id;
             document.getElementById('editClassName').value = name;
             document.getElementById('editCenterId').value = centerId;
+            document.getElementById('editMaxCapacity').value = maxCapacity;
         }
 
         function applyFilters() {
