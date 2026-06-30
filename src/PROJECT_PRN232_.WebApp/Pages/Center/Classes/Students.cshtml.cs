@@ -5,13 +5,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using PROJECT_PRN232_.Domain;
 using PROJECT_PRN232_.Application.Services;
 using PROJECT_PRN232_.Application.DTOs;
-using PROJECT_PRN232_.Application.Repositories;
 using PROJECT_PRN232_.Infrastructure.Data;
-using PROJECT_PRN232_.Application.DTOs;
-using PROJECT_PRN232_.Application.Services;
 
 namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
 {
@@ -20,19 +18,25 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
     {
         private readonly IEnrollmentService _enrollmentService;
         private readonly IClassService _classService;
+        private readonly AppDbContext _context;
 
-        public StudentsModel(IEnrollmentService enrollmentService, IClassService classService)
+        public StudentsModel(IEnrollmentService enrollmentService, IClassService classService, AppDbContext context)
         {
             _enrollmentService = enrollmentService;
             _classService = classService;
+            _context = context;
         }
 
         public ClassResponseDto ClassInfo { get; set; } = null!;
         public IEnumerable<Student> EnrolledStudents { get; set; } = new List<Student>();
+        public IEnumerable<Student> AvailableStudents { get; set; } = new List<Student>();
         public IEnumerable<ClassResponseDto> ActiveClasses { get; set; } = new List<ClassResponseDto>();
 
         [BindProperty(SupportsGet = true)]
         public int ClassId { get; set; }
+
+        [BindProperty]
+        public List<int> SelectedStudentIds { get; set; } = new();
 
         [BindProperty]
         public int StudentId { get; set; }
@@ -49,34 +53,59 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
                 return NotFound();
             }
             ClassInfo = classObj;
-            EnrolledStudents = await _enrollmentService.GetStudentsInClassAsync(classId);
 
+            // Load enrolled students
+            var enrolledList = await _enrollmentService.GetStudentsInClassAsync(classId);
+            EnrolledStudents = enrolledList.ToList();
+            var enrolledIds = EnrolledStudents.Select(s => s.Id).ToList();
+
+            // Load available students (not in this class)
+            AvailableStudents = await _context.Students
+                .Where(s => !enrolledIds.Contains(s.Id))
+                .OrderBy(s => s.FullName)
+                .ToListAsync();
+
+            // Load other active classes for transfer options
             var allClasses = await _classService.GetAllClassesAsync();
             ActiveClasses = allClasses.Where(c => c.Status == "Active" && c.Id != classId).ToList();
 
             return Page();
         }
 
-        public async Task<IActionResult> OnPostEnrollAsync()
+        public async Task<IActionResult> OnPostEnrollMultiAsync()
         {
-            if (StudentId <= 0)
+            if (SelectedStudentIds == null || !SelectedStudentIds.Any())
             {
-                TempData["ErrorMessage"] = "Mã học sinh phải là số dương lớn hơn 0.";
+                TempData["ErrorMessage"] = "Vui lòng chọn ít nhất một học sinh từ danh sách để xếp lớp!";
                 return RedirectToPage(new { classId = ClassId });
             }
 
-            try
+            int successCount = 0;
+            int failCount = 0;
+            List<string> errorMessages = new();
+
+            foreach (var studentId in SelectedStudentIds)
             {
-                await _enrollmentService.EnrollStudentAsync(ClassId, StudentId);
-                TempData["SuccessMessage"] = "Thêm học sinh vào lớp học thành công!";
+                try
+                {
+                    var success = await _enrollmentService.EnrollStudentAsync(ClassId, studentId);
+                    if (success) successCount++;
+                    else failCount++;
+                }
+                catch (Exception ex)
+                {
+                    failCount++;
+                    errorMessages.Add(ex.Message);
+                }
             }
-            catch (ArgumentException ex)
+
+            if (successCount > 0)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["SuccessMessage"] = $"Đã xếp lớp thành công cho {successCount} học sinh!";
             }
-            catch (InvalidOperationException ex)
+            if (failCount > 0)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Có {failCount} học sinh không thể xếp lớp. Chi tiết: " + string.Join(", ", errorMessages.Distinct());
             }
 
             return RedirectToPage(new { classId = ClassId });
@@ -104,11 +133,7 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
                 await _enrollmentService.TransferStudentClassAsync(studentId, ClassId, TargetClassId);
                 TempData["SuccessMessage"] = "Chuyển lớp cho học viên thành công!";
             }
-            catch (ArgumentException ex)
-            {
-                TempData["ErrorMessage"] = ex.Message;
-            }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
                 TempData["ErrorMessage"] = ex.Message;
             }
