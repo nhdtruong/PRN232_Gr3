@@ -348,37 +348,51 @@
         }
 
         function toggleSelectAll(masterCheckbox) {
-            const visibleCheckboxes = $('.available-student-item:visible .student-checkbox');
-            visibleCheckboxes.prop('checked', masterCheckbox.checked);
+            // Lấy tất cả checkbox của những học sinh ĐANG HIỂN THỊ
+            const items = document.querySelectorAll('.available-student-item');
+            items.forEach(item => {
+                if (item.style.display !== 'none') {
+                    const checkbox = item.querySelector('.student-checkbox');
+                    if (checkbox) {
+                        checkbox.checked = masterCheckbox.checked;
+                    }
+                }
+            });
             updateCounter();
         }
 
         function updateCounter() {
-            const checkedCount = $('.student-checkbox:checked').length;
+            const checkedCount = document.querySelectorAll('.student-checkbox:checked').length;
             document.getElementById('selectedCounter').textContent = `Đã chọn: ${checkedCount}`;
         }
 
-        // Live search filter for available students
-        document.getElementById('searchAvailableInput').addEventListener('input', function(e) {
-            const query = e.target.value.toLowerCase().trim();
-            
-            $('.available-student-item').each(function() {
-                const item = $(this);
-                const sName = item.data('name');
-                const sId = item.data('id').toString();
+        // Live search filter for available students (Vanilla JS)
+        const searchInput = document.getElementById('searchAvailableInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                const query = e.target.value.toLowerCase().trim();
+                const items = document.querySelectorAll('.available-student-item');
 
-                if (sName.includes(query) || sId.includes(query)) {
-                    item.show();
-                } else {
-                    item.hide();
-                    // Uncheck hidden checkboxes
-                    item.find('.student-checkbox').prop('checked', false);
-                }
+                items.forEach(item => {
+                    const sName = item.getAttribute('data-name');
+                    const sId = item.getAttribute('data-id');
+
+                    if (sName.includes(query) || sId.includes(query)) {
+                        item.style.setProperty('display', 'flex', 'important');
+                    } else {
+                        item.style.setProperty('display', 'none', 'important');
+                        // Bỏ tích checkbox nếu bị ẩn đi
+                        const checkbox = item.querySelector('.student-checkbox');
+                        if (checkbox) {
+                            checkbox.checked = false;
+                        }
+                    }
+                });
+
+                // Reset select all state on search filter change
+                document.getElementById('checkAllStudents').checked = false;
+                updateCounter();
             });
-
-            // Reset select all state on search filter change
-            document.getElementById('checkAllStudents').checked = false;
-            updateCounter();
-        });
+        }
     </script>
 }
