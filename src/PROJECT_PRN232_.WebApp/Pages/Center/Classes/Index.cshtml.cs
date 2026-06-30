@@ -51,6 +51,7 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
 
         public async Task<JsonResult> OnGetClassLessonsAsync(int classId)
         {
+            var classObj = await _context.Classes.FindAsync(classId);
             var lessons = await _context.Lessons
                 .Where(l => l.ClassId == classId)
                 .OrderBy(l => l.LessonDate)
@@ -64,7 +65,18 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
                 })
                 .ToListAsync();
 
-            return new JsonResult(lessons);
+            // Lấy thông tin phòng học đầu tiên của các buổi học hoặc lấy ngẫu nhiên một phòng
+            var firstRoomId = lessons.FirstOrDefault(l => l.RoomId.HasValue)?.RoomId;
+
+            return new JsonResult(new
+            {
+                classId = classId,
+                className = classObj?.ClassName ?? "",
+                maxCapacity = classObj?.MaxCapacity ?? 30,
+                roomId = firstRoomId,
+                totalLessons = lessons.Count, // Tổng số buổi thực tế từ bảng Lessons
+                lessons = lessons
+            });
         }
 
         public async Task<IActionResult> OnPostCreateAsync()
