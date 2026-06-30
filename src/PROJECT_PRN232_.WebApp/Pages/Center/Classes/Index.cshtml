@@ -267,8 +267,8 @@
                             <th style="width: 120px;">Mã lớp</th>
                             <th>Tên lớp</th>
                             <th class="text-center" style="width: 100px;">Sĩ số</th>
-                            <th>Ngày khai giảng</th>
-                            <th>Ngày bế giảng</th>
+                            <th>Môn học</th>
+                            <th class="text-center" style="width: 120px;">Tổng số buổi</th>
                             <th style="width: 180px;">Trạng thái</th>
                             <th class="text-center" style="width: 180px;">Thao tác</th>
                         </tr>
@@ -286,8 +286,20 @@
                                 <td class="text-center">
                                     <span class="badge bg-light text-dark border px-2 py-1"><i class="bi bi-people me-1"></i>@c.StudentCount</span>
                                 </td>
-                                <td class="small text-muted">@(c.StartDate?.ToString("dd/MM/yyyy") ?? "01/05/2026")</td>
-                                <td class="small text-muted">@(c.EndDate?.ToString("dd/MM/yyyy") ?? "01/08/2026")</td>
+                                <td class="small">
+                                    @{
+                                        var subjectDisplay = c.Subject switch {
+                                            "ielts" => "IELTS General",
+                                            "toeic" => "TOEIC Intensive",
+                                            "comm" => "Tiếng Anh Giao Tiếp",
+                                            _ => c.Subject ?? "—"
+                                        };
+                                    }
+                                    <span class="badge bg-primary-subtle text-primary border rounded-pill px-2 py-1">@subjectDisplay</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-info-subtle text-info border px-2 py-1"><i class="bi bi-book me-1"></i>@c.TotalLessons buổi</span>
+                                </td>
                                 <td>
                                     @if (c.Status == "Active")
                                     {
@@ -306,7 +318,7 @@
                                         <a asp-page="/Center/Classes/Students" asp-route-classId="@c.Id" class="eb-action-btn view" title="Học viên">
                                             <i class="bi bi-people"></i>
                                         </a>
-                                        <button class="eb-action-btn edit" onclick="openEditModal(@c.Id, '@c.ClassName', @c.CenterId, @c.MaxCapacity)" data-bs-toggle="modal" data-bs-target="#editClassModal" title="Sửa">
+                                        <button class="eb-action-btn edit" onclick="openEditModal(@c.Id, '@c.ClassName', @c.CenterId, @c.MaxCapacity, '@c.Subject', @c.TotalLessons)" data-bs-toggle="modal" data-bs-target="#editClassModal" title="Sửa">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
                                         <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" onsubmit="return confirm('Bạn có chắc chắn muốn xóa lớp học này?');" style="display:inline;">
@@ -486,8 +498,8 @@
 
                             <!-- Môn học -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
-                                <select class="form-select" required>
+                                <label asp-for="CreateDto.Subject" class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
+                                <select asp-for="CreateDto.Subject" class="form-select" required>
                                     <option value="" selected disabled>Chọn môn học</option>
                                     <option value="ielts">IELTS General</option>
                                     <option value="toeic">TOEIC Intensive</option>
@@ -497,14 +509,14 @@
 
                             <!-- Tổng số buổi -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
-                                <input class="form-control" type="number" placeholder="Ví dụ: 24" value="24" required />
+                                <label asp-for="CreateDto.TotalLessons" class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
+                                <input asp-for="CreateDto.TotalLessons" class="form-control" type="number" placeholder="Ví dụ: 24" value="24" required />
                             </div>
 
                             <!-- Phòng học -->
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Phòng học (*)</label>
-                                <select class="form-select" required>
+                                <select class="form-select" name="CreateRoomId" required>
                                     <option value="" selected disabled>Chọn phòng học</option>
                                     @foreach (var r in Model.Rooms)
                                     {
@@ -538,7 +550,7 @@
                             <div class="row g-2 align-items-center schedule-row-item mb-2 pb-2 border-bottom">
                                 <div class="col-md-3">
                                     <label class="small text-muted fw-semibold d-block mb-1">Thứ (*)</label>
-                                    <select class="form-select form-select-sm" required>
+                                    <select class="form-select form-select-sm" name="CreateDayOfWeek[]" required>
                                         <option value="Thứ 2">Thứ 2</option>
                                         <option value="Thứ 3">Thứ 3</option>
                                         <option value="Thứ 4">Thứ 4</option>
@@ -550,7 +562,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="small text-muted fw-semibold d-block mb-1">Ca học gợi ý</label>
-                                    <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                                    <select class="form-select form-select-sm slot-suggestion-select" name="CreateSlotId[]" onchange="onSlotSuggestionChanged(this)">
                                         <option value="" selected>Tự chọn giờ</option>
                                         @foreach (var s in Model.Slots)
                                         {
@@ -618,24 +630,24 @@
 
                             <!-- Môn học -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
-                                <select class="form-select" id="editClassSubject" required>
+                                <label asp-for="UpdateDto.Subject" class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
+                                <select asp-for="UpdateDto.Subject" class="form-select" id="editClassSubject" required>
                                     <option value="ielts">IELTS General</option>
                                     <option value="toeic">TOEIC Intensive</option>
-                                    <option value="comm" selected>Tiếng Anh Giao Tiếp</option>
+                                    <option value="comm">Tiếng Anh Giao Tiếp</option>
                                 </select>
                             </div>
 
                             <!-- Tổng số buổi -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
-                                <input class="form-control" type="number" id="editTotalLessons" value="24" required />
+                                <label asp-for="UpdateDto.TotalLessons" class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
+                                <input asp-for="UpdateDto.TotalLessons" class="form-control" type="number" id="editTotalLessons" value="24" required />
                             </div>
 
                             <!-- Phòng học -->
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Phòng học (*)</label>
-                                <select class="form-select" id="editClassRoom" required>
+                                <select class="form-select" id="editClassRoom" name="UpdateRoomId" required>
                                     @foreach (var r in Model.Rooms)
                                     {
                                         <option value="@r.Id">@r.RoomName (Sức chứa: @r.Capacity)</option>
@@ -668,7 +680,7 @@
                             <div class="row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom">
                                 <div class="col-md-3">
                                     <label class="small text-muted fw-semibold d-block mb-1">Thứ (*)</label>
-                                    <select class="form-select form-select-sm" required>
+                                    <select class="form-select form-select-sm" name="UpdateDayOfWeek[]" required>
                                         <option value="Thứ 2">Thứ 2</option>
                                         <option value="Thứ 3">Thứ 3</option>
                                         <option value="Thứ 4">Thứ 4</option>
@@ -680,7 +692,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="small text-muted fw-semibold d-block mb-1">Ca học gợi ý</label>
-                                    <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                                    <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
                                         <option value="" selected>Tự chọn giờ</option>
                                         @foreach (var s in Model.Slots)
                                         {
@@ -726,15 +738,156 @@
             $(el).addClass('active');
         }
 
-        function openEditModal(id, name, centerId, maxCapacity) {
+        function openEditModal(id, name, centerId, maxCapacity, subject, totalLessons) {
             document.getElementById('editClassId').value = id;
             document.getElementById('editClassName').value = name;
             document.getElementById('editCenterId').value = centerId;
-            document.getElementById('editMaxCapacity').value = maxCapacity;
+            
+            // Set Max Capacity securely with numeric default fallback
+            const maxCapInput = document.getElementById('editMaxCapacity');
+            if (maxCapInput) {
+                maxCapInput.value = maxCapacity || 30;
+            }
+
+            // Set Subject and TotalLessons synchronously from list model
+            const subjectEl = document.getElementById('editClassSubject');
+            if (subjectEl) {
+                subjectEl.value = subject || "comm";
+            }
+
+            const totalLessonsEl = document.getElementById('editTotalLessons');
+            if (totalLessonsEl) {
+                totalLessonsEl.value = totalLessons || 24;
+            }
 
             // Generate class code representation
             const formattedId = ("0000" + id).slice(-4);
             document.getElementById('editClassCode').value = `CLS-${centerId}-${new Date().getFullYear()}${("0" + (new Date().getMonth() + 1)).slice(-2)}-${formattedId}`;
+
+            // Fetch dynamic schedule and slots
+            const container = document.getElementById('editScheduleRowsContainer');
+            container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading schedule...</div>';
+
+            fetch(`${window.location.pathname}?handler=ClassLessons&classId=${id}`)
+                .then(res => res.json())
+                .then(data => {
+                    console.log("Class data retrieved:", data);
+                    container.innerHTML = '';
+                    
+                    // Bind Class details directly to edit modal inputs
+                    if (data.maxCapacity) {
+                        document.getElementById('editMaxCapacity').value = data.maxCapacity;
+                    }
+                    
+                    // Fallback to model data values if database seed details are missing
+                    const roomEl = document.getElementById('editClassRoom');
+                    if (roomEl) {
+                        if (data.roomId) {
+                            roomEl.value = data.roomId;
+                        } else {
+                            // Select first option by default
+                            roomEl.selectedIndex = 0;
+                        }
+                    }
+
+                    const totalLessonsEl = document.getElementById('editTotalLessons');
+                    if (totalLessonsEl) {
+                        totalLessonsEl.value = data.totalLessons && data.totalLessons > 0 ? data.totalLessons : 24;
+                    }
+
+                    const lessons = data.lessons;
+                    // Lấy slotsOptions từ Create modal (đảm bảo lấy đúng)
+                    const allSlotSelects = document.querySelectorAll('#scheduleRowsContainer .slot-suggestion-select');
+                    const slotsOptionsRef = allSlotSelects.length > 0 ? allSlotSelects[0].innerHTML : '';
+
+                    if (!lessons || lessons.length === 0) {
+                        // Render a single blank default schedule row with proper name attributes
+                        container.innerHTML = `
+                            <div class="row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom">
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm edit-day-select" name="UpdateDayOfWeek[]" required>
+                                        <option value="Thứ 2" selected>Thứ 2</option>
+                                        <option value="Thứ 3">Thứ 3</option>
+                                        <option value="Thứ 4">Thứ 4</option>
+                                        <option value="Thứ 5">Thứ 5</option>
+                                        <option value="Thứ 6">Thứ 6</option>
+                                        <option value="Thứ 7">Thứ 7</option>
+                                        <option value="Chủ nhật">Chủ nhật</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
+                                        ${slotsOptionsRef}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="time" class="form-control form-control-sm start-time-input" required />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="time" class="form-control form-control-sm end-time-input" required />
+                                </div>
+                                <div class="col-md-1 text-end">
+                                    <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeEditScheduleRow(this)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    lessons.forEach((l, idx) => {
+                        const newRow = document.createElement('div');
+                        newRow.className = 'row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom';
+                        
+                        // Map DayOfWeek number to Vietnam Day String
+                        const daysMap = { 0: "Chủ nhật", 1: "Thứ 2", 2: "Thứ 3", 3: "Thứ 4", 4: "Thứ 5", 5: "Thứ 6", 6: "Thứ 7" };
+                        const vnDay = daysMap[l.dayOfWeek] || "Thứ 2";
+
+                        newRow.innerHTML = `
+                            <div class="col-md-3">
+                                <select class="form-select form-select-sm edit-day-select" name="UpdateDayOfWeek[]" required>
+                                    <option value="Thứ 2" ${vnDay === "Thứ 2" ? "selected" : ""}>Thứ 2</option>
+                                    <option value="Thứ 3" ${vnDay === "Thứ 3" ? "selected" : ""}>Thứ 3</option>
+                                    <option value="Thứ 4" ${vnDay === "Thứ 4" ? "selected" : ""}>Thứ 4</option>
+                                    <option value="Thứ 5" ${vnDay === "Thứ 5" ? "selected" : ""}>Thứ 5</option>
+                                    <option value="Thứ 6" ${vnDay === "Thứ 6" ? "selected" : ""}>Thứ 6</option>
+                                    <option value="Thứ 7" ${vnDay === "Thứ 7" ? "selected" : ""}>Thứ 7</option>
+                                    <option value="Chủ nhật" ${vnDay === "Chủ nhật" ? "selected" : ""}>Chủ nhật</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
+                                    ${slotsOptionsRef}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="time" class="form-control form-control-sm start-time-input" required />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="time" class="form-control form-control-sm end-time-input" required />
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeEditScheduleRow(this)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        `;
+
+                        container.appendChild(newRow);
+
+                        // If slot ID is present, trigger automatic slot value population AFTER append
+                        const selectElement = newRow.querySelector('.slot-suggestion-select');
+                        if (l.slotId && selectElement) {
+                            selectElement.value = l.slotId;
+                            onSlotSuggestionChanged(selectElement);
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.error("Fetch schedule error:", err);
+                    container.innerHTML = '<div class="text-danger small text-center py-2">Không thể tải lịch học.</div>';
+                });
         }
 
         function applyFilters() {
@@ -783,7 +936,7 @@
 
             newRow.innerHTML = `
                 <div class="col-md-3">
-                    <select class="form-select form-select-sm" required>
+                    <select class="form-select form-select-sm" name="CreateDayOfWeek[]" required>
                         <option value="Thứ 2">Thứ 2</option>
                         <option value="Thứ 3">Thứ 3</option>
                         <option value="Thứ 4">Thứ 4</option>
@@ -794,7 +947,7 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                    <select class="form-select form-select-sm slot-suggestion-select" name="CreateSlotId[]" onchange="onSlotSuggestionChanged(this)">
                         ${slotsOptions}
                     </select>
                 </div>
@@ -852,7 +1005,7 @@
 
                 newRow.innerHTML = `
                     <div class="col-md-3">
-                        <select class="form-select form-select-sm" required>
+                        <select class="form-select form-select-sm" name="UpdateDayOfWeek[]" required>
                             <option value="Thứ 2">Thứ 2</option>
                             <option value="Thứ 3">Thứ 3</option>
                             <option value="Thứ 4">Thứ 4</option>
@@ -863,7 +1016,7 @@
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                        <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
                             ${slotsOptions}
                         </select>
                     </div>

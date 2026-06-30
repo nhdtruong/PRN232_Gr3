@@ -24,6 +24,8 @@ namespace PROJECT_PRN232_.Application.Services
                 Status = c.Status,
                 StudentCount = c.ClassStudents?.Count ?? 0,
                 MaxCapacity = c.MaxCapacity,
+                Subject = c.Subject,
+                TotalLessons = c.TotalLessons,
                 StartDate = c.StartDate,
                 EndDate = c.EndDate
             });
@@ -42,6 +44,8 @@ namespace PROJECT_PRN232_.Application.Services
                 Status = classEntity.Status,
                 StudentCount = classEntity.ClassStudents?.Count ?? 0,
                 MaxCapacity = classEntity.MaxCapacity,
+                Subject = classEntity.Subject,
+                TotalLessons = classEntity.TotalLessons,
                 StartDate = classEntity.StartDate,
                 EndDate = classEntity.EndDate
             };
@@ -53,7 +57,9 @@ namespace PROJECT_PRN232_.Application.Services
             {
                 ClassName = dto.ClassName,
                 CenterId = dto.CenterId,
-                MaxCapacity = dto.MaxCapacity
+                MaxCapacity = dto.MaxCapacity,
+                Subject = dto.Subject,
+                TotalLessons = dto.TotalLessons
             };
 
             var createdClass = await _classRepository.AddClassAsync(classEntity);
@@ -66,6 +72,8 @@ namespace PROJECT_PRN232_.Application.Services
                 Status = createdClass.Status,
                 StudentCount = 0,
                 MaxCapacity = createdClass.MaxCapacity,
+                Subject = createdClass.Subject,
+                TotalLessons = createdClass.TotalLessons,
                 StartDate = createdClass.StartDate,
                 EndDate = createdClass.EndDate
             };
@@ -79,6 +87,8 @@ namespace PROJECT_PRN232_.Application.Services
             classEntity.ClassName = dto.ClassName;
             classEntity.CenterId = dto.CenterId;
             classEntity.MaxCapacity = dto.MaxCapacity;
+            classEntity.Subject = dto.Subject;
+            classEntity.TotalLessons = dto.TotalLessons;
 
             return await _classRepository.UpdateClassAsync(classEntity);
         }
