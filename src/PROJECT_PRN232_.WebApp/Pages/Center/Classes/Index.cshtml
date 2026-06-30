@@ -743,14 +743,13 @@
             fetch(`${window.location.pathname}?handler=ClassLessons&classId=${id}`)
                 .then(res => res.json())
                 .then(lessons => {
+                    console.log("Lessons retrieved:", lessons);
                     container.innerHTML = '';
                     if (!lessons || lessons.length === 0) {
                         container.innerHTML = '<div class="text-muted small text-center py-2">Chưa thiết lập lịch học cho lớp này. Hãy bấm Thêm lịch để tạo!</div>';
                         return;
                     }
 
-                    // Group lessons by Day of Week or show individual slots
-                    // We render rows corresponding to the lessons configured for this class
                     const slotsOptions = document.querySelector('.slot-suggestion-select').innerHTML;
 
                     lessons.forEach((l, idx) => {
