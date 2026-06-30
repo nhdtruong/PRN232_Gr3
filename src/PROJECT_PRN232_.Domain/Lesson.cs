@@ -7,7 +7,7 @@ namespace PROJECT_PRN232_.Domain
 {
 	public class Lesson
 	{
-       [Key]
+		[Key]
 		public int Id { get; set; }
 
 		[Required]
@@ -26,6 +26,16 @@ namespace PROJECT_PRN232_.Domain
 		public DateTime LessonDate { get; set; }
 
 		public bool IsPublished { get; set; } = false;
+
+		public int? RoomId { get; set; }
+
+		[ForeignKey(nameof(RoomId))]
+		public virtual Room? Room { get; set; }
+
+		public int? SlotId { get; set; }
+
+		[ForeignKey(nameof(SlotId))]
+		public virtual Slot? Slot { get; set; }
 
 		// Navigation Properties
 		public virtual ICollection<Material> Materials { get; set; } = new List<Material>();

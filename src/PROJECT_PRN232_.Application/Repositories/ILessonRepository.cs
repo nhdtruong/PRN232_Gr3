@@ -18,5 +18,6 @@ namespace PROJECT_PRN232_.Application.Repositories
         Task<IEnumerable<Lesson>> GetLessonsByStudentIdAsync(int studentId);
         Task<bool> PublishLessonAsync(int lessonId);
         Task<Lesson?> GetLessonWithMaterialsAsync(int lessonId);
+        Task<bool> CheckCollisionAsync(System.DateTime date, int slotId, int roomId, int? excludeLessonId = null);
     }
 }

@@ -47,13 +47,23 @@ namespace PROJECT_PRN232_.Controllers
             dto.ClassId = classId;
             var centerUserId = GetUserId();
 
-            var result = await _lessonService.CreateAsync(dto, centerUserId);
-            if (result == null)
+            try
             {
-                return BadRequest(new { message = "Không thể tạo buổi học. Vui lòng kiểm tra quyền sở hữu lớp học hoặc lớp học đã bị khóa/đóng." });
+                var result = await _lessonService.CreateAsync(dto, centerUserId);
+                if (result == null)
+                {
+                    return BadRequest(new { message = "Không thể tạo buổi học. Vui lòng kiểm tra quyền sở hữu lớp học hoặc lớp học đã bị khóa/đóng." });
+                }
+                return CreatedAtAction(nameof(GetById), new { lessonId = result.Id }, result);
             }
-
-            return CreatedAtAction(nameof(GetById), new { lessonId = result.Id }, result);
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -85,14 +95,20 @@ namespace PROJECT_PRN232_.Controllers
 
             var centerUserId = GetUserId();
             dto.Id = lessonId;
-            var success = await _lessonService.UpdateAsync(dto, centerUserId);
 
-            if (!success)
+            try
             {
-                return BadRequest(new { message = "Không thể cập nhật buổi học. Vui lòng kiểm tra quyền sở hữu hoặc trạng thái lớp học." });
+                var success = await _lessonService.UpdateAsync(dto, centerUserId);
+                if (!success)
+                {
+                    return BadRequest(new { message = "Không thể cập nhật buổi học. Vui lòng kiểm tra quyền sở hữu hoặc trạng thái lớp học." });
+                }
+                return NoContent();
             }
-
-            return NoContent();
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         /// <summary>

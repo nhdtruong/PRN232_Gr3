@@ -18,6 +18,8 @@ namespace PROJECT_PRN232_.Infrastructure.Repositories
         {
             return await _context.Lessons
                 .Include(l => l.Class)
+                .Include(l => l.Room)
+                .Include(l => l.Slot)
                 .FirstOrDefaultAsync(l => l.Id == lessonId);
         }
 
@@ -65,6 +67,8 @@ namespace PROJECT_PRN232_.Infrastructure.Repositories
         {
             return await _context.Lessons
                 .Include(l => l.Class)
+                .Include(l => l.Room)
+                .Include(l => l.Slot)
                 .Where(l => l.ClassId == classId)
                 .OrderBy(l => l.LessonDate)
                 .ToListAsync();
@@ -116,6 +120,8 @@ namespace PROJECT_PRN232_.Infrastructure.Repositories
 
             return await _context.Lessons
                 .Include(l => l.Class)
+                .Include(l => l.Room)
+                .Include(l => l.Slot)
                 .Where(l => classIds.Contains(l.ClassId))
                 .OrderBy(l => l.LessonDate)
                 .ToListAsync();
@@ -136,6 +142,17 @@ namespace PROJECT_PRN232_.Infrastructure.Repositories
                 .Include(l => l.Class)
                 .Include(l => l.Materials)
                 .FirstOrDefaultAsync(l => l.Id == lessonId);
+        }
+
+        public async Task<bool> CheckCollisionAsync(System.DateTime date, int slotId, int roomId, int? excludeLessonId = null)
+        {
+            // Trả về true nếu có bất kỳ lesson nào cùng ngày, ca học, phòng học (ngoại trừ excludeLessonId nếu sửa)
+            var dateOnly = date.Date;
+            return await _context.Lessons
+                .AnyAsync(l => l.LessonDate.Date == dateOnly 
+                            && l.SlotId == slotId 
+                            && l.RoomId == roomId 
+                            && (!excludeLessonId.HasValue || l.Id != excludeLessonId.Value));
         }
     }
 }

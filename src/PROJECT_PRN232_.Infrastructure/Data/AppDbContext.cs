@@ -20,6 +20,8 @@ namespace PROJECT_PRN232_.Infrastructure.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<ChatChannel> ChatChannels { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<Room> Rooms { get; set; }
+        public DbSet<Slot> Slots { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -94,6 +96,18 @@ namespace PROJECT_PRN232_.Infrastructure.Data
                 .HasOne(cm => cm.Sender)
                 .WithMany(u => u.SentMessages)
                 .HasForeignKey(cm => cm.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Lesson>()
+                .HasOne(l => l.Room)
+                .WithMany(r => r.Lessons)
+                .HasForeignKey(l => l.RoomId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Lesson>()
+                .HasOne(l => l.Slot)
+                .WithMany(s => s.Lessons)
+                .HasForeignKey(l => l.SlotId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

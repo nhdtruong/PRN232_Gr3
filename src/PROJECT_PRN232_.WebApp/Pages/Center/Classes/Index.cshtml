@@ -1,10 +1,10 @@
 @page
 @model PROJECT_PRN232_.WebApp.Pages.Center.Classes.IndexModel
 @{
-    ViewData["Title"] = "Quản lý Lớp học";
+    ViewData["Title"] = "Quản lý Lớp học - EduBridge";
 }
 
-<!-- Custom Styles for Premium Indigo Table Design -->
+<!-- Custom Styles for Premium Indigo Design -->
 <style>
     :root {
         --eb-indigo-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
@@ -40,6 +40,7 @@
         text-decoration: none;
         border-bottom: 3px solid transparent;
         transition: all 0.25s ease;
+        cursor: pointer;
     }
 
     .eb-nav-tab:hover, .eb-nav-tab.active {
@@ -199,71 +200,14 @@
     <!-- Title Section -->
     <div class="mb-4">
         <h1 class="fw-bold text-dark mb-1" style="font-size: 1.85rem;">Quản lý lớp học</h1>
-        <p class="text-muted mb-0">Quản lý thông tin các lớp học</p>
+        <p class="text-muted mb-0">Thiết lập và đồng bộ thông tin phòng học, ca học và lịch học trung tâm.</p>
     </div>
 
     <!-- Navigation Tabs -->
     <div class="eb-nav-tabs">
-        <a href="/Center/Classes/Index" class="eb-nav-tab active">Danh sách lớp học</a>
-        <a href="#" class="eb-nav-tab">Quản lý phòng học</a>
-        <a href="#" class="eb-nav-tab">Quản lý ca học</a>
-    </div>
-
-    <!-- Filter Card -->
-    <div class="eb-card">
-        <h5 class="fw-bold mb-3" style="color: var(--eb-text-dark);">Danh sách lớp học</h5>
-        <div class="row g-3">
-            <div class="col-md-3">
-                <input type="text" id="filterClassName" class="form-control" placeholder="Tìm tên/mã lớp...">
-            </div>
-            <div class="col-md-3">
-                <input type="text" id="filterTeacher" class="form-control" placeholder="Tên giáo viên">
-            </div>
-            <div class="col-md-2">
-                <select id="filterSubject" class="form-select">
-                    <option value="">Môn học</option>
-                    <option value="Kids English A1">Kids English A1</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select id="filterRoom" class="form-select">
-                    <option value="">Phòng học</option>
-                    <option value="Phòng Test 01">Phòng Test 01</option>
-                    <option value="Phòng Test 02">Phòng Test 02</option>
-                    <option value="Phòng 101">Phòng 101</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select id="filterStatus" class="form-select">
-                    <option value="">Trạng thái</option>
-                    <option value="Active">Đang hoạt động</option>
-                    <option value="Closed">Đã đóng</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <div class="input-group">
-                    <input type="text" id="filterStartDate" class="form-control" placeholder="Ngày khai giảng" onfocus="(this.type='date')" onblur="(this.type='text')">
-                    <span class="input-group-text bg-white border-start-0" style="border-radius: 0 10px 10px 0;"><i class="bi bi-calendar3" style="color: #4F46E5;"></i></span>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="input-group">
-                    <input type="text" id="filterEndDate" class="form-control" placeholder="Ngày kết thúc" onfocus="(this.type='date')" onblur="(this.type='text')">
-                    <span class="input-group-text bg-white border-start-0" style="border-radius: 0 10px 10px 0;"><i class="bi bi-calendar3" style="color: #4F46E5;"></i></span>
-                </div>
-            </div>
-            <div class="col-md-6 d-flex justify-content-between align-items-center">
-                <button class="eb-btn-primary" data-bs-toggle="modal" data-bs-target="#createClassModal">
-                    <i class="bi bi-plus-lg"></i> Thêm lớp mới
-                </button>
-                <div class="d-flex gap-2">
-                    <button class="eb-btn-outline" onclick="resetFilters()">Làm mới bộ lọc</button>
-                    <button class="eb-btn-primary" onclick="applyFilters()">
-                        <i class="bi bi-search"></i> Tìm kiếm
-                    </button>
-                </div>
-            </div>
-        </div>
+        <span onclick="switchTab('classes-tab', this)" class="eb-nav-tab active">Danh sách lớp học</span>
+        <span onclick="switchTab('rooms-tab', this)" class="eb-nav-tab">Quản lý phòng học</span>
+        <span onclick="switchTab('slots-tab', this)" class="eb-nav-tab">Quản lý ca học</span>
     </div>
 
     <!-- Alert Messages -->
@@ -282,118 +226,228 @@
         </div>
     }
 
-    <!-- Table Card -->
-    <div class="eb-card p-0 overflow-hidden" style="border-radius: 12px;">
-        <div class="table-responsive">
-            <table class="eb-table table-hover">
-                <thead>
-                    <tr>
-                        <th class="text-center" style="width: 60px;">STT</th>
-                        <th style="width: 80px;">ID</th>
-                        <th style="width: 120px;">Mã lớp</th>
-                        <th>Tên lớp</th>
-                        <th>Môn học</th>
-                        <th>Giáo viên</th>
-                        <th class="text-center" style="width: 85px;">Sĩ số</th>
-                        <th>Lịch học</th>
-                        <th>Thời gian học</th>
-                        <th>Phòng</th>
-                        <th style="width: 150px;">Trạng thái</th>
-                        <th class="text-center" style="width: 140px;">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody id="classTableBody">
-                    @{
-                        int index = 1;
-                    }
-                    @foreach (var c in Model.Classes)
-                    {
-                        var classCode = $"CLS{c.Id:D4}";
-                        var startDateStr = c.StartDate?.ToString("dd/MM/yyyy") ?? "01/05/2026";
-                        var endDateStr = c.EndDate?.ToString("dd/MM/yyyy") ?? "01/08/2026";
-                        var displayTeacher = "Phạm Quốc Huy";
-                        var displaySubject = "Kids English A1";
-                        var displaySchedule = c.Id % 2 == 0 ? "Thứ 2, Thứ 4 - 18:00" : "Thứ 4 18:00-20:00";
-                        var displayRoom = $"Phòng Test {c.Id:D2}";
-                        
-                        <tr class="class-row" 
-                            data-class-name="@c.ClassName" 
-                            data-class-id="@c.Id"
-                            data-teacher="@displayTeacher"
-                            data-subject="@displaySubject"
-                            data-room="@displayRoom"
-                            data-status="@c.Status"
-                            data-start-date="@(c.StartDate?.ToString("yyyy-MM-dd") ?? "2026-05-01")"
-                            data-end-date="@(c.EndDate?.ToString("yyyy-MM-dd") ?? "2026-08-01")">
-                            
-                            <td class="text-center fw-semibold text-muted">@index</td>
-                            <td class="fw-semibold">@c.Id</td>
-                            <td><span class="text-primary fw-bold">@classCode</span></td>
-                            <td class="fw-bold" style="color: var(--eb-text-dark);">@c.ClassName</td>
-                            <td><span class="text-muted small fw-semibold">@displaySubject</span></td>
-                            <td class="fw-semibold">@displayTeacher</td>
-                            <td class="text-center">
-                                <span class="text-muted fw-semibold"><i class="bi bi-people me-1"></i>@c.StudentCount</span>
-                            </td>
-                            <td class="small fw-semibold text-muted">@displaySchedule</td>
-                            <td class="small text-muted">
-                                @startDateStr - <br>@endDateStr
-                            </td>
-                            <td><span class="badge bg-light text-dark border px-2 py-1 small">@displayRoom</span></td>
-                            <td>
-                                @if (c.Status == "Active")
-                                {
-                                    <span class="badge-active">Đang hoạt động</span>
-                                }
-                                else
-                                {
-                                    <span class="badge-closed">Đã đóng</span>
-                                }
-                            </td>
-                            <td class="text-center">
-                                <div class="d-inline-flex gap-2">
-                                    <a asp-page="/Center/Classes/Students" asp-route-classId="@c.Id" class="eb-action-btn view" title="Xem danh sách học viên">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    
-                                    <button class="eb-action-btn edit" onclick="openEditModal(@c.Id, '@c.ClassName', @c.CenterId)" data-bs-toggle="modal" data-bs-target="#editClassModal" title="Sửa thông tin lớp">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </button>
-                                    
-                                    <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" onsubmit="return confirm('Bạn có chắc chắn muốn xóa lớp học này?');" style="display:inline;">
-                                        <button type="submit" class="eb-action-btn delete" title="Xóa lớp học">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        index++;
-                    }
-                </tbody>
-            </table>
+    <!-- TAB 1: CLASSES MANAGEMENT -->
+    <div id="classes-tab" class="tab-content">
+        <!-- Filter Card -->
+        <div class="eb-card">
+            <h5 class="fw-bold mb-3" style="color: var(--eb-text-dark);">Danh sách lớp học</h5>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" id="filterClassName" class="form-control" placeholder="Tìm tên/mã lớp...">
+                </div>
+                <div class="col-md-3">
+                    <select id="filterStatus" class="form-select">
+                        <option value="">Trạng thái lớp</option>
+                        <option value="Active">Đang hoạt động</option>
+                        <option value="Closed">Đã đóng</option>
+                    </select>
+                </div>
+                <div class="col-md-6 d-flex justify-content-between align-items-center">
+                    <button class="eb-btn-primary" data-bs-toggle="modal" data-bs-target="#createClassModal">
+                        <i class="bi bi-plus-lg"></i> Thêm lớp mới
+                    </button>
+                    <div class="d-flex gap-2">
+                        <button class="eb-btn-outline" onclick="resetFilters()">Làm mới bộ lọc</button>
+                        <button class="eb-btn-primary" onclick="applyFilters()">
+                            <i class="bi bi-search"></i> Tìm kiếm
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Pagination Section -->
-        <div class="px-4 pb-3">
-            <div class="pagination-wrapper">
-                <div class="text-muted small">
-                    Tổng số: <strong id="totalCount">@Model.Classes.Count()</strong> bản ghi
+        <!-- Table Card -->
+        <div class="eb-card p-0 overflow-hidden" style="border-radius: 12px;">
+            <div class="table-responsive">
+                <table class="eb-table table-hover">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 60px;">STT</th>
+                            <th style="width: 80px;">ID</th>
+                            <th style="width: 120px;">Mã lớp</th>
+                            <th>Tên lớp</th>
+                            <th class="text-center" style="width: 100px;">Sĩ số</th>
+                            <th>Ngày khai giảng</th>
+                            <th>Ngày bế giảng</th>
+                            <th style="width: 180px;">Trạng thái</th>
+                            <th class="text-center" style="width: 180px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int classIdx = 1; }
+                        @foreach (var c in Model.Classes)
+                        {
+                            var classCode = $"CLS{c.Id:D4}";
+                            <tr class="class-row" data-class-name="@c.ClassName" data-class-id="@c.Id" data-status="@c.Status">
+                                <td class="text-center fw-semibold text-muted">@classIdx</td>
+                                <td class="fw-semibold">@c.Id</td>
+                                <td><span class="text-primary fw-bold">@classCode</span></td>
+                                <td class="fw-bold" style="color: var(--eb-text-dark);">@c.ClassName</td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border px-2 py-1"><i class="bi bi-people me-1"></i>@c.StudentCount</span>
+                                </td>
+                                <td class="small text-muted">@(c.StartDate?.ToString("dd/MM/yyyy") ?? "01/05/2026")</td>
+                                <td class="small text-muted">@(c.EndDate?.ToString("dd/MM/yyyy") ?? "01/08/2026")</td>
+                                <td>
+                                    @if (c.Status == "Active")
+                                    {
+                                        <span class="badge-active">Đang hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-closed">Đã đóng</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-inline-flex gap-2">
+                                        <a href="/Center/Lessons/@c.Id" class="eb-action-btn view" title="Xếp lịch học & Quản lý buổi học">
+                                            <i class="bi bi-calendar-event"></i>
+                                        </a>
+                                        <a asp-page="/Center/Classes/Students" asp-route-classId="@c.Id" class="eb-action-btn view" title="Học viên">
+                                            <i class="bi bi-people"></i>
+                                        </a>
+                                        <button class="eb-action-btn edit" onclick="openEditModal(@c.Id, '@c.ClassName', @c.CenterId)" data-bs-toggle="modal" data-bs-target="#editClassModal" title="Sửa">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" onsubmit="return confirm('Bạn có chắc chắn muốn xóa lớp học này?');" style="display:inline;">
+                                            <button type="submit" class="eb-action-btn delete" title="Xóa">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            classIdx++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: ROOMS MANAGEMENT -->
+    <div id="rooms-tab" class="tab-content" style="display: none;">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="eb-card">
+                    <h5 class="fw-bold mb-3">Thêm phòng học mới</h5>
+                    <form method="post" asp-page-handler="CreateRoom">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Tên phòng học</label>
+                            <input asp-for="RoomInput.RoomName" class="form-control" placeholder="Ví dụ: Phòng 101" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Sức chứa tối đa</label>
+                            <input asp-for="RoomInput.Capacity" type="number" class="form-control" value="30" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Trang thiết bị</label>
+                            <input asp-for="RoomInput.Equipment" class="form-control" placeholder="Ví dụ: Điều hòa, Máy chiếu..." />
+                        </div>
+                        <button type="submit" class="eb-btn-primary w-100 justify-content-center">Lưu phòng học</button>
+                    </form>
                 </div>
-                <nav aria-label="Page navigation">
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item disabled"><a class="page-link" href="#"><i class="bi bi-chevron-double-left"></i></a></li>
-                        <li class="page-item disabled"><a class="page-link" href="#"><i class="bi bi-chevron-left"></i></a></li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item disabled"><a class="page-link" href="#"><i class="bi bi-chevron-right"></i></a></li>
-                        <li class="page-item disabled"><a class="page-link" href="#"><i class="bi bi-chevron-double-right"></i></a></li>
-                    </ul>
-                </nav>
-                <div>
-                    <select class="form-select form-select-sm" style="width: 70px;">
-                        <option value="20">20</option>
-                        <option value="50">50</option>
-                    </select>
+            </div>
+            <div class="col-md-8">
+                <div class="eb-card p-0 overflow-hidden">
+                    <table class="eb-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 60px;">STT</th>
+                                <th>Tên phòng</th>
+                                <th class="text-center">Sức chứa</th>
+                                <th>Thiết bị hiện có</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th class="text-center" style="width: 100px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ int rIdx = 1; }
+                            @foreach (var r in Model.Rooms)
+                            {
+                                <tr>
+                                    <td class="text-center text-muted fw-semibold">@rIdx</td>
+                                    <td class="fw-bold">@r.RoomName</td>
+                                    <td class="text-center">@r.Capacity chỗ</td>
+                                    <td class="small text-muted">@r.Equipment</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success-subtle text-success border rounded-pill px-3 py-1">Hoạt động</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <form method="post" asp-page-handler="DeleteRoom" asp-route-id="@r.Id" onsubmit="return confirm('Bạn có chắc muốn xóa phòng này?');">
+                                            <button type="submit" class="eb-action-btn delete" title="Xóa phòng học">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                rIdx++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: SLOTS MANAGEMENT -->
+    <div id="slots-tab" class="tab-content" style="display: none;">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="eb-card">
+                    <h5 class="fw-bold mb-3">Thêm ca học mới</h5>
+                    <form method="post" asp-page-handler="CreateSlot">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Tên ca học</label>
+                            <input asp-for="SlotInput.SlotName" class="form-control" placeholder="Ví dụ: Ca 1 (Sáng)" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Giờ bắt đầu</label>
+                            <input asp-for="SlotInput.StartTime" type="time" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Giờ kết thúc</label>
+                            <input asp-for="SlotInput.EndTime" type="time" class="form-control" required />
+                        </div>
+                        <button type="submit" class="eb-btn-primary w-100 justify-content-center">Lưu ca học</button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="eb-card p-0 overflow-hidden">
+                    <table class="eb-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 60px;">STT</th>
+                                <th>Tên ca học</th>
+                                <th>Giờ học</th>
+                                <th class="text-center" style="width: 100px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ int sIdx = 1; }
+                            @foreach (var s in Model.Slots)
+                            {
+                                <tr>
+                                    <td class="text-center text-muted fw-semibold">@sIdx</td>
+                                    <td class="fw-bold">@s.SlotName</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border px-3 py-1 font-monospace">
+                                            @s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm")
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <form method="post" asp-page-handler="DeleteSlot" asp-route-id="@s.Id" onsubmit="return confirm('Bạn có chắc muốn xóa ca học này?');">
+                                            <button type="submit" class="eb-action-btn delete" title="Xóa ca học">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                sIdx++;
+                            }
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -464,6 +518,13 @@
 @section Scripts {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        function switchTab(tabId, el) {
+            $('.tab-content').hide();
+            $('#' + tabId).show();
+            $('.eb-nav-tab').removeClass('active');
+            $(el).addClass('active');
+        }
+
         function openEditModal(id, name, centerId) {
             document.getElementById('editClassId').value = id;
             document.getElementById('editClassName').value = name;
@@ -472,71 +533,35 @@
 
         function applyFilters() {
             var classNameFilter = $('#filterClassName').val().toLowerCase().trim();
-            var teacherFilter = $('#filterTeacher').val().toLowerCase().trim();
-            var subjectFilter = $('#filterSubject').val();
-            var roomFilter = $('#filterRoom').val();
             var statusFilter = $('#filterStatus').val();
-            var startDateFilter = $('#filterStartDate').val();
-            var endDateFilter = $('#filterEndDate').val();
-
-            var visibleCount = 0;
 
             $('.class-row').each(function() {
                 var row = $(this);
                 var cName = row.data('class-name').toLowerCase();
                 var cId = row.data('class-id').toString();
-                var teacher = row.data('teacher').toLowerCase();
-                var subject = row.data('subject');
-                var room = row.data('room');
                 var status = row.data('status');
-                var sDate = row.data('start-date');
-                var eDate = row.data('end-date');
 
                 var matches = true;
 
                 if (classNameFilter && !cName.includes(classNameFilter) && !cId.includes(classNameFilter)) {
                     matches = false;
                 }
-                if (teacherFilter && !teacher.includes(teacherFilter)) {
-                    matches = false;
-                }
-                if (subjectFilter && subject !== subjectFilter) {
-                    matches = false;
-                }
-                if (roomFilter && room !== roomFilter) {
-                    matches = false;
-                }
                 if (statusFilter && status !== statusFilter) {
-                    matches = false;
-                }
-                if (startDateFilter && sDate < startDateFilter) {
-                    matches = false;
-                }
-                if (endDateFilter && eDate > endDateFilter) {
                     matches = false;
                 }
 
                 if (matches) {
                     row.show();
-                    visibleCount++;
                 } else {
                     row.hide();
                 }
             });
-
-            $('#totalCount').text(visibleCount);
         }
 
         function resetFilters() {
             $('#filterClassName').val('');
-            $('#filterTeacher').val('');
-            $('#filterSubject').val('');
-            $('#filterRoom').val('');
             $('#filterStatus').val('');
-            $('#filterStartDate').val('');
-            $('#filterEndDate').val('');
             $('.class-row').show();
-            $('#totalCount').text($('.class-row').length);
         }
     </script>
 }
