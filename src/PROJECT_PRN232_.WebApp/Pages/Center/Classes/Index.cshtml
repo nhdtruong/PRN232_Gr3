@@ -267,8 +267,8 @@
                             <th style="width: 120px;">Mã lớp</th>
                             <th>Tên lớp</th>
                             <th class="text-center" style="width: 100px;">Sĩ số</th>
-                            <th>Ngày khai giảng</th>
-                            <th>Ngày bế giảng</th>
+                            <th>Môn học</th>
+                            <th class="text-center" style="width: 120px;">Tổng số buổi</th>
                             <th style="width: 180px;">Trạng thái</th>
                             <th class="text-center" style="width: 180px;">Thao tác</th>
                         </tr>
@@ -286,8 +286,20 @@
                                 <td class="text-center">
                                     <span class="badge bg-light text-dark border px-2 py-1"><i class="bi bi-people me-1"></i>@c.StudentCount</span>
                                 </td>
-                                <td class="small text-muted">@(c.StartDate?.ToString("dd/MM/yyyy") ?? "01/05/2026")</td>
-                                <td class="small text-muted">@(c.EndDate?.ToString("dd/MM/yyyy") ?? "01/08/2026")</td>
+                                <td class="small">
+                                    @{
+                                        var subjectDisplay = c.Subject switch {
+                                            "ielts" => "IELTS General",
+                                            "toeic" => "TOEIC Intensive",
+                                            "comm" => "Tiếng Anh Giao Tiếp",
+                                            _ => c.Subject ?? "—"
+                                        };
+                                    }
+                                    <span class="badge bg-primary-subtle text-primary border rounded-pill px-2 py-1">@subjectDisplay</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-info-subtle text-info border px-2 py-1"><i class="bi bi-book me-1"></i>@c.TotalLessons buổi</span>
+                                </td>
                                 <td>
                                     @if (c.Status == "Active")
                                     {
