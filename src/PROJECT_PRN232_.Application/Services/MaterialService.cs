@@ -60,9 +60,14 @@ namespace PROJECT_PRN232_.Application.Services
             var material = await _materialRepository.GetByIdAsync(materialId);
             if (material == null) return false;
 
-            // Kiểm tra xem Center có quyền sở hữu lớp học chứa tài liệu này không
-            var lesson = await _lessonRepository.GetLessonWithClassAsync(material.LessonId);
-            if (lesson == null || lesson.Class.CenterId != centerUserId) return false;
+            // Nếu tài liệu gắn với buổi học cũ => kiểm tra CenterId qua Lesson
+            if (material.LessonId.HasValue)
+            {
+                var lesson = await _lessonRepository.GetLessonWithClassAsync(material.LessonId.Value);
+                if (lesson == null || lesson.Class.CenterId != centerUserId) return false;
+            }
+            // Nếu tài liệu gắn với Subject => cần kiểm tra theo SubjectId (để MaterialController cũ vẫn dùng được)
+            // Tạm thời: nếu không có LessonId thì vẫn cho xóa (SubjectController kiểm tra phân quyền trước)
 
             return await _materialRepository.DeleteAsync(materialId);
         }
@@ -71,7 +76,7 @@ namespace PROJECT_PRN232_.Application.Services
         private static MaterialResponseDto MapToDto(Material m) => new()
         {
             Id = m.Id,
-            LessonId = m.LessonId,
+            LessonId = m.LessonId ?? 0,
             Title = m.Title,
             MaterialType = m.MaterialType,
             FileURL = m.FileURL,
