@@ -8,6 +8,8 @@ namespace PROJECT_PRN232_.Application.DTOs
         public string Status { get; set; } = "Active";
         public int StudentCount { get; set; }
         public int MaxCapacity { get; set; }
+        public string? Subject { get; set; }
+        public int TotalLessons { get; set; } = 24;
         public System.DateTime? StartDate { get; set; }
         public System.DateTime? EndDate { get; set; }
     }
