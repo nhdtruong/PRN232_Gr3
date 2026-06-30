@@ -588,34 +588,128 @@
 
 <!-- EDIT CLASS MODAL -->
 <div class="modal fade" id="editClassModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold" style="color: var(--eb-text-dark); font-size: 1.25rem;">Sửa Lớp Học</h5>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-bottom px-4 py-3">
+                <h5 class="modal-title fw-bold text-dark" style="font-size: 1.35rem;">✏️ Sửa lớp học</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="post" asp-page-handler="Update">
                 <input type="hidden" asp-for="UpdateDto.Id" id="editClassId" />
-                <div class="modal-body py-3">
-                    <div class="mb-3">
-                        <label asp-for="UpdateDto.ClassName" class="form-label fw-semibold text-muted small">Tên lớp học</label>
-                        <input asp-for="UpdateDto.ClassName" class="form-control" id="editClassName" required>
-                        <span asp-validation-for="UpdateDto.ClassName" class="text-danger small"></span>
+                <div class="modal-body px-4 py-4" style="background-color: #F8FAFC;">
+                    
+                    <!-- Section: Thông tin lớp học -->
+                    <div class="bg-white rounded-3 p-4 border mb-4">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Thông tin lớp học</h6>
+                        
+                        <div class="row g-3">
+                            <!-- Mã lớp -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small mb-1">Mã lớp</label>
+                                <input class="form-control bg-light" type="text" id="editClassCode" readonly disabled style="cursor: not-allowed;" />
+                            </div>
+                            
+                            <!-- Tên lớp -->
+                            <div class="col-md-6">
+                                <label asp-for="UpdateDto.ClassName" class="form-label fw-semibold text-muted small mb-1">Tên lớp (*)</label>
+                                <input asp-for="UpdateDto.ClassName" class="form-control" id="editClassName" required />
+                                <span asp-validation-for="UpdateDto.ClassName" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Môn học -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
+                                <select class="form-select" id="editClassSubject" required>
+                                    <option value="ielts">IELTS General</option>
+                                    <option value="toeic">TOEIC Intensive</option>
+                                    <option value="comm" selected>Tiếng Anh Giao Tiếp</option>
+                                </select>
+                            </div>
+
+                            <!-- Tổng số buổi -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
+                                <input class="form-control" type="number" id="editTotalLessons" value="24" required />
+                            </div>
+
+                            <!-- Phòng học -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small mb-1">Phòng học (*)</label>
+                                <select class="form-select" id="editClassRoom" required>
+                                    @foreach (var r in Model.Rooms)
+                                    {
+                                        <option value="@r.Id">@r.RoomName (Sức chứa: @r.Capacity)</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Sĩ số tối đa -->
+                            <div class="col-md-6">
+                                <label asp-for="UpdateDto.MaxCapacity" class="form-label fw-semibold text-muted small mb-1">Sĩ số tối đa (*)</label>
+                                <input asp-for="UpdateDto.MaxCapacity" class="form-control" type="number" id="editMaxCapacity" required />
+                                <span asp-validation-for="UpdateDto.MaxCapacity" class="text-danger small"></span>
+                            </div>
+                            
+                            <input asp-for="UpdateDto.CenterId" type="hidden" id="editCenterId" value="1" />
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label asp-for="UpdateDto.CenterId" class="form-label fw-semibold text-muted small">Mã Trung Tâm</label>
-                        <input asp-for="UpdateDto.CenterId" class="form-control" type="number" id="editCenterId" readonly required>
-                        <span asp-validation-for="UpdateDto.CenterId" class="text-danger small"></span>
+
+                    <!-- Section: Lịch học -->
+                    <div class="bg-white rounded-3 p-4 border">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <h6 class="fw-bold text-dark mb-0">Lịch học</h6>
+                            <button type="button" class="btn btn-primary btn-sm rounded-3 px-3 d-inline-flex align-items-center gap-1" id="btnEditAddScheduleRow">
+                                <i class="bi bi-plus-lg"></i> Thêm lịch
+                            </button>
+                        </div>
+
+                        <!-- Schedule Rows Container -->
+                        <div id="editScheduleRowsContainer">
+                            <div class="row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom">
+                                <div class="col-md-3">
+                                    <label class="small text-muted fw-semibold d-block mb-1">Thứ (*)</label>
+                                    <select class="form-select form-select-sm" required>
+                                        <option value="Thứ 2">Thứ 2</option>
+                                        <option value="Thứ 3">Thứ 3</option>
+                                        <option value="Thứ 4">Thứ 4</option>
+                                        <option value="Thứ 5">Thứ 5</option>
+                                        <option value="Thứ 6">Thứ 6</option>
+                                        <option value="Thứ 7">Thứ 7</option>
+                                        <option value="Chủ nhật">Chủ nhật</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="small text-muted fw-semibold d-block mb-1">Ca học gợi ý</label>
+                                    <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                                        <option value="" selected>Tự chọn giờ</option>
+                                        @foreach (var s in Model.Slots)
+                                        {
+                                            <option value="@s.Id" data-start="@s.StartTime.ToString(@"hh\:mm")" data-end="@s.EndTime.ToString(@"hh\:mm")">@s.SlotName (@s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm"))</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="small text-muted fw-semibold d-block mb-1">Giờ bắt đầu (*)</label>
+                                    <input type="time" class="form-control form-control-sm start-time-input" required />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="small text-muted fw-semibold d-block mb-1">Giờ kết thúc (*)</label>
+                                    <input type="time" class="form-control form-control-sm end-time-input" required />
+                                </div>
+                                <div class="col-md-1 text-end">
+                                    <label class="small text-muted fw-semibold d-block mb-1" style="visibility: hidden;">Xóa</label>
+                                    <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeEditScheduleRow(this)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label asp-for="UpdateDto.MaxCapacity" class="form-label fw-semibold text-muted small">Sĩ số tối đa</label>
-                        <input asp-for="UpdateDto.MaxCapacity" class="form-control" type="number" id="editMaxCapacity" required>
-                        <span asp-validation-for="UpdateDto.MaxCapacity" class="text-danger small"></span>
-                    </div>
+
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="eb-btn-outline py-2" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="eb-btn-primary py-2">Lưu Thay Đổi</button>
+                <div class="modal-footer border-top px-4 py-3" style="background-color: #F8FAFC;">
+                    <button type="button" class="btn btn-light rounded-3 border px-4 py-2 fw-semibold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-3 px-4 py-2 fw-semibold" style="background: var(--eb-indigo-gradient); border: none;">Lưu thay đổi</button>
                 </div>
             </form>
         </div>
@@ -637,6 +731,10 @@
             document.getElementById('editClassName').value = name;
             document.getElementById('editCenterId').value = centerId;
             document.getElementById('editMaxCapacity').value = maxCapacity;
+
+            // Generate class code representation
+            const formattedId = ("0000" + id).slice(-4);
+            document.getElementById('editClassCode').value = `CLS-${centerId}-${new Date().getFullYear()}${("0" + (new Date().getMonth() + 1)).slice(-2)}-${formattedId}`;
         }
 
         function applyFilters() {
@@ -726,7 +824,7 @@
 
         function onSlotSuggestionChanged(selectElement) {
             const selectedOption = selectElement.options[selectElement.selectedIndex];
-            const row = selectElement.closest('.schedule-row-item');
+            const row = selectElement.closest('.schedule-row-item, .edit-schedule-row-item');
             const startTimeInput = row.querySelector('.start-time-input');
             const endTimeInput = row.querySelector('.end-time-input');
 
@@ -738,6 +836,59 @@
             } else {
                 startTimeInput.value = "";
                 endTimeInput.value = "";
+            }
+        }
+
+        // --- EDIT MODAL DYNAMIC SCHEDULING SCRIPTS ---
+        const btnEditAdd = document.getElementById('btnEditAddScheduleRow');
+        if (btnEditAdd) {
+            btnEditAdd.addEventListener('click', function() {
+                const container = document.getElementById('editScheduleRowsContainer');
+                const newRow = document.createElement('div');
+                newRow.className = 'row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom';
+                
+                // Reuse slot options
+                const slotsOptions = document.querySelector('.slot-suggestion-select').innerHTML;
+
+                newRow.innerHTML = `
+                    <div class="col-md-3">
+                        <select class="form-select form-select-sm" required>
+                            <option value="Thứ 2">Thứ 2</option>
+                            <option value="Thứ 3">Thứ 3</option>
+                            <option value="Thứ 4">Thứ 4</option>
+                            <option value="Thứ 5">Thứ 5</option>
+                            <option value="Thứ 6">Thứ 6</option>
+                            <option value="Thứ 7">Thứ 7</option>
+                            <option value="Chủ nhật">Chủ nhật</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                            ${slotsOptions}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="time" class="form-control form-control-sm start-time-input" required />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="time" class="form-control form-control-sm end-time-input" required />
+                    </div>
+                    <div class="col-md-1 text-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeEditScheduleRow(this)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(newRow);
+            });
+        }
+
+        function removeEditScheduleRow(button) {
+            const rows = document.querySelectorAll('.edit-schedule-row-item');
+            if (rows.length > 1) {
+                button.closest('.edit-schedule-row-item').remove();
+            } else {
+                alert("Lớp học phải đăng ký tối thiểu một lịch học!");
             }
         }
     </script>
