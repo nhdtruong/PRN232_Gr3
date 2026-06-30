@@ -735,6 +735,81 @@
             // Generate class code representation
             const formattedId = ("0000" + id).slice(-4);
             document.getElementById('editClassCode').value = `CLS-${centerId}-${new Date().getFullYear()}${("0" + (new Date().getMonth() + 1)).slice(-2)}-${formattedId}`;
+
+            // Fetch dynamic schedule and slots
+            const container = document.getElementById('editScheduleRowsContainer');
+            container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading schedule...</div>';
+
+            fetch(`?handler=ClassLessons&classId=${id}`)
+                .then(res => res.json())
+                .then(lessons => {
+                    container.innerHTML = '';
+                    if (!lessons || lessons.length === 0) {
+                        container.innerHTML = '<div class="text-muted small text-center py-2">Chưa thiết lập lịch học cho lớp này. Hãy bấm Thêm lịch để tạo!</div>';
+                        return;
+                    }
+
+                    // Group lessons by Day of Week or show individual slots
+                    // We render rows corresponding to the lessons configured for this class
+                    const slotsOptions = document.querySelector('.slot-suggestion-select').innerHTML;
+
+                    lessons.forEach((l, idx) => {
+                        const newRow = document.createElement('div');
+                        newRow.className = 'row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom';
+                        
+                        // Map DayOfWeek number to Vietnam Day String
+                        const daysMap = { 0: "Chủ nhật", 1: "Thứ 2", 2: "Thứ 3", 3: "Thứ 4", 4: "Thứ 5", 5: "Thứ 6", 6: "Thứ 7" };
+                        const vnDay = daysMap[l.dayOfWeek] || "Thứ 2";
+
+                        newRow.innerHTML = `
+                            <div class="col-md-3">
+                                <select class="form-select form-select-sm edit-day-select" required>
+                                    <option value="Thứ 2" ${vnDay === "Thứ 2" ? "selected" : ""}>Thứ 2</option>
+                                    <option value="Thứ 3" ${vnDay === "Thứ 3" ? "selected" : ""}>Thứ 3</option>
+                                    <option value="Thứ 4" ${vnDay === "Thứ 4" ? "selected" : ""}>Thứ 4</option>
+                                    <option value="Thứ 5" ${vnDay === "Thứ 5" ? "selected" : ""}>Thứ 5</option>
+                                    <option value="Thứ 6" ${vnDay === "Thứ 6" ? "selected" : ""}>Thứ 6</option>
+                                    <option value="Thứ 7" ${vnDay === "Thứ 7" ? "selected" : ""}>Thứ 7</option>
+                                    <option value="Chủ nhật" ${vnDay === "Chủ nhật" ? "selected" : ""}>Chủ nhật</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
+                                    ${slotsOptions}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="time" class="form-control form-control-sm start-time-input" required />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="time" class="form-control form-control-sm end-time-input" required />
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeEditScheduleRow(this)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        `;
+
+                        container.appendChild(newRow);
+
+                        // If slot ID is present, trigger automatic slot value population
+                        const selectElement = newRow.querySelector('.slot-suggestion-select');
+                        if (l.slotId) {
+                            selectElement.value = l.slotId;
+                            onSlotSuggestionChanged(selectElement);
+                        }
+
+                        // Update edit room select based on the first lesson room
+                        if (idx === 0 && l.roomId) {
+                            document.getElementById('editClassRoom').value = l.roomId;
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.error("Fetch schedule error:", err);
+                    container.innerHTML = '<div class="text-danger small text-center py-2">Không thể tải lịch học.</div>';
+                });
         }
 
         function applyFilters() {

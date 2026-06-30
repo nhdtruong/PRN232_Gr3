@@ -49,6 +49,24 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
             Slots = await _context.Slots.OrderBy(s => s.StartTime).ToListAsync();
         }
 
+        public async Task<JsonResult> OnGetClassLessonsAsync(int classId)
+        {
+            var lessons = await _context.Lessons
+                .Where(l => l.ClassId == classId)
+                .OrderBy(l => l.LessonDate)
+                .Select(l => new 
+                {
+                    l.Id,
+                    l.RoomId,
+                    l.SlotId,
+                    LessonDate = l.LessonDate.ToString("yyyy-MM-dd"),
+                    DayOfWeek = l.LessonDate.DayOfWeek
+                })
+                .ToListAsync();
+
+            return new JsonResult(lessons);
+        }
+
         public async Task<IActionResult> OnPostCreateAsync()
         {
             ModelState.Clear();
