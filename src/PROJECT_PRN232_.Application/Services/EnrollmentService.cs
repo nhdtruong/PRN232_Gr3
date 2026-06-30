@@ -12,17 +12,20 @@ namespace PROJECT_PRN232_.Application.Services
         private readonly IClassRepository _classRepository;
         private readonly IStudentRepository _studentRepository;
         private readonly INotificationService _notificationService;
+        private readonly ILessonRepository _lessonRepository;
 
         public EnrollmentService(
             IClassStudentRepository classStudentRepository,
             IClassRepository classRepository,
             IStudentRepository studentRepository,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            ILessonRepository lessonRepository)
         {
             _classStudentRepository = classStudentRepository;
             _classRepository = classRepository;
             _studentRepository = studentRepository;
             _notificationService = notificationService;
+            _lessonRepository = lessonRepository;
         }
 
         public async Task<IEnumerable<Student>> GetStudentsInClassAsync(int classId)
@@ -54,6 +57,13 @@ namespace PROJECT_PRN232_.Application.Services
                 throw new InvalidOperationException("Không thể thêm học viên vào lớp học đã đóng.");
             }
 
+            // Check class capacity
+            var activeStudents = await _classStudentRepository.GetStudentsByClassIdAsync(classId);
+            if (activeStudents.Count() >= classEntity.MaxCapacity)
+            {
+                throw new InvalidOperationException($"Lớp học đã đạt sĩ số tối đa ({classEntity.MaxCapacity} học viên). Không thể xếp thêm.");
+            }
+
             // 3. Check if student exists
             var student = await _studentRepository.GetByIdAsync(studentId);
             if (student == null)
@@ -68,6 +78,31 @@ namespace PROJECT_PRN232_.Application.Services
                 throw new InvalidOperationException("Học sinh này đã đăng ký học ở lớp này rồi.");
             }
 
+            // Check for student schedule overlap (Lessons inside class)
+            var targetClassLessons = await _lessonRepository.GetByClassIdAsync(classId);
+            
+            var studentEnrollments = await _classStudentRepository.GetEnrollmentsByStudentIdAsync(studentId);
+            var studentClassIds = studentEnrollments.Select(e => e.ClassId).ToList();
+
+            foreach (var enrolledClassId in studentClassIds)
+            {
+                var enrolledClassLessons = await _lessonRepository.GetByClassIdAsync(enrolledClassId);
+                foreach (var targetLesson in targetClassLessons)
+                {
+                    if (targetLesson.SlotId.HasValue)
+                    {
+                        var collision = enrolledClassLessons.FirstOrDefault(el => 
+                            el.LessonDate.Date == targetLesson.LessonDate.Date && 
+                            el.SlotId == targetLesson.SlotId);
+                        
+                        if (collision != null)
+                        {
+                            throw new InvalidOperationException($"Lịch học bị trùng! Học viên đã có lịch học lớp '{collision.Class?.ClassName}' vào ngày {targetLesson.LessonDate:dd/MM/yyyy} ({targetLesson.Slot?.SlotName ?? "Ca học " + targetLesson.SlotId}).");
+                        }
+                    }
+                }
+            }
+            
             // 5. Create enrollment
             var enrollment = new ClassStudent
             {

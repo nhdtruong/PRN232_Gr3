@@ -57,6 +57,30 @@ namespace PROJECT_PRN232_.Infrastructure.Data
                 context.SaveChanges();
             }
 
+            // 0. Seed Rooms & Slots
+            if (!context.Rooms.Any())
+            {
+                context.Rooms.AddRange(
+                    new Room { RoomName = "Phòng 101", Capacity = 30, Equipment = "Máy chiếu, Điều hòa, Bảng tương tác", Status = "Active" },
+                    new Room { RoomName = "Phòng Test 01", Capacity = 20, Equipment = "Máy chiếu, Điều hòa", Status = "Active" },
+                    new Room { RoomName = "Phòng Test 02", Capacity = 25, Equipment = "Máy chiếu, Điều hòa, Tivi 75 inch", Status = "Active" },
+                    new Room { RoomName = "Phòng Lab A", Capacity = 40, Equipment = "40 Máy tính cấu hình cao, Máy chiếu", Status = "Active" }
+                );
+                context.SaveChanges();
+            }
+
+            if (!context.Slots.Any())
+            {
+                context.Slots.AddRange(
+                    new Slot { SlotName = "Ca 1 (Sáng)", StartTime = new System.TimeSpan(8, 0, 0), EndTime = new System.TimeSpan(9, 30, 0) },
+                    new Slot { SlotName = "Ca 2 (Sáng)", StartTime = new System.TimeSpan(10, 0, 0), EndTime = new System.TimeSpan(11, 30, 0) },
+                    new Slot { SlotName = "Ca 3 (Chiều)", StartTime = new System.TimeSpan(14, 0, 0), EndTime = new System.TimeSpan(15, 30, 0) },
+                    new Slot { SlotName = "Ca 4 (Chiều)", StartTime = new System.TimeSpan(16, 0, 0), EndTime = new System.TimeSpan(17, 30, 0) },
+                    new Slot { SlotName = "Ca Tối", StartTime = new System.TimeSpan(18, 0, 0), EndTime = new System.TimeSpan(19, 30, 0) }
+                );
+                context.SaveChanges();
+            }
+
             // Lấy ID của Center và Parent hiện có để phục vụ liên kết
             var center = context.Users.FirstOrDefault(u => u.Role == "Center");
             var parent = context.Users.FirstOrDefault(u => u.Role == "Parent");

@@ -13,5 +13,7 @@ namespace PROJECT_PRN232_.Application.DTOs
 
         [Required(ErrorMessage = "Mã trung tâm không được để trống")]
         public int CenterId { get; set; }
+
+        public int MaxCapacity { get; set; }
     }
 }

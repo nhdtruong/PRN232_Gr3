@@ -16,5 +16,8 @@ namespace PROJECT_PRN232_.Application.DTOs
 
         [Required]
         public DateTime LessonDate { get; set; }
+
+        public int? RoomId { get; set; }
+        public int? SlotId { get; set; }
     }
 }

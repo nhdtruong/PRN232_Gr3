@@ -11,5 +11,11 @@ namespace PROJECT_PRN232_.Application.DTOs
         public string? Description { get; set; }
         public DateTime LessonDate { get; set; }
         public bool IsPublished { get; set; }
+        public int? RoomId { get; set; }
+        public string? RoomName { get; set; }
+        public int? SlotId { get; set; }
+        public string? SlotName { get; set; }
+        public TimeSpan? StartTime { get; set; }
+        public TimeSpan? EndTime { get; set; }
     }
 }

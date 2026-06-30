@@ -49,12 +49,23 @@ namespace PROJECT_PRN232_.Application.Services
                 throw new UnauthorizedAccessException("Bạn không có quyền thêm buổi học cho lớp này.");
             }
 
+            if (dto.RoomId.HasValue && dto.SlotId.HasValue)
+            {
+                var isCollided = await _lessonRepository.CheckCollisionAsync(dto.LessonDate, dto.SlotId.Value, dto.RoomId.Value);
+                if (isCollided)
+                {
+                    throw new InvalidOperationException("Phòng học này đã có lớp khác sử dụng ở ca học và ngày được chọn.");
+                }
+            }
+
             var lesson = new Lesson
             {
                 ClassId = dto.ClassId,
                 Title = dto.Title,
                 Description = dto.Description,
                 LessonDate = dto.LessonDate,
+                RoomId = dto.RoomId,
+                SlotId = dto.SlotId,
                 IsPublished = false
             };
 
@@ -69,9 +80,20 @@ namespace PROJECT_PRN232_.Application.Services
 
             if (existing.Class.CenterId != centerUserId) return false;
 
+            if (dto.RoomId.HasValue && dto.SlotId.HasValue)
+            {
+                var isCollided = await _lessonRepository.CheckCollisionAsync(dto.LessonDate, dto.SlotId.Value, dto.RoomId.Value, dto.Id);
+                if (isCollided)
+                {
+                    throw new InvalidOperationException("Phòng học này đã có lớp khác sử dụng ở ca học và ngày được chọn.");
+                }
+            }
+
             existing.Title = dto.Title;
             existing.Description = dto.Description;
             existing.LessonDate = dto.LessonDate;
+            existing.RoomId = dto.RoomId;
+            existing.SlotId = dto.SlotId;
 
             return await _lessonRepository.UpdateAsync(existing);
         }
@@ -131,7 +153,13 @@ namespace PROJECT_PRN232_.Application.Services
             Title = l.Title,
             Description = l.Description,
             LessonDate = l.LessonDate,
-            IsPublished = l.IsPublished
+            IsPublished = l.IsPublished,
+            RoomId = l.RoomId,
+            RoomName = l.Room?.RoomName,
+            SlotId = l.SlotId,
+            SlotName = l.Slot?.SlotName,
+            StartTime = l.Slot?.StartTime,
+            EndTime = l.Slot?.EndTime
         };
     }
 }
