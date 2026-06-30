@@ -648,6 +648,14 @@
             }
         ];
 
+        const globalSlotsOptions = `
+            <option value="">Tự chọn giờ</option>
+            @foreach (var s in Model.Slots)
+            {
+                <option value="@s.Id" data-start="@s.StartTime.ToString(@"hh\:mm")" data-end="@s.EndTime.ToString(@"hh\:mm")">@s.SlotName (@s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm"))</option>
+            }
+        `;
+
         let allClasses = [];
 
         function switchTab(tabId, el) {
@@ -817,7 +825,7 @@
             const container = document.getElementById('editScheduleRowsContainer');
             container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading schedule...</div>';
 
-            fetch(`/api/center/classes/${id}/lessons`)
+            fetch(`/api/center/classes/${id}/schedules`)
                 .then(res => res.json())
                 .then(data => {
                     container.innerHTML = '';
@@ -840,8 +848,7 @@
                     }
 
                     const lessons = data.lessons;
-                    const allSlotSelects = document.querySelectorAll('#scheduleRowsContainer .slot-suggestion-select');
-                    const slotsOptionsRef = allSlotSelects.length > 0 ? allSlotSelects[0].innerHTML : '';
+                    const slotsOptionsRef = globalSlotsOptions;
 
                     if (!lessons || lessons.length === 0) {
                         container.innerHTML = `
@@ -1026,7 +1033,7 @@
             const container = document.getElementById('scheduleRowsContainer');
             const newRow = document.createElement('div');
             newRow.className = 'row g-2 align-items-center schedule-row-item mb-2 pb-2 border-bottom';
-            const slotsOptions = document.querySelector('.slot-suggestion-select').innerHTML;
+            const slotsOptions = globalSlotsOptions;
 
             newRow.innerHTML = `
                 <div class="col-md-3">
@@ -1088,7 +1095,7 @@
             const container = document.getElementById('editScheduleRowsContainer');
             const newRow = document.createElement('div');
             newRow.className = 'row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom';
-            const slotsOptions = document.querySelector('.slot-suggestion-select').innerHTML;
+            const slotsOptions = globalSlotsOptions;
 
             newRow.innerHTML = `
                 <div class="col-md-3">
