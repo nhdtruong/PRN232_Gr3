@@ -369,8 +369,8 @@ namespace PROJECT_PRN232_.Controllers
             }
         }
 
-        [HttpGet("api/center/classes/{classId}/lessons")]
-        public async Task<IActionResult> GetClassLessons(int classId)
+        [HttpGet("api/center/classes/{classId}/schedules")]
+        public async Task<IActionResult> GetClassSchedules(int classId)
         {
             var classObj = await _context.Classes.FindAsync(classId);
             if (classObj == null)
