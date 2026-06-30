@@ -730,7 +730,12 @@
             document.getElementById('editClassId').value = id;
             document.getElementById('editClassName').value = name;
             document.getElementById('editCenterId').value = centerId;
-            document.getElementById('editMaxCapacity').value = maxCapacity;
+            
+            // Set Max Capacity securely with numeric default fallback
+            const maxCapInput = document.getElementById('editMaxCapacity');
+            if (maxCapInput) {
+                maxCapInput.value = maxCapacity || 30;
+            }
 
             // Generate class code representation
             const formattedId = ("0000" + id).slice(-4);
