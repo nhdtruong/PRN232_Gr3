@@ -1,81 +1,290 @@
 @page
 @model PROJECT_PRN232_.WebApp.Pages.Center.Parents.IndexModel
-
 @{
-    ViewData["Title"] = "Danh sách Phụ huynh";
+    ViewData["Title"] = "Quản lý Phụ huynh - REST API";
 }
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Danh sách Phụ huynh</h2>
-        <a asp-page="./Create" class="btn btn-primary">Thêm phụ huynh mới</a>
+        <h2 class="fw-bold text-dark">👥 Quản lý Phụ huynh</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createParentModal">
+            <i class="bi bi-plus-lg me-1"></i> Thêm phụ huynh mới
+        </button>
     </div>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
+    <div id="alertContainer"></div>
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <table class="table table-hover table-bordered mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Họ và Tên</th>
-                        <th>Tên đăng nhập</th>
-                        <th>Email</th>
-                        <th>Số điện thoại</th>
-                        <th>Trạng thái</th>
-                        <th>Ngày tạo</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var parent in Model.ParentUsers)
-                    {
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light text-uppercase font-semibold" style="font-size: 0.85rem;">
                         <tr>
-                            <td>@parent.Id</td>
-                            <td>@parent.FullName</td>
-                            <td>@parent.Username</td>
-                            <td>@parent.Email</td>
-                            <td>@parent.Phone</td>
-                            <td>
-                                @if(parent.IsActive)
-                                {
-                                    <span class="badge bg-success">Hoạt động</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-danger">Khóa</span>
-                                }
-                            </td>
-                            <td>@parent.CreatedAt.ToString("dd/MM/yyyy")</td>
-                            <td>
-                                <div class="d-flex gap-1">
-                                    <a asp-page="./Details" asp-route-id="@parent.Id" class="btn btn-sm btn-info text-white">Chi tiết</a>
-                                    <a asp-page="./Edit" asp-route-id="@parent.Id" class="btn btn-sm btn-warning text-white">Sửa</a>
-                                    <a href="/Center/Chat/Index?parentId=@parent.Id" class="btn btn-sm btn-success" title="Nhắn tin"><i class="bi bi-chat-dots"></i> Nhắn tin</a>
-                                    <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@parent.Id" onsubmit="return confirm('Bạn có chắc chắn muốn @(parent.IsActive ? "khóa" : "mở khóa") tài khoản này?');" style="display:inline;">
-                                        <button type="submit" class="btn btn-sm @(parent.IsActive ? "btn-danger" : "btn-success")">
-                                            @(parent.IsActive ? "Khóa" : "Mở khóa")
-                                        </button>
-                                    </form>
-                                </div>
+                            <th class="ps-3">ID</th>
+                            <th>Họ và Tên</th>
+                            <th>Tên đăng nhập</th>
+                            <th>Email</th>
+                            <th>Số điện thoại</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th class="text-center" style="width: 250px;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="parentsTableBody">
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span> Đang tải dữ liệu phụ huynh...
                             </td>
                         </tr>
-                    }
-                    @if(!Model.ParentUsers.Any())
-                    {
-                        <tr>
-                            <td colspan="8" class="text-center">Chưa có dữ liệu phụ huynh.</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- CREATE PARENT MODAL -->
+<div class="modal fade" id="createParentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 border-0 shadow-lg">
+            <div class="modal-header px-4 py-3">
+                <h5 class="modal-title fw-bold text-dark">📝 Tạo tài khoản phụ huynh</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createParentForm">
+                <div class="modal-body px-4 py-3" style="background-color: #F8FAFC;">
+                    <div class="create-error-container"></div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Họ và Tên (*)</label>
+                        <input id="createFullName" class="form-control" placeholder="Họ và tên..." required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Tên đăng nhập (*)</label>
+                        <input id="createUsername" class="form-control" placeholder="Tên đăng nhập..." required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Mật khẩu (*)</label>
+                        <input id="createPassword" type="password" class="form-control" placeholder="Mật khẩu..." required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Email</label>
+                        <input id="createEmail" type="email" class="form-control" placeholder="example@gmail.com" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Số điện thoại</label>
+                        <input id="createPhone" class="form-control" placeholder="Số điện thoại..." />
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3" style="background-color: #F8FAFC;">
+                    <button type="button" class="btn btn-light border px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary px-4">Lưu phụ huynh</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT PARENT MODAL -->
+<div class="modal fade" id="editParentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 border-0 shadow-lg">
+            <div class="modal-header px-4 py-3">
+                <h5 class="modal-title fw-bold text-dark">✏️ Cập nhật thông tin phụ huynh</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editParentForm">
+                <input type="hidden" id="editParentId" />
+                <div class="modal-body px-4 py-3" style="background-color: #F8FAFC;">
+                    <div class="edit-error-container"></div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Họ và Tên (*)</label>
+                        <input id="editFullName" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Email</label>
+                        <input id="editEmail" type="email" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Số điện thoại</label>
+                        <input id="editPhone" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3" style="background-color: #F8FAFC;">
+                    <button type="button" class="btn btn-light border px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary px-4">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function loadParents() {
+            fetch('/api/center/parents')
+                .then(res => res.json())
+                .then(data => {
+                    renderParents(data);
+                })
+                .catch(err => {
+                    console.error("Lỗi tải phụ huynh:", err);
+                    $('#parentsTableBody').html('<tr><td colspan="8" class="text-center text-danger py-4">Không thể kết nối đến máy chủ.</td></tr>');
+                });
+        }
+
+        function renderParents(parents) {
+            const tbody = document.getElementById('parentsTableBody');
+            if (parents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Chưa có phụ huynh nào.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            parents.forEach(p => {
+                const statusBadge = p.isActive 
+                    ? '<span class="badge bg-success-subtle text-success border px-2 py-1 rounded-pill">Hoạt động</span>'
+                    : '<span class="badge bg-danger-subtle text-danger border px-2 py-1 rounded-pill">Khóa</span>';
+                
+                const toggleBtn = p.isActive 
+                    ? `<button class="btn btn-sm btn-danger px-2" onclick="toggleStatus(${p.id})">Khóa</button>`
+                    : `<button class="btn btn-sm btn-success px-2" onclick="toggleStatus(${p.id})">Mở khóa</button>`;
+
+                html += `
+                    <tr>
+                        <td class="ps-3 fw-bold">${p.id}</td>
+                        <td class="fw-bold text-dark">${p.fullName}</td>
+                        <td>${p.username}</td>
+                        <td>${p.email || '—'}</td>
+                        <td>${p.phone || '—'}</td>
+                        <td>${statusBadge}</td>
+                        <td class="small text-muted">${new Date(p.createdAt).toLocaleDateString('vi-VN')}</td>
+                        <td class="text-center">
+                            <div class="d-inline-flex gap-1">
+                                <button class="btn btn-sm btn-warning text-white px-2" onclick="openEditModal(${p.id}, '${p.fullName}', '${p.email || ''}', '${p.phone || ''}')" data-bs-toggle="modal" data-bs-target="#editParentModal">Sửa</button>
+                                <a href="/Center/Chat/Index?parentId=${p.id}" class="btn btn-sm btn-success px-2"><i class="bi bi-chat-dots"></i> Nhắn tin</a>
+                                ${toggleBtn}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // Tạo tài khoản
+        document.getElementById('createParentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            $('.create-error-container').html('');
+
+            const bodyData = {
+                fullName: document.getElementById('createFullName').value,
+                username: document.getElementById('createUsername').value,
+                password: document.getElementById('createPassword').value,
+                email: document.getElementById('createEmail').value || null,
+                phone: document.getElementById('createPhone').value || null
+            };
+
+            fetch('/api/center/parents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyData)
+            })
+            .then(async res => {
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.message || "Tạo phụ huynh thất bại.");
+                }
+                return res.json();
+            })
+            .then(() => {
+                bootstrap.Modal.getInstance(document.getElementById('createParentModal')).hide();
+                showAlert("Tạo phụ huynh thành công!", "success");
+                loadParents();
+                document.getElementById('createParentForm').reset();
+            })
+            .catch(err => {
+                $('.create-error-container').html(`
+                    <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>${err.message}
+                    </div>
+                `);
+            });
+        });
+
+        // Toggle Status
+        function toggleStatus(id) {
+            if (!confirm("Bạn có chắc muốn thực hiện thay đổi trạng thái tài khoản này?")) return;
+
+            fetch(`/api/center/parents/${id}/toggle-status`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    showAlert(data.message, "success");
+                    loadParents();
+                })
+                .catch(err => {
+                    showAlert("Thay đổi trạng thái thất bại.", "danger");
+                });
+        }
+
+        // Mở popup Edit
+        function openEditModal(id, fullName, email, phone) {
+            $('.edit-error-container').html('');
+            document.getElementById('editParentId').value = id;
+            document.getElementById('editFullName').value = fullName;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editPhone').value = phone;
+        }
+
+        // Cập nhật tài khoản
+        document.getElementById('editParentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            $('.edit-error-container').html('');
+
+            const id = document.getElementById('editParentId').value;
+            const bodyData = {
+                fullName: document.getElementById('editFullName').value,
+                email: document.getElementById('editEmail').value || null,
+                phone: document.getElementById('editPhone').value || null
+            };
+
+            fetch(`/api/center/parents/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyData)
+            })
+            .then(async res => {
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.message || "Cập nhật phụ huynh thất bại.");
+                }
+            })
+            .then(() => {
+                bootstrap.Modal.getInstance(document.getElementById('editParentModal')).hide();
+                showAlert("Cập nhật phụ huynh thành công!", "success");
+                loadParents();
+            })
+            .catch(err => {
+                $('.edit-error-container').html(`
+                    <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>${err.message}
+                    </div>
+                `);
+            });
+        });
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            container.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show border-0 rounded-3 shadow-sm" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        $(document).ready(function () {
+            loadParents();
+        });
+    </script>
+}
