@@ -784,12 +784,16 @@
                     }
 
                     const lessons = data.lessons;
+                    // Lấy slotsOptions từ Create modal (đảm bảo lấy đúng)
+                    const allSlotSelects = document.querySelectorAll('#scheduleRowsContainer .slot-suggestion-select');
+                    const slotsOptionsRef = allSlotSelects.length > 0 ? allSlotSelects[0].innerHTML : '';
+
                     if (!lessons || lessons.length === 0) {
-                        // Render a single blank default schedule row to prevent empty visual space
+                        // Render a single blank default schedule row with proper name attributes
                         container.innerHTML = `
                             <div class="row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom">
                                 <div class="col-md-3">
-                                    <select class="form-select form-select-sm edit-day-select" required>
+                                    <select class="form-select form-select-sm edit-day-select" name="UpdateDayOfWeek[]" required>
                                         <option value="Thứ 2" selected>Thứ 2</option>
                                         <option value="Thứ 3">Thứ 3</option>
                                         <option value="Thứ 4">Thứ 4</option>
@@ -800,9 +804,8 @@
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <select class="form-select form-select-sm slot-suggestion-select" onchange="onSlotSuggestionChanged(this)">
-                                        <option value="" selected>Tự chọn giờ</option>
-                                        ${document.querySelector('.slot-suggestion-select') ? document.querySelector('.slot-suggestion-select').innerHTML : ''}
+                                    <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
+                                        ${slotsOptionsRef}
                                     </select>
                                 </div>
                                 <div class="col-md-2">
@@ -820,8 +823,6 @@
                         `;
                         return;
                     }
-
-                    const slotsOptions = document.querySelector('.slot-suggestion-select') ? document.querySelector('.slot-suggestion-select').innerHTML : '';
 
                     lessons.forEach((l, idx) => {
                         const newRow = document.createElement('div');
@@ -845,7 +846,7 @@
                             </div>
                             <div class="col-md-4">
                                 <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
-                                    ${slotsOptions}
+                                    ${slotsOptionsRef}
                                 </select>
                             </div>
                             <div class="col-md-2">

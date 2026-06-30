@@ -42,6 +42,12 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
         [BindProperty]
         public Slot SlotInput { get; set; } = new();
 
+        [BindProperty]
+        public int CreateRoomId { get; set; }
+
+        [BindProperty]
+        public int UpdateRoomId { get; set; }
+
         public async Task OnGetAsync()
         {
             Classes = await _classService.GetAllClassesAsync();
@@ -49,41 +55,60 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
             Slots = await _context.Slots.OrderBy(s => s.StartTime).ToListAsync();
         }
 
+        /// <summary>
+        /// AJAX endpoint: trả về thông tin lớp + lịch học UNIQUE (deduplicated by DayOfWeek + SlotId)
+        /// để hiển thị vào Edit Modal — chỉ hiện các mẫu lịch, không hiện toàn bộ 24 buổi
+        /// </summary>
         public async Task<JsonResult> OnGetClassLessonsAsync(int classId)
         {
             var classObj = await _context.Classes.FindAsync(classId);
-            var lessons = await _context.Lessons
+            if (classObj == null)
+            {
+                return new JsonResult(new { error = "Không tìm thấy lớp học" });
+            }
+
+            // Lấy tất cả lessons của lớp, sắp xếp theo ngày
+            var allLessons = await _context.Lessons
                 .Where(l => l.ClassId == classId)
                 .OrderBy(l => l.LessonDate)
-                .Select(l => new 
+                .Select(l => new
                 {
                     l.Id,
                     l.RoomId,
                     l.SlotId,
-                    LessonDate = l.LessonDate.ToString("yyyy-MM-dd"),
-                    DayOfWeek = l.LessonDate.DayOfWeek
+                    LessonDate = l.LessonDate,
+                    DayOfWeek = (int)l.LessonDate.DayOfWeek
                 })
                 .ToListAsync();
 
-            // Lấy thông tin phòng học đầu tiên của các buổi học hoặc lấy ngẫu nhiên một phòng
-            var firstRoomId = lessons.FirstOrDefault(l => l.RoomId.HasValue)?.RoomId;
+            // Lấy roomId đầu tiên từ lessons
+            var firstRoomId = allLessons.FirstOrDefault(l => l.RoomId.HasValue)?.RoomId;
+
+            // Deduplicate: chỉ giữ các mẫu lịch UNIQUE (DayOfWeek + SlotId)
+            // để hiển thị vào phần "Lịch học" trong Edit Modal
+            var uniqueSchedules = allLessons
+                .GroupBy(l => new { l.DayOfWeek, l.SlotId })
+                .Select(g => g.First())
+                .Select(l => new
+                {
+                    l.RoomId,
+                    l.SlotId,
+                    l.DayOfWeek
+                })
+                .ToList();
 
             return new JsonResult(new
             {
                 classId = classId,
-                className = classObj?.ClassName ?? "",
-                maxCapacity = classObj?.MaxCapacity ?? 30,
+                className = classObj.ClassName,
+                maxCapacity = classObj.MaxCapacity,
+                totalLessons = classObj.TotalLessons,  // lấy từ Class, không đếm Lessons
                 roomId = firstRoomId,
-                totalLessons = lessons.Count, // Tổng số buổi thực tế từ bảng Lessons
-                lessons = lessons
+                subject = classObj.Subject,
+                // Trả về lịch UNIQUE để hiển thị vào form
+                lessons = uniqueSchedules
             });
         }
-
-        [BindProperty]
-        public int CreateRoomId { get; set; }
-
-        [BindProperty]
-        public int UpdateRoomId { get; set; }
 
         public async Task<IActionResult> OnPostCreateAsync()
         {
@@ -108,7 +133,7 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
                 var lessonsCreated = 0;
                 var currentCheckingDate = startDate;
 
-                // Chuẩn hóa danh sách thứ trong tuần (1 = Thứ 2, 2 = Thứ 3, ..., 0 = Chủ nhật)
+                // Chuẩn hóa danh sách thứ trong tuần
                 var targetDaysMap = new Dictionary<string, DayOfWeek>
                 {
                     { "Thứ 2", DayOfWeek.Monday },
@@ -123,7 +148,8 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
                 var scheduleList = new List<(DayOfWeek day, int slotId)>();
                 for (int i = 0; i < days.Count; i++)
                 {
-                    if (targetDaysMap.TryGetValue(days[i], out DayOfWeek targetDay) && int.TryParse(slots[i], out int slotId))
+                    if (targetDaysMap.TryGetValue(days[i]!, out DayOfWeek targetDay)
+                        && int.TryParse(slots[i], out int slotId))
                     {
                         scheduleList.Add((targetDay, slotId));
                     }
@@ -133,23 +159,29 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
                 {
                     while (lessonsCreated < totalLessonsNeeded)
                     {
-                        var matchingSchedule = scheduleList.FirstOrDefault(s => s.day == currentCheckingDate.DayOfWeek);
-                        if (matchingSchedule != default)
+                        foreach (var schedule in scheduleList)
                         {
-                            var lesson = new Lesson
+                            if (lessonsCreated >= totalLessonsNeeded) break;
+                            if (schedule.day == currentCheckingDate.DayOfWeek)
                             {
-                                ClassId = createdClass.Id,
-                                Title = $"Buổi {lessonsCreated + 1}",
-                                Description = $"Bài học buổi thứ {lessonsCreated + 1} của lớp {createdClass.ClassName}",
-                                LessonDate = currentCheckingDate,
-                                RoomId = CreateRoomId > 0 ? CreateRoomId : (int?)null,
-                                SlotId = matchingSchedule.slotId,
-                                IsPublished = true
-                            };
-                            _context.Lessons.Add(lesson);
-                            lessonsCreated++;
+                                var lesson = new Lesson
+                                {
+                                    ClassId = createdClass.Id,
+                                    Title = $"Buổi {lessonsCreated + 1}",
+                                    Description = $"Bài học buổi thứ {lessonsCreated + 1} của lớp {createdClass.ClassName}",
+                                    LessonDate = currentCheckingDate,
+                                    RoomId = CreateRoomId > 0 ? CreateRoomId : (int?)null,
+                                    SlotId = schedule.slotId,
+                                    IsPublished = true
+                                };
+                                _context.Lessons.Add(lesson);
+                                lessonsCreated++;
+                            }
                         }
                         currentCheckingDate = currentCheckingDate.AddDays(1);
+
+                        // Safety guard: không chạy vô hạn
+                        if (currentCheckingDate > startDate.AddYears(5)) break;
                     }
                     await _context.SaveChangesAsync();
                 }
@@ -176,7 +208,7 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
                 return Page();
             }
 
-            // Xóa các buổi học cũ của lớp để cập nhật lại lịch học mới đồng bộ
+            // Xóa các buổi học cũ để cập nhật lịch học mới
             var existingLessons = _context.Lessons.Where(l => l.ClassId == UpdateDto.Id);
             _context.Lessons.RemoveRange(existingLessons);
             await _context.SaveChangesAsync();
@@ -206,7 +238,8 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
                 var scheduleList = new List<(DayOfWeek day, int slotId)>();
                 for (int i = 0; i < days.Count; i++)
                 {
-                    if (targetDaysMap.TryGetValue(days[i], out DayOfWeek targetDay) && int.TryParse(slots[i], out int slotId))
+                    if (targetDaysMap.TryGetValue(days[i]!, out DayOfWeek targetDay)
+                        && int.TryParse(slots[i], out int slotId))
                     {
                         scheduleList.Add((targetDay, slotId));
                     }
@@ -216,23 +249,29 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
                 {
                     while (lessonsCreated < totalLessonsNeeded)
                     {
-                        var matchingSchedule = scheduleList.FirstOrDefault(s => s.day == currentCheckingDate.DayOfWeek);
-                        if (matchingSchedule != default)
+                        foreach (var schedule in scheduleList)
                         {
-                            var lesson = new Lesson
+                            if (lessonsCreated >= totalLessonsNeeded) break;
+                            if (schedule.day == currentCheckingDate.DayOfWeek)
                             {
-                                ClassId = UpdateDto.Id,
-                                Title = $"Buổi {lessonsCreated + 1}",
-                                Description = $"Bài học buổi thứ {lessonsCreated + 1} của lớp {UpdateDto.ClassName}",
-                                LessonDate = currentCheckingDate,
-                                RoomId = UpdateRoomId > 0 ? UpdateRoomId : (int?)null,
-                                SlotId = matchingSchedule.slotId,
-                                IsPublished = true
-                            };
-                            _context.Lessons.Add(lesson);
-                            lessonsCreated++;
+                                var lesson = new Lesson
+                                {
+                                    ClassId = UpdateDto.Id,
+                                    Title = $"Buổi {lessonsCreated + 1}",
+                                    Description = $"Bài học buổi thứ {lessonsCreated + 1} của lớp {UpdateDto.ClassName}",
+                                    LessonDate = currentCheckingDate,
+                                    RoomId = UpdateRoomId > 0 ? UpdateRoomId : (int?)null,
+                                    SlotId = schedule.slotId,
+                                    IsPublished = true
+                                };
+                                _context.Lessons.Add(lesson);
+                                lessonsCreated++;
+                            }
                         }
                         currentCheckingDate = currentCheckingDate.AddDays(1);
+
+                        // Safety guard
+                        if (currentCheckingDate > startDate.AddYears(5)) break;
                     }
                     await _context.SaveChangesAsync();
                 }
