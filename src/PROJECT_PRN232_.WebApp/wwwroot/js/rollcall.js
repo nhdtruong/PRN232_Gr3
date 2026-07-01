@@ -1,9 +1,6 @@
-// RollCall Client-side handler for EduBridge Center (Phase 4)
-// Khi bấm nút "Lưu bảng điểm & Điểm danh", script này sẽ:
-//   1. Thu thập dữ liệu từ tất cả các dòng trong bảng.
-//   2. Đóng gói theo chuẩn DTO LessonRollCallBulkUpsertDto.
-//   3. Gửi PUT lên /api/lessons/{lessonId}/rollcall.
-//   4. Hiển thị Toast Bootstrap 5 thành công/thất bại.
+// RollCall Client-side handler for EduBridge Center
+// Chỉ xử lý Điểm danh (status + ghi chú)
+// Điểm số & Nhận xét GV được quản lý riêng ở trang GradeSheet
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Lấy LessonId từ metadata DOM
@@ -35,51 +32,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Kiểm tra hợp lệ điểm số trước khi gửi
-        let hasValidationError = false;
-        rows.forEach((row, index) => {
-            const scoreInput = row.querySelector('.score-input');
-            const scoreValue = scoreInput.value.trim();
-            if (scoreValue !== '') {
-                const scoreNum = parseFloat(scoreValue);
-                if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 10) {
-                    scoreInput.classList.add('is-invalid');
-                    hasValidationError = true;
-                } else {
-                    scoreInput.classList.remove('is-invalid');
-                    scoreInput.classList.add('is-valid');
-                }
-            } else {
-                scoreInput.classList.remove('is-invalid', 'is-valid');
-            }
-        });
-
-        if (hasValidationError) {
-            showToastAlert('danger', '<i class="bi bi-x-circle-fill me-2"></i><strong>Lỗi dữ liệu!</strong> Điểm số phải nằm trong khoảng 0–10. Vui lòng kiểm tra lại các ô đánh dấu đỏ.', alertArea);
-            return;
-        }
-
-        // Đóng gói payload theo cấu trúc LessonRollCallBulkUpsertDto
+        // Đóng gói payload: chỉ attendance status + note
         const payload = {
-            rows: []
+            rows: [],
+            isAttendanceOnly: true
         };
 
         rows.forEach(row => {
             const studentId = parseInt(row.getAttribute('data-student-id'));
             const attendanceSelect = row.querySelector('.attendance-select');
-            const scoreInput = row.querySelector('.score-input');
-            const teacherCommentInput = row.querySelector('.teacher-comment-input');
             const attendanceNoteInput = row.querySelector('.attendance-note-input');
- 
-            const scoreRaw = scoreInput.value.trim();
-            const scoreValue = scoreRaw !== '' ? parseFloat(scoreRaw) : null;
- 
+
             payload.rows.push({
                 studentId: studentId,
-                status: mapStatusToEnum(attendanceSelect.value),  // Ánh xạ chuỗi "Late" thành số 2
+                status: mapStatusToEnum(attendanceSelect.value),
                 note: attendanceNoteInput.value.trim() !== '' ? attendanceNoteInput.value.trim() : null,
-                score: scoreValue,
-                teacherComment: teacherCommentInput.value.trim() !== '' ? teacherCommentInput.value.trim() : null
+                score: null,
+                teacherComment: null
             });
         });
  
@@ -97,16 +66,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok || response.status === 204 || response.status === 200) {
-                // 4a. Thành công: Hiển thị Toast thành công + thông báo
-                removeValidationStyles(rows);
                 showToastAlert(
                     'success',
                     `<i class="bi bi-check-circle-fill me-2"></i>
-                    <strong>Lưu thành công!</strong> Điểm danh & điểm số của <strong>${payload.rows.length} học sinh</strong> đã được cập nhật vào hệ thống.
-                    <br><span class="small mt-1 d-block opacity-75">
-                        <i class="bi bi-bell-fill me-1"></i>
-                        Thông báo kết quả học tập đã được đẩy <strong>tức thì</strong> đến Phụ huynh qua SignalR Realtime.
-                    </span>`,
+                    <strong>Lưu điểm danh thành công!</strong> Trạng thái điểm danh của <strong>${payload.rows.length} học sinh</strong> đã được cập nhật.`,
                     alertArea
                 );
  
@@ -206,24 +169,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function setBtnLoading(isLoading, btn, text, spinner) {
         if (isLoading) {
             btn.disabled = true;
-            text.textContent = 'Đang lưu & đồng bộ...';
+            text.textContent = 'Đang lưu điểm danh...';
             spinner.style.display = 'inline-block';
         } else {
             btn.disabled = false;
-            text.textContent = 'Lưu bảng điểm & Điểm danh';
+            text.textContent = 'Lưu điểm danh';
             spinner.style.display = 'none';
         }
     }
 
-    // Xóa toàn bộ class is-valid / is-invalid sau khi lưu thành công
-    function removeValidationStyles(rows) {
-        rows.forEach(row => {
-            const scoreInput = row.querySelector('.score-input');
-            if (scoreInput) {
-                scoreInput.classList.remove('is-valid', 'is-invalid');
-            }
-        });
-    }
+    // Không cần removeValidationStyles nữa vì đã bỏ cột điểm số
 
     // Escape HTML để ngăn XSS khi hiển thị error message từ server
     function escapeHtml(str) {

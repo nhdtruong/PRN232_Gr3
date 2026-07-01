@@ -5,7 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!globalMetadata) return;
 
     const currentUserId = parseInt(globalMetadata.getAttribute('data-current-user-id'));
-    const currentRole = globalMetadata.getAttribute('data-current-role');
+    const rawRole = globalMetadata.getAttribute('data-current-role');
+    // Chuẩn hóa role về chữ thường để tránh lỗi so sánh hoa/thường
+    const currentRole = rawRole ? rawRole.trim().toLowerCase() : '';
     if (isNaN(currentUserId) || !currentRole) return;
 
     // Phát hiện xem có đang ở trang Chat không (dựa vào sự tồn tại của #chat-page-metadata)
@@ -16,47 +18,77 @@ document.addEventListener('DOMContentLoaded', () => {
     let otherUserName = '';
     let pendingFile = null; // File đang chờ gửi
 
+    // Helper: ẩn tất cả badge theo selector (dùng querySelectorAll để bắt cả mobile + desktop)
+    function hideBadges(selector) {
+        document.querySelectorAll(selector).forEach(b => {
+            b.innerText = '0';
+            b.classList.add('d-none');
+        });
+    }
+
+    // ẨN BADGE NGAY LẬP TỨC khi ở trang chat của Parent
+    if (isChatPage && currentRole === 'parent') {
+        hideBadges('#chat-badge');
+    }
+
     // 2. Khởi tạo kết nối SignalR đến ChatHub
     const connection = new signalR.HubConnectionBuilder()
         .withUrl("/hubs/chat")
         .withAutomaticReconnect()
         .build();
 
-    // 3. Khởi động kết nối
+    // 3. Khởi động kết nối SignalR và gia nhập Group khi sẵn sàng
     connection.start()
         .then(() => {
             console.log("Connected to ChatHub via SignalR.");
-
-            if (isChatPage) {
-                if (currentRole === 'Parent') {
-                    // Parent: join kênh chat cố định của mình
-                    const parentChannelId = parseInt(pageMetadata.getAttribute('data-parent-channel-id'));
-                    activeChannelId = parentChannelId;
-                    otherUserName = pageMetadata.getAttribute('data-parent-center-name');
-
-                    connection.invoke("JoinChannel", activeChannelId)
-                        .then(() => {
-                            console.log(`Joined channel #${activeChannelId}`);
-                            loadMessages(activeChannelId);
-                        })
-                        .catch(err => console.error("Error joining channel:", err));
-                } else if (currentRole === 'Center') {
-                    // Center: tự động click contact nếu có target-parent-id
-                    const targetParentId = pageMetadata.getAttribute('data-target-parent-id');
-                    if (targetParentId) {
-                        const contactItem = document.querySelector(`.contact-item[data-parent-id="${targetParentId}"]`);
-                        if (contactItem) contactItem.click();
-                    }
-                }
+            if (isChatPage && activeChannelId) {
+                connection.invoke("JoinChannel", activeChannelId)
+                    .then(() => console.log(`Joined channel #${activeChannelId} via SignalR.`))
+                    .catch(err => console.error("Error joining channel via SignalR:", err));
             }
         })
         .catch(err => console.error("SignalR Connection Error:", err.toString()));
 
+    // 3b. Tải tin nhắn & cập nhật số lượng thông báo lập tức trên HTTP (không chờ SignalR)
+    if (isChatPage) {
+        if (currentRole === 'parent') {
+            // Parent: Tải tin nhắn và ẩn badge lập tức
+            const parentChannelId = parseInt(pageMetadata.getAttribute('data-parent-channel-id'));
+            activeChannelId = parentChannelId;
+            otherUserName = pageMetadata.getAttribute('data-parent-center-name');
+
+            loadMessages(activeChannelId).then(() => {
+                // Sau khi load (đã đánh dấu đọc trên server), force ẩn badge
+                hideBadges('#chat-badge');
+            });
+        } else if (currentRole === 'center') {
+            // Center: tự động click contact nếu có target-parent-id
+            const targetParentId = pageMetadata.getAttribute('data-target-parent-id');
+            if (targetParentId) {
+                const contactItem = document.querySelector(`.contact-item[data-parent-id="${targetParentId}"]`);
+                if (contactItem) {
+                    contactItem.click();
+                } else {
+                    updateNavbarChatCount();
+                }
+            } else {
+                updateNavbarChatCount();
+            }
+        }
+    }
+
     // 4. Lắng nghe tin nhắn đến (cùng channel đang mở)
-    connection.on("ReceiveMessage", (message) => {
+    connection.on("ReceiveMessage", async (message) => {
         if (message.channelId === activeChannelId) {
             appendMessage(message);
             scrollToBottom();
+
+            // Nếu người nhận đang mở sẵn channel này -> gọi API tải 1 tin nhắn để kích hoạt đánh dấu đã đọc trên DB
+            if (message.senderId !== currentUserId) {
+                await fetch(`/api/chat/channels/${activeChannelId}/messages?limit=1&t=` + Date.now(), { cache: 'no-store' });
+                // Sau khi đánh dấu đọc, ẩn badge ngay lập tức
+                hideBadges('#chat-badge');
+            }
         }
     });
 
@@ -65,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("New chat notification received:", message);
 
         // Nếu đang ở trang Chat của Center → highlight contact item trong sidebar
-        if (isChatPage && currentRole === 'Center') {
+        if (isChatPage && currentRole === 'center') {
             const contactItem = document.querySelector(`.contact-item[data-parent-id="${message.senderId}"]`);
             if (contactItem && activeChannelId !== message.channelId) {
                 contactItem.classList.add('has-unread');
@@ -80,15 +112,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Nếu đang ở trang khác hoặc channel khác → tăng badge navbar + hiện Toast
         if (!isChatPage || activeChannelId !== message.channelId) {
-            const badgeId = currentRole === 'Center' ? 'center-chat-badge' : 'chat-badge';
-            const badge = document.getElementById(badgeId);
-            if (badge) {
+            const badgeId = currentRole === 'center' ? 'center-chat-badge' : 'chat-badge';
+            document.querySelectorAll('#' + badgeId).forEach(badge => {
                 let count = parseInt(badge.innerText) || 0;
                 badge.innerText = count + 1;
                 badge.classList.remove('d-none');
-            }
+            });
 
-            const toastMsg = currentRole === 'Parent'
+            const toastMsg = currentRole === 'parent'
                 ? "Bạn có tin nhắn mới từ Trung tâm!"
                 : `Phụ huynh ${message.senderName} vừa gửi tin nhắn mới!`;
             showChatToast("Tin nhắn mới", toastMsg);
@@ -98,12 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // =====================================================================
     // 6. TÍNH NĂNG ĐÍNH KÈM FILE
     // =====================================================================
-    const attachBtn    = document.getElementById('attach-file-btn');
-    const fileInput    = document.getElementById('chat-file-input');
-    const previewBar   = document.getElementById('file-preview-bar');
-    const previewName  = document.getElementById('file-preview-name');
-    const previewSize  = document.getElementById('file-preview-size');
-    const cancelBtn    = document.getElementById('file-preview-cancel');
+    const attachBtn = document.getElementById('attach-file-btn');
+    const fileInput = document.getElementById('chat-file-input');
+    const previewBar = document.getElementById('file-preview-bar');
+    const previewName = document.getElementById('file-preview-name');
+    const previewSize = document.getElementById('file-preview-size');
+    const cancelBtn = document.getElementById('file-preview-cancel');
 
     // Mở hộp thoại chọn file khi bấm nút Kẹp giấy
     if (attachBtn && fileInput) {
@@ -164,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =====================================================================
     // 7. CENTER — Sidebar Contact List & Channel Switching
     // =====================================================================
-    if (currentRole === 'Center' && isChatPage) {
+    if (currentRole === 'center' && isChatPage) {
         const contactItems = document.querySelectorAll('.contact-item');
         contactItems.forEach(item => {
             item.addEventListener('click', async (e) => {
@@ -231,9 +262,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 8. GỬI TIN NHẮN (Văn bản hoặc File)
     // =====================================================================
     if (isChatPage) {
-        const chatForm  = document.getElementById('chat-form');
+        const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
-        const sendBtn   = document.getElementById('chat-send-btn');
+        const sendBtn = document.getElementById('chat-send-btn');
 
         if (chatForm && chatInput) {
             chatForm.addEventListener('submit', async (e) => {
@@ -325,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         try {
-            const response = await fetch(`/api/chat/channels/${channelId}/messages`);
+            const response = await fetch(`/api/chat/channels/${channelId}/messages?t=` + Date.now(), { cache: 'no-store' });
             if (!response.ok) throw new Error("Could not load channel messages.");
 
             const messages = await response.json();
@@ -367,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const date = new Date(message.sentAt);
         const timeString = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' +
-                           date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+            date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
 
         // Xây nội dung bong bóng theo loại tin nhắn
         let contentHtml = '';
@@ -462,22 +493,31 @@ document.addEventListener('DOMContentLoaded', () => {
         showChatToast('Lỗi File', msg);
     }
 
-    // Cập nhật lại badge navbar dựa vào số channel chưa đọc
+    // Cập nhật lại badge navbar dựa vào số channel chưa đọc (chỉ dùng cho Center)
     async function updateNavbarChatCount() {
         try {
-            const response = await fetch('/api/chat/channels');
+            // Parent đang ở trang chat → luôn ẩn badge ngay lập tức, không cần gọi API
+            if (isChatPage && currentRole === 'parent') {
+                hideBadges('#chat-badge');
+                return;
+            }
+
+            const response = await fetch('/api/chat/channels?t=' + Date.now(), { cache: 'no-store' });
             if (!response.ok) return;
             const channels = await response.json();
             let count = 0;
             channels.forEach(ch => {
                 if (!ch.isLastMessageRead && ch.lastMessageSenderId !== currentUserId) count++;
             });
-            const badgeId = currentRole === 'Center' ? 'center-chat-badge' : 'chat-badge';
-            const badge = document.getElementById(badgeId);
-            if (badge) {
+            const badgeId = currentRole === 'center' ? 'center-chat-badge' : 'chat-badge';
+            document.querySelectorAll('#' + badgeId).forEach(badge => {
                 badge.innerText = count;
-                count === 0 ? badge.classList.add('d-none') : badge.classList.remove('d-none');
-            }
+                if (count === 0) {
+                    badge.classList.add('d-none');
+                } else {
+                    badge.classList.remove('d-none');
+                }
+            });
         } catch (err) {
             console.error("Error updating chat badge count:", err);
         }
@@ -522,9 +562,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/&/g, "&amp;")
-                  .replace(/</g, "&lt;")
-                  .replace(/>/g, "&gt;")
-                  .replace(/"/g, "&quot;")
-                  .replace(/'/g, "&#039;");
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 });

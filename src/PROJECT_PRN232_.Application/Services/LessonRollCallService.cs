@@ -65,34 +65,115 @@ namespace PROJECT_PRN232_.Application.Services
             if (rowStudentIds.Count == 0 || !rowStudentIds.All(enrolledIds.Contains))
                 return false;
 
-            if (!AssessmentService.ValidateScores(dto.Rows.Select(r => new AssessmentUpsertDto
+            if (dto.IsGradeOnly)
             {
-                StudentId = r.StudentId,
-                Score = r.Score,
-                TeacherComment = r.TeacherComment
-            })))
-                return false;
+                if (!AssessmentService.ValidateScores(dto.Rows.Select(r => new AssessmentUpsertDto
+                {
+                    StudentId = r.StudentId,
+                    Score = r.Score,
+                    TeacherComment = r.TeacherComment
+                })))
+                    return false;
 
-            var attendances = dto.Rows.Select(r => new Attendance
+                var assessments = dto.Rows.Select(r => new Assessment
+                {
+                    StudentId = r.StudentId,
+                    Score = r.Score,
+                    TeacherComment = r.TeacherComment
+                });
+
+                await _assessmentRepository.UpsertBulkAsync(lessonId, assessments);
+                await SendGradeNotificationsAsync(lesson, dto.Rows);
+            }
+            else if (dto.IsAttendanceOnly)
             {
-                StudentId = r.StudentId,
-                Status = r.Status,
-                Note = r.Note
-            });
+                var attendances = dto.Rows.Select(r => new Attendance
+                {
+                    StudentId = r.StudentId,
+                    Status = r.Status,
+                    Note = r.Note
+                });
 
-            var assessments = dto.Rows.Select(r => new Assessment
+                await _attendanceRepository.UpsertBulkAsync(lessonId, attendances);
+                await SendAttendanceNotificationsAsync(lesson, dto.Rows);
+            }
+            else
             {
-                StudentId = r.StudentId,
-                Score = r.Score,
-                TeacherComment = r.TeacherComment
-            });
+                // Legacy / fallback: update both
+                if (!AssessmentService.ValidateScores(dto.Rows.Select(r => new AssessmentUpsertDto
+                {
+                    StudentId = r.StudentId,
+                    Score = r.Score,
+                    TeacherComment = r.TeacherComment
+                })))
+                    return false;
 
-            await _attendanceRepository.UpsertBulkAsync(lessonId, attendances);
-            await _assessmentRepository.UpsertBulkAsync(lessonId, assessments);
+                var attendances = dto.Rows.Select(r => new Attendance
+                {
+                    StudentId = r.StudentId,
+                    Status = r.Status,
+                    Note = r.Note
+                });
 
-            await SendRollCallNotificationsAsync(lesson, dto.Rows);
+                var assessments = dto.Rows.Select(r => new Assessment
+                {
+                    StudentId = r.StudentId,
+                    Score = r.Score,
+                    TeacherComment = r.TeacherComment
+                });
+
+                await _attendanceRepository.UpsertBulkAsync(lessonId, attendances);
+                await _assessmentRepository.UpsertBulkAsync(lessonId, assessments);
+                await SendRollCallNotificationsAsync(lesson, dto.Rows);
+            }
 
             return true;
+        }
+
+        private async Task SendAttendanceNotificationsAsync(Lesson lesson, List<LessonRollCallRowDto> rows)
+        {
+            if (rows == null || rows.Count == 0) return;
+
+            var rollCallData = await _lessonRepository.GetRollCallDataAsync(lesson.Id, lesson.ClassId);
+            var studentMap = rollCallData.ToDictionary(r => r.Student.Id, r => r.Student);
+
+            foreach (var row in rows)
+            {
+                if (!studentMap.TryGetValue(row.StudentId, out var student)) continue;
+                if (student.ParentId == 0) continue; // skip student with no parent
+
+                await _notificationService.NotifyAttendanceUpdatedAsync(
+                    student.ParentId,
+                    lesson.ClassId,
+                    lesson.Class.ClassName,
+                    lesson.Title,
+                    student.FullName,
+                    row.Status,
+                    row.Note);
+            }
+        }
+
+        private async Task SendGradeNotificationsAsync(Lesson lesson, List<LessonRollCallRowDto> rows)
+        {
+            if (rows == null || rows.Count == 0) return;
+
+            var rollCallData = await _lessonRepository.GetRollCallDataAsync(lesson.Id, lesson.ClassId);
+            var studentMap = rollCallData.ToDictionary(r => r.Student.Id, r => r.Student);
+
+            foreach (var row in rows)
+            {
+                if (!studentMap.TryGetValue(row.StudentId, out var student)) continue;
+                if (student.ParentId == 0) continue; // skip student with no parent
+
+                await _notificationService.NotifyGradeUpdatedAsync(
+                    student.ParentId,
+                    lesson.ClassId,
+                    lesson.Class.ClassName,
+                    lesson.Title,
+                    student.FullName,
+                    row.Score,
+                    row.TeacherComment);
+            }
         }
 
         private async Task SendRollCallNotificationsAsync(Lesson lesson, List<LessonRollCallRowDto> rows)
