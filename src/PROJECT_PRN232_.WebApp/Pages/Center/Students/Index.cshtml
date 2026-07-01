@@ -7,9 +7,18 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-dark">🎓 Quản lý Học sinh</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStudentModal">
-            <i class="bi bi-plus-lg me-1"></i> Thêm học sinh mới
-        </button>
+        <div class="d-flex gap-2">
+            <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm theo Tên..." style="width: 250px;" />
+            <button class="btn btn-secondary" onclick="filterStudents()">
+                <i class="bi bi-search me-1"></i> Tìm kiếm
+            </button>
+            <button class="btn btn-outline-secondary" onclick="resetFilter()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+            </button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStudentModal">
+                <i class="bi bi-plus-lg me-1"></i> Thêm học sinh mới
+            </button>
+        </div>
     </div>
 
     <div id="alertContainer"></div>
@@ -216,6 +225,19 @@
     <script>
         let currentStudents = [];
 
+        function filterStudents() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = currentStudents.filter(s => 
+                s.fullName.toLowerCase().includes(query)
+            );
+            renderStudents(filtered);
+        }
+
+        function resetFilter() {
+            document.getElementById('searchInput').value = '';
+            renderStudents(currentStudents);
+        }
+
         function loadStudents() {
             fetch('/api/center/students')
                 .then(res => res.json())
@@ -390,6 +412,12 @@
 
         $(document).ready(function () {
             loadStudents();
+
+            document.getElementById('searchInput').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    filterStudents();
+                }
+            });
         });
     </script>
 }

@@ -7,9 +7,18 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-dark">👥 Quản lý Phụ huynh</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createParentModal">
-            <i class="bi bi-plus-lg me-1"></i> Thêm phụ huynh mới
-        </button>
+        <div class="d-flex gap-2">
+            <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm theo ID hoặc Tên..." style="width: 250px;" />
+            <button class="btn btn-secondary" onclick="filterParents()">
+                <i class="bi bi-search me-1"></i> Tìm kiếm
+            </button>
+            <button class="btn btn-outline-secondary" onclick="resetFilter()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+            </button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createParentModal">
+                <i class="bi bi-plus-lg me-1"></i> Thêm phụ huynh mới
+            </button>
+        </div>
     </div>
 
     <div id="alertContainer"></div>
@@ -121,10 +130,27 @@
 @section Scripts {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        let currentParents = [];
+
+        function filterParents() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = currentParents.filter(p => 
+                p.id.toString().includes(query) || 
+                p.fullName.toLowerCase().includes(query)
+            );
+            renderParents(filtered);
+        }
+
+        function resetFilter() {
+            document.getElementById('searchInput').value = '';
+            renderParents(currentParents);
+        }
+
         function loadParents() {
             fetch('/api/center/parents')
                 .then(res => res.json())
                 .then(data => {
+                    currentParents = data;
                     renderParents(data);
                 })
                 .catch(err => {
@@ -285,6 +311,12 @@
 
         $(document).ready(function () {
             loadParents();
+
+            document.getElementById('searchInput').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    filterParents();
+                }
+            });
         });
     </script>
 }
