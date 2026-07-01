@@ -1,10 +1,10 @@
 @page
-@model PROJECT_PRN232_.WebApp.Pages.Center.Lessons.RollCallModel
+@model PROJECT_PRN232_.WebApp.Pages.Center.Lessons.GradeSheetModel
 @using PROJECT_PRN232_.Domain
 @{
     ViewData["Title"] = Model.RollCallData != null
-        ? $"Điểm danh - {Model.RollCallData.LessonTitle}"
-        : "Điểm danh";
+        ? $"Kết quả học tập - {Model.RollCallData.LessonTitle}"
+        : "Kết quả học tập";
 }
 
 <!-- Metadata ẩn truyền LessonId xuống cho JavaScript -->
@@ -28,7 +28,7 @@
     </div>
 }
 
-@* ====== GIAO DIỆN NHẬP ĐIỂM CHính ====== *@
+@* ====== GIAO DIỆN NHẬP KẾT QUẢ HỌC TẬP ====== *@
 @if (Model.RollCallData != null)
 {
     var data = Model.RollCallData;
@@ -39,11 +39,11 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1 small">
                     <li class="breadcrumb-item"><a href="/Center/Dashboard" class="text-decoration-none">Dashboard</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Điểm danh</li>
+                    <li class="breadcrumb-item active" aria-current="page">Kết quả học tập</li>
                 </ol>
             </nav>
             <h1 class="h3 fw-bold text-dark mb-0">
-                <i class="bi bi-person-check-fill text-primary me-2"></i>Điểm danh học sinh
+                <i class="bi bi-journal-richtext text-success me-2"></i>Nhập kết quả học tập
             </h1>
         </div>
         <div class="col-auto">
@@ -59,8 +59,8 @@
             <div class="row g-3">
                 <div class="col-md-4">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="bg-primary bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-building text-primary fs-4"></i>
+                        <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                            <i class="bi bi-building text-success fs-4"></i>
                         </div>
                         <div>
                             <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Lớp học</div>
@@ -81,8 +81,8 @@
                 </div>
                 <div class="col-md-4">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="bg-info bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-calendar3 text-info fs-4"></i>
+                        <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                            <i class="bi bi-calendar3 text-success fs-4"></i>
                         </div>
                         <div>
                             <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Ngày học</div>
@@ -97,12 +97,12 @@
     <!-- Khu vực thông báo kết quả lưu (ẩn ban đầu, JS sẽ hiện) -->
     <div id="save-alert-area" class="mb-3" style="display: none;"></div>
 
-    <!-- Bảng nhập điểm danh & điểm số -->
+    <!-- Bảng nhập điểm số & nhận xét -->
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-white border-bottom py-3 px-4 d-flex align-items-center justify-content-between" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
             <h5 class="mb-0 fw-bold text-dark">
-                <i class="bi bi-people-fill text-primary me-2"></i>
-                Danh sách học sinh — <span class="text-primary">@data.Rows.Count học sinh</span>
+                <i class="bi bi-people-fill text-success me-2"></i>
+                Kết quả học tập — <span class="text-success">@data.Rows.Count học sinh</span>
             </h5>
             <div class="d-flex align-items-center gap-2">
                 <span class="badge bg-warning text-dark rounded-pill">
@@ -113,13 +113,13 @@
 
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover align-middle mb-0" id="rollcall-table">
+                <table class="table table-bordered table-striped table-hover align-middle mb-0" id="gradesheet-table">
                     <thead class="table-dark">
                         <tr>
                             <th class="text-center py-3" style="width: 50px;">#</th>
                             <th class="py-3" style="min-width: 200px;">Tên học sinh</th>
-                            <th class="text-center py-3" style="min-width: 200px;">Trạng thái điểm danh</th>
-                            <th class="py-3" style="min-width: 240px;">Ghi chú điểm danh</th>
+                            <th class="text-center py-3" style="min-width: 160px;">Điểm số</th>
+                            <th class="py-3" style="min-width: 260px;">Nhận xét của giáo viên</th>
                         </tr>
                     </thead>
                     <tbody id="rollcall-tbody">
@@ -136,7 +136,7 @@
                                 <!-- Tên học sinh -->
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
-                                        <div class="avatar bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                                        <div class="avatar bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center fw-bold"
                                              style="width: 36px; height: 36px; font-size: 0.85rem; flex-shrink: 0;">
                                             @row.StudentName.Substring(0, 1).ToUpper()
                                         </div>
@@ -144,27 +144,25 @@
                                     </div>
                                 </td>
 
-                                <!-- Điểm danh -->
+                                <!-- Điểm số -->
                                 <td class="text-center">
-                                    @{
-                                        string? selPresent  = row.Status == AttendanceStatus.Present  ? "selected" : null;
-                                        string? selAbsent   = row.Status == AttendanceStatus.Absent   ? "selected" : null;
-                                        string? selLate     = row.Status == AttendanceStatus.Late     ? "selected" : null;
-                                    }
-                                    <select class="form-select form-select-sm attendance-select rounded-pill border-0 shadow-sm"
-                                            style="min-width: 150px; font-size: 0.85rem;">
-                                        <option value="Present"  selected="@selPresent">✅ Có mặt</option>
-                                        <option value="Absent"   selected="@selAbsent">❌ Vắng mặt</option>
-                                        <option value="Late"     selected="@selLate">⏰ Đi trễ</option>
-                                    </select>
+                                    <div class="input-group input-group-sm justify-content-center" style="max-width: 120px; margin: 0 auto;">
+                                        <input type="number"
+                                               class="form-control score-input text-center rounded-pill border-0 shadow-sm"
+                                               min="0" max="10" step="0.5"
+                                               placeholder="—"
+                                               value="@(row.Score.HasValue ? row.Score.Value.ToString("0.##") : "")"
+                                               style="font-size: 0.9rem; font-weight: 600;" />
+                                        <span class="input-group-text bg-light text-muted border-0" style="font-size: 0.75rem; border-radius: 0 20px 20px 0;">/10</span>
+                                    </div>
                                 </td>
 
-                                <!-- Ghi chú điểm danh -->
+                                <!-- Nhận xét của giáo viên -->
                                 <td>
                                     <input type="text"
-                                           class="form-control form-control-sm attendance-note-input rounded-pill border-0 shadow-sm"
-                                           placeholder="Ghi chú (nếu có)..."
-                                           value="@(row.Note ?? "")"
+                                           class="form-control form-control-sm teacher-comment-input rounded-pill border-0 shadow-sm"
+                                           placeholder="Nhập nhận xét về học sinh..."
+                                           value="@(row.TeacherComment ?? "")"
                                            style="font-size: 0.85rem;" />
                                 </td>
                             </tr>
@@ -178,11 +176,11 @@
         <div class="card-footer bg-white border-top py-4 px-4 d-flex justify-content-between align-items-center" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
             <div class="text-muted small">
                 <i class="bi bi-info-circle me-1"></i>
-                Lưu trạng thái điểm danh cho tất cả học sinh trong buổi học này.
+                Sau khi lưu, thông báo kết quả học tập sẽ được gửi <strong>tức thì</strong> đến Phụ huynh qua SignalR Realtime.
             </div>
-            <button id="btn-save-rollcall" class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm" type="button">
-                <i class="bi bi-person-check me-2"></i>
-                <span id="btn-save-text">Lưu điểm danh</span>
+            <button id="btn-save-rollcall" class="btn btn-success btn-lg rounded-pill px-5 shadow-sm" type="button">
+                <i class="bi bi-award me-2"></i>
+                <span id="btn-save-text">Lưu kết quả học tập</span>
                 <span id="btn-save-spinner" class="spinner-border spinner-border-sm ms-2" role="status" style="display: none;"></span>
             </button>
         </div>
@@ -190,23 +188,22 @@
 }
 
 <style>
-    /* Custom table styles for a clean look */
-    #rollcall-table thead th {
+    #gradesheet-table thead th {
         font-size: 0.78rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         border: none;
     }
-    #rollcall-table tbody td {
+    #gradesheet-table tbody td {
         border-color: #f0f2f5;
         padding: 12px 16px;
     }
-    #rollcall-table tbody tr:hover {
-        background-color: #f8f9fa !important;
+    #gradesheet-table tbody tr:hover {
+        background-color: #f0fdf4 !important;
     }
-    #rollcall-table tbody tr:nth-child(odd) {
-        background-color: #fafafa;
+    #gradesheet-table tbody tr:nth-child(odd) {
+        background-color: #f9fafb;
     }
     .score-input {
         -moz-appearance: textfield;
@@ -216,11 +213,9 @@
         -webkit-appearance: none;
         margin: 0;
     }
-    .attendance-select:focus,
     .score-input:focus,
-    .teacher-comment-input:focus,
-    .attendance-note-input:focus {
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    .teacher-comment-input:focus {
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.15);
     }
     #btn-save-rollcall {
         transition: all 0.2s ease;
@@ -232,5 +227,5 @@
 </style>
 
 @section Scripts {
-    <script src="~/js/rollcall.js" asp-append-version="true"></script>
+    <script src="~/js/gradesheet.js" asp-append-version="true"></script>
 }

@@ -94,6 +94,116 @@ namespace PROJECT_PRN232_.Application.Services
             await _realtimeNotifier.PushNotificationToParentAsync(parentId, notificationDto, unreadCount);
         }
 
+        // ── Thông báo Điểm danh riêng biệt ──
+        public async Task NotifyAttendanceUpdatedAsync(
+            int parentId,
+            int classId,
+            string className,
+            string lessonTitle,
+            string studentName,
+            AttendanceStatus attendanceStatus,
+            string? attendanceNote)
+        {
+            var statusText = attendanceStatus switch
+            {
+                AttendanceStatus.Present => "<span class='badge bg-success'>Có mặt</span>",
+                AttendanceStatus.Absent => "<span class='badge bg-danger'>Vắng mặt</span>",
+                AttendanceStatus.Late => "<span class='badge bg-warning text-dark'>Đi trễ</span>",
+                AttendanceStatus.Excused => "<span class='badge bg-info text-dark'>Vắng có phép</span>",
+                _ => "<span class='badge bg-secondary'>Chưa điểm danh</span>"
+            };
+
+            var noteText = !string.IsNullOrWhiteSpace(attendanceNote)
+                ? $"<span class='text-dark fw-normal'>{attendanceNote}</span>"
+                : "<span class='text-muted' style='font-style: italic;'>Không có ghi chú</span>";
+
+            var messageBody = $@"
+<div class='mb-2'><b>Lớp học:</b> {className}</div>
+<div class='mb-2'><b>Buổi học:</b> {lessonTitle}</div>
+<hr style='opacity: 0.15; margin: 10px 0;'>
+<div class='mb-2'><b>Điểm danh:</b> {statusText}</div>
+<div class='mb-2'><b>Ghi chú điểm danh:</b> {noteText}</div>
+";
+
+            var notification = new Notification
+            {
+                ParentId = parentId,
+                ClassId = classId,
+                Title = $"Điểm danh - {studentName}",
+                Message = messageBody,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            };
+
+            await _notificationRepository.AddAsync(notification);
+            var unreadCount = await _notificationRepository.CountUnreadByParentAsync(parentId);
+
+            var notificationDto = new NotificationResponseDto
+            {
+                Id = notification.Id,
+                ClassId = notification.ClassId,
+                Title = notification.Title,
+                Message = notification.Message,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt
+            };
+
+            await _realtimeNotifier.PushNotificationToParentAsync(parentId, notificationDto, unreadCount);
+        }
+
+        // ── Thông báo Kết quả học tập riêng biệt ──
+        public async Task NotifyGradeUpdatedAsync(
+            int parentId,
+            int classId,
+            string className,
+            string lessonTitle,
+            string studentName,
+            decimal? score,
+            string? teacherComment)
+        {
+            var scoreText = score.HasValue
+                ? $"<strong class='text-primary' style='font-size: 1.05rem;'>{score.Value.ToString("0.##")}</strong> / 10"
+                : "<span class='text-muted'>Chưa có điểm</span>";
+
+            var commentText = !string.IsNullOrWhiteSpace(teacherComment)
+                ? $"<span class='text-dark fw-normal'>{teacherComment}</span>"
+                : "<span class='text-muted' style='font-style: italic;'>Không có nhận xét</span>";
+
+            var messageBody = $@"
+<div class='mb-2'><b>Lớp học:</b> {className}</div>
+<div class='mb-2'><b>Buổi học:</b> {lessonTitle}</div>
+<hr style='opacity: 0.15; margin: 10px 0;'>
+<div class='mb-2'><b>Điểm số:</b> {scoreText}</div>
+<div class='mb-1'><b>Nhận xét của giáo viên:</b></div>
+<div class='p-2 bg-light rounded border-start border-primary border-3' style='font-size: 0.85rem;'>{commentText}</div>
+";
+
+            var notification = new Notification
+            {
+                ParentId = parentId,
+                ClassId = classId,
+                Title = $"Kết quả học tập - {studentName}",
+                Message = messageBody,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            };
+
+            await _notificationRepository.AddAsync(notification);
+            var unreadCount = await _notificationRepository.CountUnreadByParentAsync(parentId);
+
+            var notificationDto = new NotificationResponseDto
+            {
+                Id = notification.Id,
+                ClassId = notification.ClassId,
+                Title = notification.Title,
+                Message = notification.Message,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt
+            };
+
+            await _realtimeNotifier.PushNotificationToParentAsync(parentId, notificationDto, unreadCount);
+        }
+
         // ── Thông báo tài liệu mới đến TẤT CẢ phụ huynh trong lớp ────────────
         public async Task NotifyNewMaterialAsync(int classId, string className, string lessonTitle, DateTime lessonDate, string materialTitle)
         {

@@ -22,16 +22,13 @@
                         <tr>
                             <th class="ps-3">ID</th>
                             <th>Họ và Tên</th>
-                            <th>Ngày sinh</th>
                             <th>Giới tính</th>
-                            <th>Phụ huynh</th>
-                            <th>Ngày tạo</th>
-                            <th class="text-center" style="width: 200px;">Hành động</th>
+                            <th class="text-center" style="width: 250px;">Hành động</th>
                         </tr>
                     </thead>
                     <tbody id="studentsTableBody">
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
+                            <td colspan="4" class="text-center text-muted py-4">
                                 <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span> Đang tải dữ liệu học sinh...
                             </td>
                         </tr>
@@ -136,43 +133,121 @@
     </div>
 </div>
 
+<!-- DETAIL STUDENT MODAL -->
+<div class="modal fade" id="detailStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 px-4 pt-4 pb-0">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center">
+                    <span class="badge bg-primary bg-opacity-10 text-primary me-2 p-2 rounded-3">
+                        <i class="bi bi-person-badge-fill fs-5"></i>
+                    </span>
+                    Chi tiết học sinh
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 py-4">
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-gradient-primary text-white rounded-circle shadow-sm mb-3" style="width: 80px; height: 80px; background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);">
+                        <i class="bi bi-person-fill" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h4 id="detailFullName" class="fw-bold text-dark mb-1"></h4>
+                    <span id="detailIdBadge" class="badge bg-light text-secondary border px-3 py-2 rounded-pill small fw-semibold">ID: </span>
+                </div>
+
+                <div class="bg-light rounded-3 p-3">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-white rounded-3 p-2 me-3 shadow-sm text-primary">
+                                    <i class="bi bi-gender-ambiguous fs-5"></i>
+                                </div>
+                                <div>
+                                    <span class="text-muted d-block small fw-semibold text-uppercase" style="font-size: 0.75rem;">Giới tính</span>
+                                    <span id="detailGender" class="fw-bold text-dark"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-white rounded-3 p-2 me-3 shadow-sm text-success">
+                                    <i class="bi bi-calendar-event fs-5"></i>
+                                </div>
+                                <div>
+                                    <span class="text-muted d-block small fw-semibold text-uppercase" style="font-size: 0.75rem;">Ngày sinh</span>
+                                    <span id="detailDateOfBirth" class="fw-bold text-dark"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 border-top pt-3">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-white rounded-3 p-2 me-3 shadow-sm text-info">
+                                    <i class="bi bi-people-fill fs-5"></i>
+                                </div>
+                                <div>
+                                    <span class="text-muted d-block small fw-semibold text-uppercase" style="font-size: 0.75rem;">Phụ huynh liên kết</span>
+                                    <span id="detailParentName" class="fw-bold text-dark"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 border-top pt-3">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-white rounded-3 p-2 me-3 shadow-sm text-warning">
+                                    <i class="bi bi-clock-history fs-5"></i>
+                                </div>
+                                <div>
+                                    <span class="text-muted d-block small fw-semibold text-uppercase" style="font-size: 0.75rem;">Ngày tạo</span>
+                                    <span id="detailCreatedAt" class="fw-bold text-dark"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
+                <button type="button" class="btn btn-secondary px-5 py-2 rounded-3 shadow-sm" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        let currentStudents = [];
+
         function loadStudents() {
             fetch('/api/center/students')
                 .then(res => res.json())
                 .then(data => {
+                    currentStudents = data;
                     renderStudents(data);
                 })
                 .catch(err => {
                     console.error("Lỗi tải học sinh:", err);
-                    $('#studentsTableBody').html('<tr><td colspan="7" class="text-center text-danger py-4">Không thể kết nối đến máy chủ.</td></tr>');
+                    $('#studentsTableBody').html('<tr><td colspan="4" class="text-center text-danger py-4">Không thể kết nối đến máy chủ.</td></tr>');
                 });
         }
 
         function renderStudents(students) {
             const tbody = document.getElementById('studentsTableBody');
             if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Chưa có học sinh nào.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Chưa có học sinh nào.</td></tr>';
                 return;
             }
 
             let html = '';
             students.forEach(s => {
-                const birthDisplay = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : '—';
                 const genderDisplay = s.gender === 'Male' ? 'Nam' : (s.gender === 'Female' ? 'Nữ' : (s.gender || '—'));
                 
                 html += `
                     <tr>
                         <td class="ps-3 fw-bold">${s.id}</td>
                         <td class="fw-bold text-dark">${s.fullName}</td>
-                        <td>${birthDisplay}</td>
                         <td>${genderDisplay}</td>
-                        <td>${s.parentName}</td>
-                        <td class="small text-muted">${new Date(s.createdAt).toLocaleDateString('vi-VN')}</td>
                         <td class="text-center">
                             <div class="d-inline-flex gap-1">
+                                <button class="btn btn-sm btn-info text-white px-2" onclick="openDetailModal(${s.id})" data-bs-toggle="modal" data-bs-target="#detailStudentModal">Xem chi tiết</button>
                                 <button class="btn btn-sm btn-warning text-white px-2" onclick="openEditModal(${s.id}, '${s.fullName}', '${s.dateOfBirth ? s.dateOfBirth.split('T')[0] : ''}', '${s.gender || ''}', ${s.parentId})" data-bs-toggle="modal" data-bs-target="#editStudentModal">Sửa</button>
                                 <button class="btn btn-sm btn-danger px-2" onclick="deleteStudent(${s.id})">Xóa</button>
                             </div>
@@ -235,6 +310,24 @@
                 .catch(err => {
                     showAlert(err.message, "danger");
                 });
+        }
+
+        // Mở popup Detail
+        function openDetailModal(id) {
+            const s = currentStudents.find(student => student.id === id);
+            if (!s) return;
+            
+            const birthDisplay = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : '—';
+            const genderDisplay = s.gender === 'Male' ? 'Nam' : (s.gender === 'Female' ? 'Nữ' : (s.gender || '—'));
+            const parentName = s.parentName || '—';
+            const createdAt = new Date(s.createdAt).toLocaleDateString('vi-VN');
+            
+            document.getElementById('detailIdBadge').innerText = 'ID: ' + s.id;
+            document.getElementById('detailFullName').innerText = s.fullName;
+            document.getElementById('detailDateOfBirth').innerText = birthDisplay;
+            document.getElementById('detailGender').innerText = genderDisplay;
+            document.getElementById('detailParentName').innerText = parentName;
+            document.getElementById('detailCreatedAt').innerText = createdAt;
         }
 
         // Mở popup Edit
