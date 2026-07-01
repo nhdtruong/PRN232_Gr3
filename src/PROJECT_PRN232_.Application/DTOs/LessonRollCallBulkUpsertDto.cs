@@ -6,5 +6,7 @@ namespace PROJECT_PRN232_.Application.DTOs
     {
         [Required]
         public List<LessonRollCallRowDto> Rows { get; set; } = new();
+        public bool IsAttendanceOnly { get; set; } = false;
+        public bool IsGradeOnly { get; set; } = false;
     }
 }

@@ -378,7 +378,9 @@
     if (isAuthenticated)
     {
         userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        role         = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        var rawRole  = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        role         = string.Equals(rawRole, "Center", StringComparison.OrdinalIgnoreCase) ? "Center" :
+                       string.Equals(rawRole, "Parent", StringComparison.OrdinalIgnoreCase) ? "Parent" : rawRole;
         userName     = User.Identity!.Name ?? "";
         avatarLetter = userName.Length > 0 ? userName.Substring(0, 1).ToUpper() : "?";
 
