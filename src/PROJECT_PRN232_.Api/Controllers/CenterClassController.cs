@@ -318,7 +318,31 @@ namespace PROJECT_PRN232_.Controllers
         [HttpGet("api/center/classes/{classId}/students")]
         public async Task<IActionResult> GetStudentsInClass(int classId)
         {
-            var students = await _enrollmentService.GetStudentsInClassAsync(classId);
+            var classObj = await _context.Classes.FindAsync(classId);
+            if (classObj == null)
+            {
+                return NotFound(new { message = $"Không tìm thấy lớp học ID {classId}." });
+            }
+
+            var className = classObj.ClassName;
+
+            var students = await _context.ClassStudents
+                .Where(cs => cs.ClassId == classId)
+                .Include(cs => cs.Student)
+                    .ThenInclude(s => s.Parent)
+                .Select(cs => new
+                {
+                    cs.Student.Id,
+                    cs.Student.FullName,
+                    cs.Student.DateOfBirth,
+                    cs.Student.Gender,
+                    cs.Student.ParentId,
+                    ParentName = cs.Student.Parent != null ? cs.Student.Parent.FullName : "Chưa có",
+                    cs.Student.CreatedAt,
+                    ClassName = className
+                })
+                .ToListAsync();
+
             return Ok(students);
         }
 

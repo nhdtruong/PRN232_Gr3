@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -24,20 +25,28 @@ namespace PROJECT_PRN232_.Controllers
         [HttpGet("api/center/students")]
         public async Task<IActionResult> GetStudents()
         {
-            var students = await _context.Students
-                .Include(s => s.Parent)
-                .OrderByDescending(s => s.CreatedAt)
-                .Select(s => new
+            var students = await (
+                from s in _context.Students
+                join u in _context.Users on s.ParentId equals u.Id into parentGroup
+                from parent in parentGroup.DefaultIfEmpty()
+                orderby s.CreatedAt ascending
+                select new
                 {
                     s.Id,
                     s.FullName,
                     s.DateOfBirth,
                     s.Gender,
                     s.ParentId,
-                    ParentName = s.Parent != null ? s.Parent.FullName : "Chưa có",
-                    s.CreatedAt
-                })
-                .ToListAsync();
+                    ParentName = parent != null ? parent.FullName : "Chưa có",
+                    s.CreatedAt,
+                    ClassName = (
+                        from cs in _context.ClassStudents
+                        join c in _context.Classes on cs.ClassId equals c.Id
+                        where cs.StudentId == s.Id
+                        select c.ClassName
+                    ).FirstOrDefault() ?? ""
+                }
+            ).ToListAsync();
 
             return Ok(students);
         }
@@ -73,6 +82,11 @@ namespace PROJECT_PRN232_.Controllers
                 return BadRequest(ModelState);
             }
 
+            if (dto.DateOfBirth.HasValue && dto.DateOfBirth.Value > DateTime.Today)
+            {
+                return BadRequest(new { message = "Ngày sinh không được vượt quá ngày hiện tại." });
+            }
+
             var parentExists = await _context.Users.AnyAsync(u => u.Id == dto.ParentId && u.Role == "Parent");
             if (!parentExists)
             {
@@ -100,6 +114,11 @@ namespace PROJECT_PRN232_.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            if (dto.DateOfBirth.HasValue && dto.DateOfBirth.Value > DateTime.Today)
+            {
+                return BadRequest(new { message = "Ngày sinh không được vượt quá ngày hiện tại." });
             }
 
             var student = await _context.Students.FindAsync(id);
@@ -140,17 +159,35 @@ namespace PROJECT_PRN232_.Controllers
 
     public class StudentCreateApiDto
     {
+        [Required(ErrorMessage = "Phụ huynh liên kết không được để trống.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Phụ huynh được chọn không hợp lệ.")]
         public int ParentId { get; set; }
+
+        [Required(ErrorMessage = "Họ và tên không được để trống.")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Họ và tên phải từ 2 đến 100 ký tự.")]
+        [RegularExpression(@"^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠƯưăâêôơư\s]+$", ErrorMessage = "Họ và tên chỉ được chứa chữ cái và khoảng trắng.")]
         public string FullName { get; set; } = string.Empty;
+
         public DateTime? DateOfBirth { get; set; }
+
+        [RegularExpression(@"^(Male|Female)$", ErrorMessage = "Giới tính phải là Nam hoặc Nữ.")]
         public string? Gender { get; set; }
     }
 
     public class StudentUpdateApiDto
     {
+        [Required(ErrorMessage = "Phụ huynh liên kết không được để trống.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Phụ huynh được chọn không hợp lệ.")]
         public int ParentId { get; set; }
+
+        [Required(ErrorMessage = "Họ và tên không được để trống.")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Họ và tên phải từ 2 đến 100 ký tự.")]
+        [RegularExpression(@"^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠƯưăâêôơư\s]+$", ErrorMessage = "Họ và tên chỉ được chứa chữ cái và khoảng trắng.")]
         public string FullName { get; set; } = string.Empty;
+
         public DateTime? DateOfBirth { get; set; }
+
+        [RegularExpression(@"^(Male|Female)$", ErrorMessage = "Giới tính phải là Nam hoặc Nữ.")]
         public string? Gender { get; set; }
     }
 }
