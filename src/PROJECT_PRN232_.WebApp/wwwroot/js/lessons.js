@@ -5,18 +5,19 @@ const classId = metadataEl ? parseInt(metadataEl.getAttribute("data-class-id")) 
 let lessonsData = [];
 let searchQuery = "";
 let currentPage = 1;
-const pageSize = 6;
+const pageSize = 6; // Hiển thị tối đa 6 buổi học trên một trang để không bị kéo dài
 
 document.addEventListener("DOMContentLoaded", () => {
     if (classId > 0) {
         loadLessonsFromServer();
     }
 
+    // Lắng nghe sự kiện tìm kiếm buổi học
     const searchInput = document.getElementById("searchLessonInput");
     if (searchInput) {
         searchInput.addEventListener("input", (e) => {
             searchQuery = e.target.value.toLowerCase().trim();
-            currentPage = 1;
+            currentPage = 1; // Reset về trang 1 khi gõ tìm kiếm
             renderLessons();
         });
     }
@@ -26,18 +27,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (createForm) {
         createForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const titleInput = document.getElementById("createTitle");
-            const descInput = document.getElementById("createDescription");
-            const dateInput = document.getElementById("createDate");
-            const roomIdSelect = document.getElementById("createRoomId");
-            const slotIdSelect = document.getElementById("createSlotId");
+            const titleInput = createForm.querySelector('input[type="text"]');
+            const descInput = createForm.querySelector('textarea');
+            const dateInput = createForm.querySelector('input[type="datetime-local"]');
 
             const payload = {
                 title: titleInput.value,
                 description: descInput.value,
-                lessonDate: new Date(dateInput.value).toISOString(),
-                roomId: roomIdSelect.value ? parseInt(roomIdSelect.value) : null,
-                slotId: slotIdSelect.value ? parseInt(slotIdSelect.value) : null
+                lessonDate: new Date(dateInput.value).toISOString()
             };
 
             try {
@@ -50,9 +47,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 if (response.ok) {
-                    showToast("Thành công", "Đã tạo buổi học mới và xếp phòng/ca học thành công!", "success");
+                    showToast("Thành công", "Đã tạo buổi học mới và lưu vào cơ sở dữ liệu!", "success");
                     createForm.reset();
                     
+                    // Đóng modal
                     const modalEl = document.getElementById("createLessonModal");
                     const modal = bootstrap.Modal.getInstance(modalEl);
                     modal.hide();
@@ -60,56 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     await loadLessonsFromServer();
                 } else {
                     const error = await response.json();
-                    showToast("Không thể xếp lịch", error.message || "Trùng lịch học hoặc dữ liệu không hợp lệ.", "danger");
-                }
-            } catch (err) {
-                console.error("Lỗi:", err);
-                showToast("Lỗi hệ thống", "Không thể kết nối đến máy chủ.", "danger");
-            }
-        });
-    }
-
-    // Xử lý submit Form Chỉnh sửa buổi học
-    const editForm = document.getElementById("editLessonForm");
-    if (editForm) {
-        editForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const idInput = document.getElementById("editLessonId");
-            const titleInput = document.getElementById("editTitle");
-            const descInput = document.getElementById("editDescription");
-            const dateInput = document.getElementById("editDate");
-            const roomIdSelect = document.getElementById("editRoomId");
-            const slotIdSelect = document.getElementById("editSlotId");
-
-            const payload = {
-                id: parseInt(idInput.value),
-                title: titleInput.value,
-                description: descInput.value,
-                lessonDate: new Date(dateInput.value).toISOString(),
-                roomId: roomIdSelect.value ? parseInt(roomIdSelect.value) : null,
-                slotId: slotIdSelect.value ? parseInt(slotIdSelect.value) : null
-            };
-
-            try {
-                const response = await fetch(`/api/center/lessons/${payload.id}`, {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    showToast("Thành công", "Đã cập nhật thông tin và lịch học của buổi học thành công!", "success");
-                    
-                    const modalEl = document.getElementById("editLessonModal");
-                    const modal = bootstrap.Modal.getInstance(modalEl);
-                    modal.hide();
-
-                    await loadLessonsFromServer();
-                } else {
-                    const error = await response.json();
-                    showToast("Không thể cập nhật", error.message || "Trùng lịch học hoặc dữ liệu không hợp lệ.", "danger");
+                    showToast("Thất bại", error.message || "Không thể tạo buổi học mới.", "danger");
                 }
             } catch (err) {
                 console.error("Lỗi:", err);
@@ -151,6 +100,7 @@ function renderLessons() {
     const pagination = document.getElementById("lessonsPagination");
     if (!gridContainer) return;
 
+    // Lọc theo từ khóa tìm kiếm
     const filtered = lessonsData.filter(l => 
         l.title.toLowerCase().includes(searchQuery) || 
         (l.description && l.description.toLowerCase().includes(searchQuery))
@@ -170,6 +120,7 @@ function renderLessons() {
         return;
     }
 
+    // Thực hiện phân trang
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     const pageItems = filtered.slice(startIndex, endIndex);
@@ -179,15 +130,20 @@ function renderLessons() {
         const formattedDate = lessonDate.toLocaleDateString("vi-VN", {
             day: "2-digit",
             month: "2-digit",
-            year: "numeric"
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
         });
 
+        // Tính toán đúng số thứ tự buổi học thực tế trên toàn bộ danh sách
         const absoluteIndex = startIndex + idx + 1;
 
+        // Trạng thái xuất bản
         const statusBadge = lesson.isPublished 
             ? `<span class="badge rounded-pill px-2 py-1 small fw-semibold" style="font-size: 0.72rem; background-color: rgba(16, 185, 129, 0.15); color: #047857;"><i class="bi bi-broadcast-pin me-1"></i>Đã phát sóng</span>`
             : `<span class="badge rounded-pill px-2 py-1 small fw-semibold" style="font-size: 0.72rem; background-color: rgba(107, 114, 128, 0.15); color: #4B5563;"><i class="bi bi-pencil-fill me-1"></i>Nháp</span>`;
 
+        // Nút phát sóng thông báo (hiện nút Phát sóng lại nếu đã xuất bản)
         const publishButtonHtml = lesson.isPublished 
             ? `
             <button class="btn btn-outline-primary btn-sm rounded-pill w-100 mb-3 fw-bold shadow-sm" 
@@ -204,12 +160,6 @@ function renderLessons() {
             </button>
             `;
 
-        const roomAndSlotInfo = (lesson.roomName && lesson.slotName)
-            ? `<div class="mt-2 text-primary small fw-semibold">
-                <i class="bi bi-geo-alt-fill me-1"></i> ${lesson.roomName} | <i class="bi bi-clock-fill me-1"></i> ${lesson.slotName} (${lesson.startTime.substring(0, 5)} - ${lesson.endTime.substring(0, 5)})
-               </div>`
-            : `<div class="mt-2 text-danger small fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Chưa xếp lịch phòng/ca</div>`;
-
         return `
             <div class="col-lg-4 col-md-6 col-sm-12">
                 <div class="admin-lesson-card shadow-sm">
@@ -219,7 +169,7 @@ function renderLessons() {
                                 <span class="badge rounded-pill px-3 py-1.5 small fw-bold" style="background-color: rgba(79, 70, 229, 0.15); color: #4F46E5;">Buổi ${absoluteIndex}</span>
                                 ${statusBadge}
                             </div>
-                            <span class="text-muted small" style="font-size: 0.78rem;"><i class="bi bi-calendar me-1"></i>${formattedDate}</span>
+                            <span class="text-muted small" style="font-size: 0.78rem;"><i class="bi bi-clock me-1"></i>${formattedDate}</span>
                         </div>
                         
                         <h5 class="fw-bold text-dark mb-2 text-truncate" title="${lesson.title}">${lesson.title}</h5>
@@ -227,11 +177,8 @@ function renderLessons() {
                             ${lesson.description || "<i>Không có mô tả nội dung cho buổi học này.</i>"}
                         </p>
                         
-                        ${roomAndSlotInfo}
-
-                        <div class="mt-3">
-                            ${publishButtonHtml}
-                        </div>
+                        <!-- Nút phát sóng thông báo nếu có -->
+                        ${publishButtonHtml}
 
                         <!-- Nút hành động -->
                         <div class="card-footer-buttons d-flex justify-content-between align-items-center mt-3">
@@ -242,9 +189,12 @@ function renderLessons() {
                                 <a href="/Center/Lessons/RollCall?LessonId=${lesson.id}" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold">
                                     <i class="bi bi-person-check me-1"></i> Điểm danh
                                 </a>
+                                <a href="/Center/Lessons/GradeSheet?LessonId=${lesson.id}" class="btn btn-warning btn-sm rounded-pill px-3 fw-semibold text-dark">
+                                    <i class="bi bi-award me-1"></i> Kết quả
+                                </a>
                             </div>
                             <div class="d-flex gap-1.5">
-                                <button class="btn btn-outline-warning btn-sm btn-action-circle" onclick="triggerEditModal(${lesson.id})" title="Sửa thông tin">
+                                <button class="btn btn-outline-warning btn-sm btn-action-circle" onclick="editLesson(${lesson.id})" title="Sửa thông tin">
                                     <i class="bi bi-pencil-square"></i>
                                 </button>
                                 <button class="btn btn-outline-danger btn-sm btn-action-circle" onclick="deleteLesson(${lesson.id})" title="Xóa buổi học">
@@ -274,6 +224,7 @@ function renderLessonsPagination(totalItems) {
 
     let html = `<nav aria-label="Page navigation"><ul class="pagination pagination-sm mb-0 gap-1">`;
 
+    // Nút Prev
     html += `
         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
             <button class="page-link rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" data-page="${currentPage - 1}" aria-label="Previous">
@@ -281,6 +232,7 @@ function renderLessonsPagination(totalItems) {
             </button>
         </li>`;
 
+    // Nút các trang số
     for (let i = 1; i <= totalPages; i++) {
         html += `
             <li class="page-item ${currentPage === i ? 'active' : ''}">
@@ -288,6 +240,7 @@ function renderLessonsPagination(totalItems) {
             </li>`;
     }
 
+    // Nút Next
     html += `
         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
             <button class="page-link rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" data-page="${currentPage + 1}" aria-label="Next">
@@ -298,6 +251,7 @@ function renderLessonsPagination(totalItems) {
     html += `</ul></nav>`;
     pagination.innerHTML = html;
 
+    // Gắn sự kiện click
     pagination.querySelectorAll("button").forEach(btn => {
         btn.addEventListener("click", () => {
             const page = parseInt(btn.getAttribute("data-page"));
@@ -331,94 +285,107 @@ async function deleteLesson(id) {
     }
 }
 
-// Mở Modal Sửa buổi học
-function triggerEditModal(id) {
+// Sửa tiêu đề buổi học thật trong Database
+async function editLesson(id) {
     const lesson = lessonsData.find(l => l.id === id);
     if (!lesson) return;
 
-    document.getElementById("editLessonId").value = lesson.id;
-    document.getElementById("editTitle").value = lesson.title;
-    document.getElementById("editDescription").value = lesson.description || "";
-    
-    // Convert ISO string/date to YYYY-MM-DD
-    const rawDate = new Date(lesson.lessonDate);
-    const yyyy = rawDate.getFullYear();
-    const mm = String(rawDate.getMonth() + 1).padStart(2, '0');
-    const dd = String(rawDate.getDate()).padStart(2, '0');
-    document.getElementById("editDate").value = `${yyyy}-${mm}-${dd}`;
+    const newTitle = prompt("Nhập tiêu đề mới cho buổi học:", lesson.title);
+    if (!newTitle || newTitle.trim() === "") return;
 
-    document.getElementById("editRoomId").value = lesson.roomId || "";
-    document.getElementById("editSlotId").value = lesson.slotId || "";
-
-    const modalEl = document.getElementById("editLessonModal");
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
-}
-
-// Phát sóng thông báo buổi học tới phụ huynh
-async function publishLesson(lessonId, isRebroadcast = false) {
-    const confirmMsg = isRebroadcast 
-        ? "Bạn muốn phát sóng LẠI thông báo cho buổi học này tới phụ huynh? Tin nhắn cũ sẽ được cập nhật."
-        : "Bạn muốn phát sóng buổi học này? Hệ thống sẽ gửi thông báo và tài liệu đi kèm tới toàn bộ phụ huynh trong lớp.";
-        
-    if (!confirm(confirmMsg)) return;
+    const payload = {
+        title: newTitle,
+        description: lesson.description,
+        lessonDate: lesson.lessonDate
+    };
 
     try {
-        const response = await fetch(`/api/center/lessons/${lessonId}/publish`, {
-            method: "POST"
+        const response = await fetch(`/api/center/lessons/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
         });
 
         if (response.ok) {
-            const data = await response.json();
-            showToast("Đã phát sóng", data.message, "success");
+            showToast("Thành công", "Đã cập nhật thông tin buổi học vào cơ sở dữ liệu!", "success");
             await loadLessonsFromServer();
         } else {
-            const err = await response.json();
-            showToast("Không thể phát sóng", err.message || "Yêu cầu thất bại.", "danger");
+            showToast("Thất bại", "Không thể cập nhật thông tin buổi học.", "danger");
         }
-    } catch (e) {
-        console.error(e);
-        showToast("Lỗi kết nối", "Không thể kết nối tới máy chủ.", "danger");
+    } catch (err) {
+        console.error("Lỗi khi cập nhật:", err);
+        showToast("Lỗi", "Không thể kết nối máy chủ để cập nhật.", "danger");
     }
 }
 
-// Helper Toast thông báo đẹp mắt góc màn hình
-function showToast(title, message, type = "success") {
-    let toastContainer = document.getElementById("toast-container-box");
-    if (!toastContainer) {
-        toastContainer = document.createElement("div");
-        toastContainer.id = "toast-container-box";
-        toastContainer.className = "toast-container position-fixed bottom-0 end-0 p-3";
-        toastContainer.style.zIndex = "1090";
-        document.body.appendChild(toastContainer);
-    }
+// Phát sóng thông báo buổi học tới phụ huynh
+async function publishLesson(id, isRebroadcast = false) {
+    const titleText = isRebroadcast ? 'Phát sóng lại thông báo?' : 'Phát sóng thông báo?';
+    const textMsg = isRebroadcast 
+        ? "Tài liệu buổi học đã thay đổi. Hệ thống sẽ gửi thông báo cập nhật mới tới toàn bộ Phụ huynh có con trong lớp."
+        : "Hệ thống sẽ gửi thông báo tổng hợp kèm nút xem nhanh tài liệu tới toàn bộ Phụ huynh có con trong lớp này.";
+    const successTitle = isRebroadcast ? 'Đã phát sóng lại!' : 'Đã phát sóng!';
+    const successText = isRebroadcast 
+        ? 'Thông báo cập nhật đã được gửi tới toàn bộ Phụ huynh!'
+        : 'Thông báo tổng hợp đã được gửi tới toàn bộ Phụ huynh!';
 
-    const toastId = "toast_" + Date.now();
-    const iconClass = type === "success" 
-        ? "bi-check-circle-fill text-success" 
-        : (type === "danger" ? "bi-exclamation-triangle-fill text-danger" : "bi-info-circle-fill text-info");
+    Swal.fire({
+        title: titleText,
+        text: textMsg,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4F46E5',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Đồng ý phát sóng',
+        cancelButtonText: 'Hủy'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`/api/center/lessons/${id}/publish`, {
+                    method: "POST"
+                });
 
-    const toastHtml = `
-        <div id="${toastId}" class="toast align-items-center border-0 shadow rounded-4" role="alert" aria-live="assertive" aria-atomic="true" style="background-color: #ffffff;">
+                if (response.ok) {
+                    Swal.fire({
+                        title: successTitle,
+                        text: successText,
+                        icon: 'success',
+                        confirmButtonColor: '#4F46E5'
+                    });
+                    await loadLessonsFromServer(); // Tải lại danh sách để cập nhật giao diện
+                } else {
+                    const error = await response.json();
+                    Swal.fire('Thất bại', error.message || "Không thể xuất bản buổi học.", 'error');
+                }
+            } catch (err) {
+                console.error("Lỗi khi xuất bản:", err);
+                Swal.fire('Lỗi', "Không thể kết nối máy chủ để xuất bản.", 'error');
+            }
+        }
+    });
+}
+
+// Hàm vẽ Toast thông báo
+function showToast(title, content, type = "success") {
+    let alertClass = "bg-success";
+    if (type === "danger") alertClass = "bg-danger";
+    if (type === "info") alertClass = "bg-info";
+
+    const toastContainer = document.createElement("div");
+    toastContainer.className = "position-fixed bottom-0 end-0 p-3";
+    toastContainer.style.zIndex = "1100";
+    toastContainer.innerHTML = `
+        <div class="toast show align-items-center text-white ${alertClass} border-0 rounded-3 shadow" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
-                <div class="toast-body d-flex align-items-center gap-2">
-                    <i class="bi ${iconClass} fs-5"></i>
-                    <div>
-                        <strong class="text-dark d-block">${title}</strong>
-                        <span class="text-muted small">${message}</span>
-                    </div>
+                <div class="toast-body">
+                    <strong>${title}:</strong> ${content}
                 </div>
-                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
     `;
-
-    toastContainer.insertAdjacentHTML("beforeend", toastHtml);
-    const toastEl = document.getElementById(toastId);
-    const bsToast = new bootstrap.Toast(toastEl, { delay: 4000 });
-    bsToast.show();
-
-    toastEl.addEventListener("hidden.bs.toast", () => {
-        toastEl.remove();
-    });
+    document.body.appendChild(toastContainer);
+    setTimeout(() => toastContainer.remove(), 4000);
 }

@@ -22,6 +22,24 @@ namespace PROJECT_PRN232_.Application.Services
             decimal? score,
             string? teacherComment);
 
+        Task NotifyAttendanceUpdatedAsync(
+            int parentId,
+            int classId,
+            string className,
+            string lessonTitle,
+            string studentName,
+            AttendanceStatus attendanceStatus,
+            string? attendanceNote);
+
+        Task NotifyGradeUpdatedAsync(
+            int parentId,
+            int classId,
+            string className,
+            string lessonTitle,
+            string studentName,
+            decimal? score,
+            string? teacherComment);
+
         /// <summary>
         /// Thông báo tài liệu mới đến TẤT CẢ phụ huynh có con trong lớp (dùng khi giáo viên "giao bài").
         /// </summary>

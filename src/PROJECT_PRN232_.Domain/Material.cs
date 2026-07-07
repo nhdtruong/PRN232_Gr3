@@ -9,11 +9,17 @@ namespace PROJECT_PRN232_.Domain
         [Key]
         public int Id { get; set; }
 
-        [Required]
-        public int LessonId { get; set; }
+        // Gắn với Buổi học (giữ nguyên để tương thích với code cũ)
+        public int? LessonId { get; set; }
 
         [ForeignKey(nameof(LessonId))]
-        public virtual Lesson Lesson { get; set; } = null!;
+        public virtual Lesson? Lesson { get; set; }
+
+        // Gắn với Môn học (Subject) — mới thêm cho Người 4
+        public int? SubjectId { get; set; }
+
+        [ForeignKey(nameof(SubjectId))]
+        public virtual Subject? Subject { get; set; }
 
         [Required]
         [StringLength(255)]

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PROJECT_PRN232_.Infrastructure.Data;
 
@@ -11,13 +12,15 @@ using PROJECT_PRN232_.Infrastructure.Data;
 namespace PROJECT_PRN232_.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260630175504_AddSubjectAndTotalLessonsToClass")]
+    partial class AddSubjectAndTotalLessonsToClass
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "8.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -275,16 +278,13 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<int?>("LessonId")
+                    b.Property<int>("LessonId")
                         .HasColumnType("int");
 
                     b.Property<string>("MaterialType")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("SubjectId")
-                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -297,8 +297,6 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LessonId");
-
-                    b.HasIndex("SubjectId");
 
                     b.ToTable("Materials");
                 });
@@ -426,44 +424,6 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                     b.HasIndex("ParentId");
 
                     b.ToTable("Students");
-                });
-
-            modelBuilder.Entity("PROJECT_PRN232_.Domain.Subject", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CenterId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("NumberOfSessions")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SubjectCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("SubjectName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CenterId", "SubjectCode")
-                        .IsUnique();
-
-                    b.ToTable("Subjects");
                 });
 
             modelBuilder.Entity("PROJECT_PRN232_.Domain.User", b =>
@@ -652,16 +612,10 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                     b.HasOne("PROJECT_PRN232_.Domain.Lesson", "Lesson")
                         .WithMany("Materials")
                         .HasForeignKey("LessonId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("PROJECT_PRN232_.Domain.Subject", "Subject")
-                        .WithMany("Materials")
-                        .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Lesson");
-
-                    b.Navigation("Subject");
                 });
 
             modelBuilder.Entity("PROJECT_PRN232_.Domain.Notification", b =>
@@ -689,17 +643,6 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Parent");
-                });
-
-            modelBuilder.Entity("PROJECT_PRN232_.Domain.Subject", b =>
-                {
-                    b.HasOne("PROJECT_PRN232_.Domain.User", "Center")
-                        .WithMany()
-                        .HasForeignKey("CenterId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Center");
                 });
 
             modelBuilder.Entity("PROJECT_PRN232_.Domain.ChatChannel", b =>
@@ -742,11 +685,6 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                     b.Navigation("Attendances");
 
                     b.Navigation("ClassStudents");
-                });
-
-            modelBuilder.Entity("PROJECT_PRN232_.Domain.Subject", b =>
-                {
-                    b.Navigation("Materials");
                 });
 
             modelBuilder.Entity("PROJECT_PRN232_.Domain.User", b =>

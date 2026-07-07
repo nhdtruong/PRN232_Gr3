@@ -2,70 +2,32 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PROJECT_PRN232_.Infrastructure.Data;
 using PROJECT_PRN232_.Domain;
-using PROJECT_PRN232_.Application.Services;
 
 namespace PROJECT_PRN232_.Controllers
 {
     [ApiController]
-    public class ParentController : ControllerBase
+    [Authorize(Roles = "Center")]
+    public class TeacherController : ControllerBase
     {
-        private readonly IEnrollmentService _enrollmentService;
         private readonly AppDbContext _context;
 
-        public ParentController(IEnrollmentService enrollmentService, AppDbContext context)
+        public TeacherController(AppDbContext context)
         {
-            _enrollmentService = enrollmentService;
             _context = context;
         }
 
-        // --- Client (Parent Role) Endpoints ---
-        [HttpGet("api/parent/children/{studentId}/classes")]
-        [Authorize(Roles = "Parent")]
-        public async Task<IActionResult> GetChildClasses(int studentId)
+        [HttpGet("api/center/teachers")]
+        public async Task<IActionResult> GetTeachers()
         {
-            var parentIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(parentIdString, out int parentId))
-            {
-                return Unauthorized(new { message = "Không xác định được người dùng." });
-            }
-            var classes = await _enrollmentService.GetClassesForStudentAsync(studentId, parentId);
-            return Ok(classes);
-        }
-
-        // --- Administrative (Center Role) CRUD Endpoints ---
-        [HttpGet("api/center/parents")]
-        [Authorize(Roles = "Center")]
-        public async Task<IActionResult> GetParents([FromQuery] int? classId = null)
-        {
-            IQueryable<User> query = _context.Users.Where(u => u.Role == "Parent");
-
-            if (classId.HasValue && classId.Value > 0)
-            {
-                // Lấy danh sách studentId trong lớp
-                var studentIdsInClass = await _context.ClassStudents
-                    .Where(cs => cs.ClassId == classId.Value)
-                    .Select(cs => cs.StudentId)
-                    .ToListAsync();
-
-                // Lấy parentId của các học sinh đó
-                var parentIdsInClass = await _context.Students
-                    .Where(s => studentIdsInClass.Contains(s.Id))
-                    .Select(s => s.ParentId)
-                    .Distinct()
-                    .ToListAsync();
-
-                query = query.Where(u => parentIdsInClass.Contains(u.Id));
-            }
-
-            var parents = await query
-                .OrderBy(u => u.CreatedAt)
+            var teachers = await _context.Users
+                .Where(u => u.Role == "Teacher")
+                .OrderByDescending(u => u.CreatedAt)
                 .Select(u => new
                 {
                     u.Id,
@@ -78,15 +40,14 @@ namespace PROJECT_PRN232_.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(parents);
+            return Ok(teachers);
         }
 
-        [HttpGet("api/center/parents/{id}")]
-        [Authorize(Roles = "Center")]
-        public async Task<IActionResult> GetParentById(int id)
+        [HttpGet("api/center/teachers/{id}")]
+        public async Task<IActionResult> GetTeacherById(int id)
         {
-            var parent = await _context.Users
-                .Where(u => u.Id == id && u.Role == "Parent")
+            var teacher = await _context.Users
+                .Where(u => u.Id == id && u.Role == "Teacher")
                 .Select(u => new
                 {
                     u.Id,
@@ -98,17 +59,16 @@ namespace PROJECT_PRN232_.Controllers
                 })
                 .FirstOrDefaultAsync();
 
-            if (parent == null)
+            if (teacher == null)
             {
-                return NotFound(new { message = "Không tìm thấy tài khoản phụ huynh." });
+                return NotFound(new { message = "Không tìm thấy tài khoản giáo viên." });
             }
 
-            return Ok(parent);
+            return Ok(teacher);
         }
 
-        [HttpPost("api/center/parents")]
-        [Authorize(Roles = "Center")]
-        public async Task<IActionResult> CreateParent([FromBody] ParentCreateApiDto dto)
+        [HttpPost("api/center/teachers")]
+        public async Task<IActionResult> CreateTeacher([FromBody] TeacherCreateApiDto dto)
         {
             if (!ModelState.IsValid)
             {
@@ -127,7 +87,7 @@ namespace PROJECT_PRN232_.Controllers
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Email = dto.Email,
                 Phone = dto.Phone,
-                Role = "Parent",
+                Role = "Teacher",
                 IsActive = true,
                 CreatedAt = DateTime.Now
             };
@@ -135,12 +95,11 @@ namespace PROJECT_PRN232_.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetParentById), new { id = user.Id }, new { id = user.Id, fullName = user.FullName });
+            return CreatedAtAction(nameof(GetTeacherById), new { id = user.Id }, new { id = user.Id, fullName = user.FullName });
         }
 
-        [HttpPut("api/center/parents/{id}")]
-        [Authorize(Roles = "Center")]
-        public async Task<IActionResult> UpdateParent(int id, [FromBody] ParentUpdateApiDto dto)
+        [HttpPut("api/center/teachers/{id}")]
+        public async Task<IActionResult> UpdateTeacher(int id, [FromBody] TeacherUpdateApiDto dto)
         {
             if (!ModelState.IsValid)
             {
@@ -148,9 +107,9 @@ namespace PROJECT_PRN232_.Controllers
             }
 
             var user = await _context.Users.FindAsync(id);
-            if (user == null || user.Role != "Parent")
+            if (user == null || user.Role != "Teacher")
             {
-                return NotFound(new { message = "Không tìm thấy phụ huynh để cập nhật." });
+                return NotFound(new { message = "Không tìm thấy giáo viên để cập nhật." });
             }
 
             user.FullName = dto.FullName;
@@ -161,14 +120,13 @@ namespace PROJECT_PRN232_.Controllers
             return NoContent();
         }
 
-        [HttpPost("api/center/parents/{id}/toggle-status")]
-        [Authorize(Roles = "Center")]
-        public async Task<IActionResult> ToggleParentStatus(int id)
+        [HttpPost("api/center/teachers/{id}/toggle-status")]
+        public async Task<IActionResult> ToggleTeacherStatus(int id)
         {
             var user = await _context.Users.FindAsync(id);
-            if (user == null || user.Role != "Parent")
+            if (user == null || user.Role != "Teacher")
             {
-                return NotFound(new { message = "Không tìm thấy phụ huynh." });
+                return NotFound(new { message = "Không tìm thấy giáo viên." });
             }
 
             user.IsActive = !user.IsActive;
@@ -178,7 +136,7 @@ namespace PROJECT_PRN232_.Controllers
         }
     }
 
-    public class ParentCreateApiDto
+    public class TeacherCreateApiDto
     {
         [Required(ErrorMessage = "Họ và tên không được để trống.")]
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Họ và tên phải từ 2 đến 100 ký tự.")]
@@ -202,7 +160,7 @@ namespace PROJECT_PRN232_.Controllers
         public string? Phone { get; set; }
     }
 
-    public class ParentUpdateApiDto
+    public class TeacherUpdateApiDto
     {
         [Required(ErrorMessage = "Họ và tên không được để trống.")]
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Họ và tên phải từ 2 đến 100 ký tự.")]

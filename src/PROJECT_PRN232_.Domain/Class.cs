@@ -28,6 +28,11 @@ namespace PROJECT_PRN232_.Domain
 
         public int MaxCapacity { get; set; } = 30;
 
+        [StringLength(100)]
+        public string? Subject { get; set; }
+
+        public int TotalLessons { get; set; } = 24;
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Navigation Properties

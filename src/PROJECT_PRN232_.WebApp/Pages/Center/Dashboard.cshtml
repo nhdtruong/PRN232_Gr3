@@ -64,6 +64,22 @@
             </div>
         </div>
 
+        <!-- Quản lý Giáo viên -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 rounded-4 hover-card">
+                <div class="card-body text-center p-4">
+                    <div class="display-4 text-success mb-3">
+                        👨‍🏫
+                    </div>
+                    <h3 class="card-title fw-bold">Quản lý giáo viên</h3>
+                    <p class="card-text text-muted">Quản lý danh sách tài khoản, hồ sơ giảng dạy và trạng thái hoạt động của giáo viên.</p>
+                    <a href="/Center/Teachers/Index" class="btn btn-success text-white rounded-pill px-4 py-2 mt-2 fw-semibold shadow-sm">
+                        <i class="bi bi-person-badge-fill me-1"></i> Truy cập quản lý
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <!-- Quản lý lớp học & Nhập học (Người 3) -->
         <div class="col-md-4">
             <div class="card h-100 shadow-sm border-0 rounded-4 hover-card" style="border: 2px solid #7c3aed !important;">
@@ -74,7 +90,23 @@
                     <h3 class="card-title fw-bold" style="color: #7c3aed;">Quản lý lớp học & Nhập học</h3>
                     <p class="card-text text-muted">Xếp lớp học viên, chuyển lớp, đóng lớp và quản lý thành viên lớp.</p>
                     <a asp-page="/Center/Classes/Index" class="btn text-white rounded-pill px-4 py-2 mt-2" style="background: linear-gradient(135deg, #7c3aed, #06b6d4);">
-                        <i class="bi bi-collection-fill me-1"></i> Truy cập
+                        <i class="bi bi-collection-fill me-1"></i> Truy cập quản lý
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Quản lý Môn học (Người 4) -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 rounded-4 hover-card" style="border: 2px solid #0ea5e9 !important;">
+                <div class="card-body text-center p-4">
+                    <div class="display-4 text-primary mb-3">
+                        📚
+                    </div>
+                    <h3 class="card-title fw-bold" style="color: #0ea5e9;">Quản lý Môn học</h3>
+                    <p class="card-text text-muted">Tạo và quản lý danh mục môn học, số buổi, tài liệu học tập theo môn.</p>
+                    <a asp-page="/Center/Subjects/Subject" class="btn text-white rounded-pill px-4 py-2 mt-2 fw-semibold shadow-sm"
+                       style="background: linear-gradient(135deg, #0ea5e9, #6366f1);">
+                        <i class="bi bi-book-half me-1"></i> Truy cập quản lý
                     </a>
                 </div>
             </div>
