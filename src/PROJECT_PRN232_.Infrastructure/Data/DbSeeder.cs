@@ -34,7 +34,19 @@ namespace PROJECT_PRN232_.Infrastructure.Data
                     CreatedAt = System.DateTime.Now
                 };
 
-                context.Users.AddRange(centerUser, parentUser);
+                var teacherUser = new User
+                {
+                    Username = "teacher",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+                    FullName = "Trần Giáo Viên",
+                    Email = "teacher@edubridge.com",
+                    Phone = "0988888888",
+                    Role = "Teacher",
+                    IsActive = true,
+                    CreatedAt = System.DateTime.Now
+                };
+
+                context.Users.AddRange(centerUser, parentUser, teacherUser);
                 context.SaveChanges();
 
                 // Seed Classes
@@ -54,6 +66,23 @@ namespace PROJECT_PRN232_.Infrastructure.Data
                 var enrollment1 = new ClassStudent { ClassId = class1.Id, StudentId = student1.Id, EnrolledAt = System.DateTime.Now };
                 var enrollment2 = new ClassStudent { ClassId = class2.Id, StudentId = student2.Id, EnrolledAt = System.DateTime.Now };
                 context.ClassStudents.AddRange(enrollment1, enrollment2);
+                context.SaveChanges();
+            }
+
+            if (!context.Users.Any(u => u.Role == "Teacher"))
+            {
+                var teacherUser = new User
+                {
+                    Username = "teacher",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+                    FullName = "Trần Giáo Viên",
+                    Email = "teacher@edubridge.com",
+                    Phone = "0988888888",
+                    Role = "Teacher",
+                    IsActive = true,
+                    CreatedAt = System.DateTime.Now
+                };
+                context.Users.Add(teacherUser);
                 context.SaveChanges();
             }
 
