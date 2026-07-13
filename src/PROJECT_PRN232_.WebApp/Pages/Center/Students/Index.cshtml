@@ -5,7 +5,7 @@
 }
 
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="fw-bold text-dark">🎓 Quản lý Học sinh</h2>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStudentModal">
             <i class="bi bi-plus-lg me-1"></i> Thêm học sinh mới
@@ -13,6 +13,32 @@
     </div>
 
     <div id="alertContainer"></div>
+
+    <!-- Thanh lọc -->
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body py-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold text-muted mb-1">🏫 Lọc theo Lớp học</label>
+                    <select id="classFilter" class="form-select" onchange="onClassFilterChange()">
+                        <option value="">-- Tất cả lớp --</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label small fw-semibold text-muted mb-1">🔍 Tìm kiếm theo Tên</label>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Nhập tên học sinh..." />
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button class="btn btn-secondary flex-fill" onclick="filterStudents()">
+                        <i class="bi bi-search me-1"></i> Tìm kiếm
+                    </button>
+                    <button class="btn btn-outline-secondary flex-fill" onclick="resetFilter()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
@@ -23,12 +49,13 @@
                             <th class="ps-3">ID</th>
                             <th>Họ và Tên</th>
                             <th>Giới tính</th>
+                            <th>Lớp đang học</th>
                             <th class="text-center" style="width: 250px;">Hành động</th>
                         </tr>
                     </thead>
                     <tbody id="studentsTableBody">
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">
+                            <td colspan="5" class="text-center text-muted py-4">
                                 <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span> Đang tải dữ liệu học sinh...
                             </td>
                         </tr>
@@ -37,6 +64,7 @@
             </div>
         </div>
     </div>
+    <div class="d-flex justify-content-center mt-4" id="studentsPagination"></div>
 </div>
 
 <!-- CREATE STUDENT MODAL -->
@@ -135,77 +163,124 @@
 
 <!-- DETAIL STUDENT MODAL -->
 <div class="modal fade" id="detailStudentModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header border-0 px-4 pt-4 pb-0">
-                <h5 class="modal-title fw-bold text-dark d-flex align-items-center">
-                    <span class="badge bg-primary bg-opacity-10 text-primary me-2 p-2 rounded-3">
-                        <i class="bi bi-person-badge-fill fs-5"></i>
-                    </span>
-                    Chi tiết học sinh
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body px-4 py-4">
-                <div class="text-center mb-4">
-                    <div class="d-inline-flex align-items-center justify-content-center bg-gradient-primary text-white rounded-circle shadow-sm mb-3" style="width: 80px; height: 80px; background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);">
-                        <i class="bi bi-person-fill" style="font-size: 2.5rem;"></i>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <!-- Header gradient -->
+            <div class="modal-header border-0 p-0">
+                <div class="w-100" style="background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%); padding: 1.5rem 1.5rem 3.5rem;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="badge bg-white bg-opacity-25 text-white px-3 py-2 rounded-pill small fw-semibold">
+                                <i class="bi bi-person-badge-fill me-1"></i> Hồ sơ học sinh
+                            </span>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <h4 id="detailFullName" class="fw-bold text-dark mb-1"></h4>
-                    <span id="detailIdBadge" class="badge bg-light text-secondary border px-3 py-2 rounded-pill small fw-semibold">ID: </span>
+                </div>
+            </div>
+
+            <div class="modal-body p-0">
+                <!-- Avatar nổi lên header -->
+                <div class="text-center" style="margin-top: -3rem;">
+                    <div id="detailAvatarCircle" class="d-inline-flex align-items-center justify-content-center text-white rounded-circle shadow border border-4 border-white mb-2"
+                         style="width: 90px; height: 90px; background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);">
+                        <i id="detailAvatarIcon" class="bi bi-person-fill" style="font-size: 2.8rem;"></i>
+                    </div>
+                    <h4 id="detailFullName" class="fw-bold text-dark mb-1 mt-1"></h4>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap mb-3">
+                        <span id="detailIdBadge" class="badge bg-light text-secondary border px-3 py-2 rounded-pill small fw-semibold">ID: </span>
+                        <span id="detailGenderBadge" class="badge px-3 py-2 rounded-pill small fw-semibold"></span>
+                        <span id="detailAgeBadge" class="badge bg-light text-dark border px-3 py-2 rounded-pill small fw-semibold"></span>
+                    </div>
                 </div>
 
-                <div class="bg-light rounded-3 p-3">
+                <!-- Thông tin chi tiết -->
+                <div class="px-4 pb-4">
                     <div class="row g-3">
-                        <div class="col-6">
-                            <div class="d-flex align-items-center">
-                                <div class="bg-white rounded-3 p-2 me-3 shadow-sm text-primary">
-                                    <i class="bi bi-gender-ambiguous fs-5"></i>
-                                </div>
-                                <div>
-                                    <span class="text-muted d-block small fw-semibold text-uppercase" style="font-size: 0.75rem;">Giới tính</span>
-                                    <span id="detailGender" class="fw-bold text-dark"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="d-flex align-items-center">
-                                <div class="bg-white rounded-3 p-2 me-3 shadow-sm text-success">
-                                    <i class="bi bi-calendar-event fs-5"></i>
-                                </div>
-                                <div>
-                                    <span class="text-muted d-block small fw-semibold text-uppercase" style="font-size: 0.75rem;">Ngày sinh</span>
-                                    <span id="detailDateOfBirth" class="fw-bold text-dark"></span>
+
+                        <!-- Ngày sinh -->
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light rounded-3 h-100">
+                                <div class="card-body d-flex align-items-center p-3">
+                                    <div class="rounded-3 p-2 me-3 shadow-sm bg-white text-success flex-shrink-0">
+                                        <i class="bi bi-calendar-heart fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Ngày sinh</div>
+                                        <div id="detailDateOfBirth" class="fw-bold text-dark"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 border-top pt-3">
-                            <div class="d-flex align-items-center">
-                                <div class="bg-white rounded-3 p-2 me-3 shadow-sm text-info">
-                                    <i class="bi bi-people-fill fs-5"></i>
-                                </div>
-                                <div>
-                                    <span class="text-muted d-block small fw-semibold text-uppercase" style="font-size: 0.75rem;">Phụ huynh liên kết</span>
-                                    <span id="detailParentName" class="fw-bold text-dark"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 border-top pt-3">
-                            <div class="d-flex align-items-center">
-                                <div class="bg-white rounded-3 p-2 me-3 shadow-sm text-warning">
-                                    <i class="bi bi-clock-history fs-5"></i>
-                                </div>
-                                <div>
-                                    <span class="text-muted d-block small fw-semibold text-uppercase" style="font-size: 0.75rem;">Ngày tạo</span>
-                                    <span id="detailCreatedAt" class="fw-bold text-dark"></span>
+
+                        <!-- Giới tính -->
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light rounded-3 h-100">
+                                <div class="card-body d-flex align-items-center p-3">
+                                    <div id="detailGenderIconBox" class="rounded-3 p-2 me-3 shadow-sm bg-white flex-shrink-0">
+                                        <i id="detailGenderIcon" class="bi bi-gender-ambiguous fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Giới tính</div>
+                                        <div id="detailGender" class="fw-bold text-dark"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Lớp đang học -->
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light rounded-3 h-100">
+                                <div class="card-body d-flex align-items-center p-3">
+                                    <div class="rounded-3 p-2 me-3 shadow-sm bg-white text-primary flex-shrink-0">
+                                        <i class="bi bi-mortarboard-fill fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Lớp đang học</div>
+                                        <div id="detailClassName" class="fw-bold text-dark"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Phụ huynh -->
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light rounded-3 h-100">
+                                <div class="card-body d-flex align-items-center p-3">
+                                    <div class="rounded-3 p-2 me-3 shadow-sm bg-white text-info flex-shrink-0">
+                                        <i class="bi bi-people-fill fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Phụ huynh liên kết</div>
+                                        <div id="detailParentName" class="fw-bold text-dark"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ngày tạo hồ sơ -->
+                        <div class="col-12">
+                            <div class="card border-0 bg-light rounded-3">
+                                <div class="card-body d-flex align-items-center p-3">
+                                    <div class="rounded-3 p-2 me-3 shadow-sm bg-white text-warning flex-shrink-0">
+                                        <i class="bi bi-clock-history fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Ngày tạo hồ sơ</div>
+                                        <div id="detailCreatedAt" class="fw-bold text-dark"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
-            <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
-                <button type="button" class="btn btn-secondary px-5 py-2 rounded-3 shadow-sm" data-bs-dismiss="modal">Đóng</button>
+
+            <div class="modal-footer border-top px-4 py-3 justify-content-center">
+                <button type="button" class="btn btn-secondary px-5 py-2 rounded-3 shadow-sm" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Đóng
+                </button>
             </div>
         </div>
     </div>
@@ -215,36 +290,119 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         let currentStudents = [];
+        let filteredStudents = [];
+        let currentPage = 1;
+        const pageSize = 10;
+        let allClasses = [];
+        let selectedClassId = null;
 
-        function loadStudents() {
-            fetch('/api/center/students')
+        // Load danh sách lớp vào dropdown
+        function loadClasses() {
+            fetch('/api/center/classes')
                 .then(res => res.json())
                 .then(data => {
-                    currentStudents = data;
-                    renderStudents(data);
+                    allClasses = data;
+                    const select = document.getElementById('classFilter');
+                    data.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = c.className + (c.status ? ` (${c.status})` : '');
+                        select.appendChild(opt);
+                    });
+                })
+                .catch(err => console.error('Lỗi tải lớp học:', err));
+        }
+
+        // Khi thay đổi filter lớp
+        function onClassFilterChange() {
+            const val = document.getElementById('classFilter').value;
+            selectedClassId = val ? parseInt(val) : null;
+            document.getElementById('searchInput').value = '';
+            currentPage = 1;
+            loadStudents();
+        }
+
+        function filterStudents() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            filteredStudents = currentStudents.filter(s =>
+                s.fullName.toLowerCase().includes(query)
+            );
+            currentPage = 1;
+            renderStudents();
+        }
+
+        function resetFilter() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('classFilter').value = '';
+            selectedClassId = null;
+            currentPage = 1;
+            loadStudents();
+        }
+
+        function loadStudents() {
+            const url = selectedClassId
+                ? `/api/center/classes/${selectedClassId}/students`
+                : '/api/center/students';
+
+            $('#studentsTableBody').html('<tr><td colspan="5" class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm text-primary me-2"></span> Đang tải...</td></tr>');
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    // API classes/{id}/students trả về format khác, chuẩn hóa
+                    currentStudents = data.map(s => ({
+                        id: s.id,
+                        fullName: s.fullName || s.name,
+                        gender: s.gender,
+                        dateOfBirth: s.dateOfBirth,
+                        parentId: s.parentId,
+                        parentName: s.parentName,
+                        createdAt: s.createdAt,
+                        className: (s.className != null && s.className !== '') ? s.className : getClassName()
+                    }));
+                    filteredStudents = currentStudents;
+                    currentPage = 1;
+                    renderStudents();
                 })
                 .catch(err => {
                     console.error("Lỗi tải học sinh:", err);
-                    $('#studentsTableBody').html('<tr><td colspan="4" class="text-center text-danger py-4">Không thể kết nối đến máy chủ.</td></tr>');
+                    $('#studentsTableBody').html('<tr><td colspan="5" class="text-center text-danger py-4">Không thể kết nối đến máy chủ.</td></tr>');
                 });
         }
 
-        function renderStudents(students) {
+        function getClassName() {
+            if (!selectedClassId) return '';
+            const c = allClasses.find(x => x.id === selectedClassId);
+            return c ? c.className : '';
+        }
+
+        function renderStudents() {
             const tbody = document.getElementById('studentsTableBody');
-            if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Chưa có học sinh nào.</td></tr>';
+            if (filteredStudents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Chưa có học sinh nào.</td></tr>';
+                document.getElementById('studentsPagination').innerHTML = '';
                 return;
             }
 
+            const totalPages = Math.ceil(filteredStudents.length / pageSize);
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageItems = filteredStudents.slice(start, end);
+
             let html = '';
-            students.forEach(s => {
+            pageItems.forEach(s => {
                 const genderDisplay = s.gender === 'Male' ? 'Nam' : (s.gender === 'Female' ? 'Nữ' : (s.gender || '—'));
-                
+                const classLabel = s.className ? `<span class="badge bg-primary bg-opacity-10 text-dark border border-primary border-opacity-25 px-2 py-1">${s.className}</span>` : '<span class="text-muted small">—</span>';
+
                 html += `
                     <tr>
                         <td class="ps-3 fw-bold">${s.id}</td>
                         <td class="fw-bold text-dark">${s.fullName}</td>
                         <td>${genderDisplay}</td>
+                        <td>${classLabel}</td>
                         <td class="text-center">
                             <div class="d-inline-flex gap-1">
                                 <button class="btn btn-sm btn-info text-white px-2" onclick="openDetailModal(${s.id})" data-bs-toggle="modal" data-bs-target="#detailStudentModal">Xem chi tiết</button>
@@ -256,6 +414,72 @@
                 `;
             });
             tbody.innerHTML = html;
+
+            renderPaginationControls(totalPages);
+        }
+
+        function renderPaginationControls(totalPages) {
+            const container = document.getElementById('studentsPagination');
+            if (!container) return;
+            if (totalPages < 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = `<nav aria-label="Page navigation"><ul class="pagination pagination-sm mb-0 gap-1">`;
+            
+            // Trang đầu
+            html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" href="#" onclick="goToPage(1); return false;" title="Trang đầu">
+                    <i class="bi bi-chevron-double-left"></i>
+                </a>
+            </li>`;
+
+            // Trang trước
+            html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" href="#" onclick="goToPage(${currentPage - 1}); return false;" title="Trang trước">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>`;
+
+            // Các trang số
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = startPage + maxVisiblePages - 1;
+            if (endPage > totalPages) {
+                endPage = totalPages;
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            for (let p = startPage; p <= endPage; p++) {
+                html += `<li class="page-item ${p === currentPage ? 'active' : ''}">
+                    <a class="page-link rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" href="#" onclick="goToPage(${p}); return false;">${p}</a>
+                </li>`;
+            }
+
+            // Trang sau
+            html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" href="#" onclick="goToPage(${currentPage + 1}); return false;" title="Trang sau">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>`;
+
+            // Trang cuối
+            html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" href="#" onclick="goToPage(${totalPages}); return false;" title="Trang cuối">
+                    <i class="bi bi-chevron-double-right"></i>
+                </a>
+            </li>`;
+
+            html += `</ul></nav>`;
+            container.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            const totalPages = Math.ceil(filteredStudents.length / pageSize);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderStudents();
         }
 
         // Tạo học sinh
@@ -263,11 +487,51 @@
             e.preventDefault();
             $('.create-error-container').html('');
 
+            // Client-side validations
+            const parentIdVal = document.getElementById('createParentId').value;
+            const fullName = document.getElementById('createFullName').value.trim();
+            const dateOfBirth = document.getElementById('createDateOfBirth').value;
+            const gender = document.getElementById('createGender').value || null;
+
+            const clientErrors = [];
+
+            if (!fullName) {
+                clientErrors.push("Họ và tên học sinh không được để trống.");
+            } else if (fullName.length < 2 || fullName.length > 100) {
+                clientErrors.push("Họ và tên học sinh phải từ 2 đến 100 ký tự.");
+            } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠƯưăâêôơư\s]+$/.test(fullName)) {
+                clientErrors.push("Họ và tên chỉ được chứa chữ cái và khoảng trắng.");
+            }
+
+            if (!parentIdVal) {
+                clientErrors.push("Vui lòng chọn một phụ huynh liên kết.");
+            }
+
+            if (dateOfBirth) {
+                const dob = new Date(dateOfBirth);
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                if (dob > today) {
+                    clientErrors.push("Ngày sinh không được vượt quá ngày hiện tại.");
+                }
+            }
+
+            if (clientErrors.length > 0) {
+                $('.create-error-container').html(`
+                    <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
+                        <ul class="mb-0 ps-3">
+                            ${clientErrors.map(err => `<li>${err}</li>`).join('')}
+                        </ul>
+                    </div>
+                `);
+                return;
+            }
+
             const bodyData = {
-                parentId: parseInt(document.getElementById('createParentId').value),
-                fullName: document.getElementById('createFullName').value,
-                dateOfBirth: document.getElementById('createDateOfBirth').value || null,
-                gender: document.getElementById('createGender').value || null
+                parentId: parseInt(parentIdVal),
+                fullName: fullName,
+                dateOfBirth: dateOfBirth || null,
+                gender: gender
             };
 
             fetch('/api/center/students', {
@@ -278,7 +542,21 @@
             .then(async res => {
                 if (!res.ok) {
                     const errData = await res.json();
-                    throw new Error(errData.message || "Tạo học sinh thất bại.");
+                    let errMsg = "";
+                    if (errData.message) {
+                        errMsg = `<li>${errData.message}</li>`;
+                    } else if (errData.errors) {
+                        const errorList = [];
+                        for (const key in errData.errors) {
+                            if (errData.errors.hasOwnProperty(key)) {
+                                errorList.push(...errData.errors[key]);
+                            }
+                        }
+                        errMsg = errorList.map(err => `<li>${err}</li>`).join('');
+                    } else {
+                        errMsg = "<li>Tạo học sinh thất bại.</li>";
+                    }
+                    throw new Error(errMsg);
                 }
                 return res.json();
             })
@@ -291,7 +569,9 @@
             .catch(err => {
                 $('.create-error-container').html(`
                     <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>${err.message}
+                        <ul class="mb-0 ps-3">
+                            ${err.message.startsWith('<li>') ? err.message : `<li>${err.message}</li>`}
+                        </ul>
                     </div>
                 `);
             });
@@ -316,18 +596,83 @@
         function openDetailModal(id) {
             const s = currentStudents.find(student => student.id === id);
             if (!s) return;
-            
-            const birthDisplay = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : '—';
-            const genderDisplay = s.gender === 'Male' ? 'Nam' : (s.gender === 'Female' ? 'Nữ' : (s.gender || '—'));
-            const parentName = s.parentName || '—';
-            const createdAt = new Date(s.createdAt).toLocaleDateString('vi-VN');
-            
+
+            // Ngày sinh & tuổi
+            let birthDisplay = '—';
+            let ageText = '';
+            if (s.dateOfBirth) {
+                const dob = new Date(s.dateOfBirth);
+                birthDisplay = dob.toLocaleDateString('vi-VN');
+                const ageDiff = Date.now() - dob.getTime();
+                const age = Math.floor(ageDiff / (1000 * 60 * 60 * 24 * 365.25));
+                if (age >= 0) ageText = age + ' tuổi';
+            }
+
+            // Giới tính
+            const isMale = s.gender === 'Male';
+            const isFemale = s.gender === 'Female';
+            const genderDisplay = isMale ? 'Nam' : (isFemale ? 'Nữ' : (s.gender || '—'));
+
+            // Ngày tạo
+            const createdAt = s.createdAt ? new Date(s.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+
+            // Lớp học
+            const classDisplay = (s.className && s.className !== '') ? s.className : 'Chưa xếp lớp';
+
+            // Điền dữ liệu cơ bản
             document.getElementById('detailIdBadge').innerText = 'ID: ' + s.id;
             document.getElementById('detailFullName').innerText = s.fullName;
             document.getElementById('detailDateOfBirth').innerText = birthDisplay;
             document.getElementById('detailGender').innerText = genderDisplay;
-            document.getElementById('detailParentName').innerText = parentName;
+            document.getElementById('detailParentName').innerText = s.parentName || '—';
             document.getElementById('detailCreatedAt').innerText = createdAt;
+            document.getElementById('detailClassName').innerText = classDisplay;
+
+            // Badge tuổi
+            const ageBadge = document.getElementById('detailAgeBadge');
+            ageBadge.style.display = ageText ? '' : 'none';
+            ageBadge.innerText = ageText;
+
+            // Badge giới tính
+            const genderBadge = document.getElementById('detailGenderBadge');
+            if (isMale) {
+                genderBadge.className = 'badge bg-primary bg-opacity-10 text-dark border border-primary border-opacity-25 px-3 py-2 rounded-pill small fw-semibold';
+                genderBadge.innerHTML = '<i class="bi bi-gender-male me-1"></i>Nam';
+            } else if (isFemale) {
+                genderBadge.className = 'badge bg-danger bg-opacity-10 text-dark border border-danger border-opacity-25 px-3 py-2 rounded-pill small fw-semibold';
+                genderBadge.innerHTML = '<i class="bi bi-gender-female me-1"></i>Nữ';
+            } else {
+                genderBadge.className = 'badge bg-secondary bg-opacity-10 text-dark border px-3 py-2 rounded-pill small fw-semibold';
+                genderBadge.innerHTML = '—';
+            }
+
+            // Icon giới tính trong card
+            const genderIconBox = document.getElementById('detailGenderIconBox');
+            const genderIcon = document.getElementById('detailGenderIcon');
+            if (isMale) {
+                genderIconBox.className = 'rounded-3 p-2 me-3 shadow-sm bg-white text-primary flex-shrink-0';
+                genderIcon.className = 'bi bi-gender-male fs-5';
+            } else if (isFemale) {
+                genderIconBox.className = 'rounded-3 p-2 me-3 shadow-sm bg-white text-danger flex-shrink-0';
+                genderIcon.className = 'bi bi-gender-female fs-5';
+            } else {
+                genderIconBox.className = 'rounded-3 p-2 me-3 shadow-sm bg-white text-secondary flex-shrink-0';
+                genderIcon.className = 'bi bi-gender-ambiguous fs-5';
+            }
+
+            // Avatar màu theo giới tính
+            const avatarCircle = document.getElementById('detailAvatarCircle');
+            const avatarIcon = document.getElementById('detailAvatarIcon');
+            if (isMale) {
+                avatarCircle.style.background = 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)';
+                avatarIcon.className = 'bi bi-person-fill';
+            } else if (isFemale) {
+                avatarCircle.style.background = 'linear-gradient(135deg, #EC4899 0%, #BE185D 100%)';
+                avatarIcon.className = 'bi bi-person-fill';
+            } else {
+                avatarCircle.style.background = 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)';
+                avatarIcon.className = 'bi bi-person-fill';
+            }
         }
 
         // Mở popup Edit
@@ -389,7 +734,14 @@
         }
 
         $(document).ready(function () {
+            loadClasses();
             loadStudents();
+
+            document.getElementById('searchInput').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    filterStudents();
+                }
+            });
         });
     </script>
 }
