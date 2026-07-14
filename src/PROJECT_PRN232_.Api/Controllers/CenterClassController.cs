@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -460,6 +461,101 @@ namespace PROJECT_PRN232_.Controllers
                 lessons = uniqueSchedules
             });
         }
+
+        /// <summary>
+        /// Tạo mới Học sinh (kèm tuỳ chọn tạo Phụ huynh mới) và xếp thẳng vào lớp.
+        /// POST /api/center/classes/{classId}/students/create-and-enroll
+        /// </summary>
+        [HttpPost("api/center/classes/{classId}/students/create-and-enroll")]
+        public async Task<IActionResult> CreateStudentAndEnroll(int classId, [FromBody] CreateStudentAndEnrollDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Kiểm tra lớp học tồn tại
+            var classExists = await _context.Classes.AnyAsync(c => c.Id == classId);
+            if (!classExists)
+                return NotFound(new { message = $"Không tìm thấy lớp học ID {classId}." });
+
+            int parentId;
+
+            if (dto.IsNewParent)
+            {
+                // Validate thông tin phụ huynh mới
+                if (string.IsNullOrWhiteSpace(dto.ParentFullName) ||
+                    string.IsNullOrWhiteSpace(dto.ParentUsername) ||
+                    string.IsNullOrWhiteSpace(dto.ParentPassword))
+                {
+                    return BadRequest(new { message = "Khi tạo phụ huynh mới, cần cung cấp Họ tên, Tên đăng nhập và Mật khẩu." });
+                }
+
+                // Kiểm tra username trùng
+                var usernameExists = await _context.Users.AnyAsync(u => u.Username == dto.ParentUsername);
+                if (usernameExists)
+                    return BadRequest(new { message = $"Tên đăng nhập '{dto.ParentUsername}' đã tồn tại trong hệ thống." });
+
+                var newParent = new User
+                {
+                    FullName     = dto.ParentFullName,
+                    Username     = dto.ParentUsername,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.ParentPassword),
+                    Email        = dto.ParentEmail,
+                    Phone        = dto.ParentPhone,
+                    Role         = "Parent",
+                    IsActive     = true,
+                    CreatedAt    = DateTime.Now
+                };
+
+                _context.Users.Add(newParent);
+                await _context.SaveChangesAsync();
+                parentId = newParent.Id;
+            }
+            else
+            {
+                // Dùng phụ huynh có sẵn
+                if (dto.ExistingParentId == null || dto.ExistingParentId <= 0)
+                    return BadRequest(new { message = "Vui lòng cung cấp ExistingParentId hợp lệ khi IsNewParent = false." });
+
+                var parentExists = await _context.Users
+                    .AnyAsync(u => u.Id == dto.ExistingParentId && u.Role == "Parent");
+                if (!parentExists)
+                    return BadRequest(new { message = "Phụ huynh được chọn không tồn tại hoặc không có Role là Parent." });
+
+                parentId = dto.ExistingParentId.Value;
+            }
+
+            // Tạo học sinh
+            var newStudent = new Student
+            {
+                FullName    = dto.StudentFullName,
+                DateOfBirth = dto.DateOfBirth,
+                ParentId    = parentId,
+                CreatedAt   = DateTime.Now
+            };
+
+            _context.Students.Add(newStudent);
+            await _context.SaveChangesAsync();
+
+            // Xếp học sinh vào lớp
+            var enrolled = await _enrollmentService.EnrollStudentAsync(classId, newStudent.Id);
+            if (!enrolled)
+            {
+                return BadRequest(new
+                {
+                    message = "Đã tạo học sinh nhưng không thể xếp vào lớp (học sinh có thể đã ở lớp này).",
+                    studentId = newStudent.Id
+                });
+            }
+
+            return Ok(new
+            {
+                message   = "Tạo học sinh và xếp lớp thành công.",
+                studentId = newStudent.Id,
+                studentName = newStudent.FullName,
+                parentId,
+                classId
+            });
+        }
     }
 
     public class ClassCreateWithScheduleDto
@@ -492,5 +588,32 @@ namespace PROJECT_PRN232_.Controllers
     {
         public int FromClassId { get; set; }
         public int ToClassId { get; set; }
+    }
+
+    public class CreateStudentAndEnrollDto
+    {
+        // Thông tin học sinh
+        [Required(ErrorMessage = "Họ tên học sinh không được để trống.")]
+        public string StudentFullName { get; set; } = string.Empty;
+
+        public DateTime? DateOfBirth { get; set; }
+
+        // Nếu IsNewParent = false → dùng ExistingParentId
+        public bool IsNewParent { get; set; }
+
+        public int? ExistingParentId { get; set; }
+
+        // Nếu IsNewParent = true → tạo Parent mới từ các field dưới
+        public string? ParentFullName { get; set; }
+
+        [RegularExpression(@"^[a-zA-Z0-9_]{3,50}$", ErrorMessage = "Tên đăng nhập chỉ chứa chữ, số và _, độ dài 3-50.")]
+        public string? ParentUsername { get; set; }
+
+        public string? ParentPassword { get; set; }
+
+        [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
+        public string? ParentEmail { get; set; }
+
+        public string? ParentPhone { get; set; }
     }
 }
