@@ -8,7 +8,7 @@ namespace PROJECT_PRN232_.Controllers
 {
     [ApiController]
     [Route("api/lessons/{lessonId}/rollcall")]
-    [Authorize(Roles = "Center")]
+    [Authorize(Roles = "Teacher")]
     public class LessonRollCallController : ControllerBase
     {
         private readonly ILessonRollCallService _rollCallService;
@@ -34,8 +34,8 @@ namespace PROJECT_PRN232_.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var centerId = GetUserId();
-            var success = await _rollCallService.SaveRollCallAsync(lessonId, dto, centerId);
+            var teacherId = GetUserId();
+            var success = await _rollCallService.SaveRollCallAsync(lessonId, dto, teacherId);
             if (!success)
                 return BadRequest(new { message = "Không thể lưu điểm danh/điểm số. Kiểm tra quyền hoặc dữ liệu học sinh." });
 

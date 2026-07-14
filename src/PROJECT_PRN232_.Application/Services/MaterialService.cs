@@ -31,15 +31,15 @@ namespace PROJECT_PRN232_.Application.Services
             return list.Select(MapToDto);
         }
 
-        // Center upload tài liệu vào buổi học — TRIGGER NOTIFICATION cho phụ huynh
-        public async Task<MaterialResponseDto?> CreateAsync(int lessonId, MaterialCreateDto dto, int centerUserId)
+        // Teacher upload tài liệu vào buổi học — TRIGGER NOTIFICATION cho phụ huynh
+        public async Task<MaterialResponseDto?> CreateAsync(int lessonId, MaterialCreateDto dto, int teacherUserId)
         {
-            // 1. Kiểm tra Buổi học tồn tại và lấy kèm thông tin Lớp học để check CenterId
+            // 1. Kiểm tra Buổi học tồn tại và lấy kèm thông tin Lớp học để check TeacherId
             var lesson = await _lessonRepository.GetLessonWithClassAsync(lessonId);
             if (lesson == null) return null;
 
-            // 2. Bảo mật: Đảm bảo Center này sở hữu lớp học của buổi học
-            if (lesson.Class.CenterId != centerUserId) return null;
+            // 2. Bảo mật: Đảm bảo Teacher này sở hữu lớp học của buổi học
+            if (lesson.Class.TeacherId != teacherUserId) return null;
 
             var material = new Material
             {
@@ -54,17 +54,17 @@ namespace PROJECT_PRN232_.Application.Services
             return MapToDto(created);
         }
 
-        // Center xóa tài liệu học tập
-        public async Task<bool> DeleteAsync(int materialId, int centerUserId)
+        // Teacher xóa tài liệu học tập
+        public async Task<bool> DeleteAsync(int materialId, int teacherUserId)
         {
             var material = await _materialRepository.GetByIdAsync(materialId);
             if (material == null) return false;
 
-            // Nếu tài liệu gắn với buổi học cũ => kiểm tra CenterId qua Lesson
+            // Nếu tài liệu gắn với buổi học cũ => kiểm tra TeacherId qua Lesson
             if (material.LessonId.HasValue)
             {
                 var lesson = await _lessonRepository.GetLessonWithClassAsync(material.LessonId.Value);
-                if (lesson == null || lesson.Class.CenterId != centerUserId) return false;
+                if (lesson == null || lesson.Class.TeacherId != teacherUserId) return false;
             }
             // Nếu tài liệu gắn với Subject => cần kiểm tra theo SubjectId (để MaterialController cũ vẫn dùng được)
             // Tạm thời: nếu không có LessonId thì vẫn cho xóa (SubjectController kiểm tra phân quyền trước)

@@ -22,24 +22,30 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Xử lý submit Form Thêm buổi học mới
-    const createForm = document.getElementById("createLessonForm");
-    if (createForm) {
-        createForm.addEventListener("submit", async (e) => {
+    // Xử lý submit Form Chỉnh sửa buổi học (Reschedule)
+    const editForm = document.getElementById("editLessonForm");
+    if (editForm) {
+        editForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const titleInput = createForm.querySelector('input[type="text"]');
-            const descInput = createForm.querySelector('textarea');
-            const dateInput = createForm.querySelector('input[type="datetime-local"]');
+            const id = parseInt(document.getElementById("editLessonId").value);
+            const title = document.getElementById("editTitle").value;
+            const description = document.getElementById("editDescription").value;
+            const lessonDateInput = document.getElementById("editDate").value;
+            const roomIdVal = document.getElementById("editRoomId").value;
+            const slotIdVal = document.getElementById("editSlotId").value;
 
             const payload = {
-                title: titleInput.value,
-                description: descInput.value,
-                lessonDate: new Date(dateInput.value).toISOString()
+                id: id,
+                title: title,
+                description: description,
+                lessonDate: new Date(lessonDateInput).toISOString(),
+                roomId: roomIdVal ? parseInt(roomIdVal) : null,
+                slotId: slotIdVal ? parseInt(slotIdVal) : null
             };
 
             try {
-                const response = await fetch(`/api/center/classes/${classId}/lessons`, {
-                    method: "POST",
+                const response = await fetch(`/api/center/lessons/${id}`, {
+                    method: "PUT",
                     headers: {
                         "Content-Type": "application/json"
                     },
@@ -47,18 +53,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 if (response.ok) {
-                    showToast("Thành công", "Đã tạo buổi học mới và lưu vào cơ sở dữ liệu!", "success");
-                    createForm.reset();
+                    showToast("Thành công", "Đã cập nhật thông tin buổi học thành công!", "success");
                     
-                    // Đóng modal
-                    const modalEl = document.getElementById("createLessonModal");
+                    const modalEl = document.getElementById("editLessonModal");
                     const modal = bootstrap.Modal.getInstance(modalEl);
-                    modal.hide();
+                    if (modal) modal.hide();
 
                     await loadLessonsFromServer();
                 } else {
                     const error = await response.json();
-                    showToast("Thất bại", error.message || "Không thể tạo buổi học mới.", "danger");
+                    showToast("Thất bại", error.message || "Không thể cập nhật buổi học.", "danger");
                 }
             } catch (err) {
                 console.error("Lỗi:", err);
@@ -162,14 +166,19 @@ function renderLessons() {
 
         return `
             <div class="col-lg-4 col-md-6 col-sm-12">
-                <div class="admin-lesson-card shadow-sm">
+                <div class="admin-lesson-card shadow-sm border-0">
                     <div class="card-body p-4 d-flex flex-column h-100">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div class="d-flex align-items-center gap-2">
                                 <span class="badge rounded-pill px-3 py-1.5 small fw-bold" style="background-color: rgba(79, 70, 229, 0.15); color: #4F46E5;">Buổi ${absoluteIndex}</span>
                                 ${statusBadge}
                             </div>
-                            <span class="text-muted small" style="font-size: 0.78rem;"><i class="bi bi-clock me-1"></i>${formattedDate}</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="text-muted small" style="font-size: 0.78rem;"><i class="bi bi-clock me-1"></i>${formattedDate}</span>
+                                <button class="btn btn-link text-warning p-0 hover-scale" onclick="editLesson(${lesson.id})" title="Sửa thông tin / Đổi lịch">
+                                    <i class="bi bi-pencil-square fs-5"></i>
+                                </button>
+                            </div>
                         </div>
                         
                         <h5 class="fw-bold text-dark mb-2 text-truncate" title="${lesson.title}">${lesson.title}</h5>
@@ -177,29 +186,40 @@ function renderLessons() {
                             ${lesson.description || "<i>Không có mô tả nội dung cho buổi học này.</i>"}
                         </p>
                         
+                        <!-- Badges Phòng học & Ca học -->
+                        <div class="d-flex gap-2 mb-3 flex-wrap">
+                            <span class="badge bg-light text-dark border d-inline-flex align-items-center gap-1 py-1.5 px-2.5 rounded-3" style="font-size: 0.75rem;">
+                                <i class="bi bi-geo-alt text-danger"></i>
+                                ${lesson.roomName || 'Chưa xếp phòng'}
+                            </span>
+                            <span class="badge bg-light text-dark border d-inline-flex align-items-center gap-1 py-1.5 px-2.5 rounded-3" style="font-size: 0.75rem;">
+                                <i class="bi bi-clock-history text-primary"></i>
+                                ${lesson.slotName || 'Chưa xếp ca'} ${lesson.startTime && lesson.endTime ? `(${lesson.startTime.substring(0, 5)} - ${lesson.endTime.substring(0, 5)})` : ''}
+                            </span>
+                        </div>
+
                         <!-- Nút phát sóng thông báo nếu có -->
                         ${publishButtonHtml}
 
-                        <!-- Nút hành động -->
-                        <div class="card-footer-buttons d-flex justify-content-between align-items-center mt-3">
-                            <div class="d-flex gap-2">
-                                <a href="/Center/Lessons/Materials/${lesson.id}" class="btn btn-success btn-sm rounded-pill px-3 fw-semibold">
-                                    <i class="bi bi-folder2-open me-1"></i> Tài liệu
-                                </a>
-                                <a href="/Center/Lessons/RollCall?LessonId=${lesson.id}" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold">
-                                    <i class="bi bi-person-check me-1"></i> Điểm danh
-                                </a>
-                                <a href="/Center/Lessons/GradeSheet?LessonId=${lesson.id}" class="btn btn-warning btn-sm rounded-pill px-3 fw-semibold text-dark">
-                                    <i class="bi bi-award me-1"></i> Kết quả
+                        <!-- Grid 3 cột hành động ở Footer -->
+                        <div class="row g-0 border-top mt-2 pt-3 text-center">
+                            <div class="col-4 border-end">
+                                <a href="/Teacher/Lessons/RollCall?LessonId=${lesson.id}" class="text-decoration-none text-primary d-block py-1 hover-action">
+                                    <i class="bi bi-person-check fs-5 d-block mb-1"></i>
+                                    <span class="small fw-bold" style="font-size: 0.75rem;">Điểm danh</span>
                                 </a>
                             </div>
-                            <div class="d-flex gap-1.5">
-                                <button class="btn btn-outline-warning btn-sm btn-action-circle" onclick="editLesson(${lesson.id})" title="Sửa thông tin">
-                                    <i class="bi bi-pencil-square"></i>
-                                </button>
-                                <button class="btn btn-outline-danger btn-sm btn-action-circle" onclick="deleteLesson(${lesson.id})" title="Xóa buổi học">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                            <div class="col-4 border-end">
+                                <a href="/Teacher/Lessons/Materials/${lesson.id}" class="text-decoration-none text-success d-block py-1 hover-action">
+                                    <i class="bi bi-folder2-open fs-5 d-block mb-1"></i>
+                                    <span class="small fw-bold" style="font-size: 0.75rem;">Học liệu</span>
+                                </a>
+                            </div>
+                            <div class="col-4">
+                                <a href="/Teacher/Lessons/GradeSheet?LessonId=${lesson.id}" class="text-decoration-none text-warning d-block py-1 hover-action">
+                                    <i class="bi bi-award fs-5 d-block mb-1"></i>
+                                    <span class="small fw-bold" style="font-size: 0.75rem;">Điểm số</span>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -263,61 +283,35 @@ function renderLessonsPagination(totalItems) {
     });
 }
 
-// Xóa buổi học thật trong Database
-async function deleteLesson(id) {
-    if (confirm("Bạn có chắc chắn muốn xóa/hủy buổi học này? Thao tác này sẽ xóa tất cả điểm danh và tài liệu liên quan trong cơ sở dữ liệu!")) {
-        try {
-            const response = await fetch(`/api/center/lessons/${id}`, {
-                method: "DELETE"
-            });
-
-            if (response.ok) {
-                showToast("Thành công", "Đã xóa buổi học thành công khỏi database.", "success");
-                await loadLessonsFromServer();
-            } else {
-                const error = await response.json();
-                showToast("Thất bại", error.message || "Không thể xóa buổi học.", "danger");
-            }
-        } catch (err) {
-            console.error("Lỗi khi xóa:", err);
-            showToast("Lỗi", "Không thể kết nối máy chủ để xóa.", "danger");
-        }
-    }
-}
-
-// Sửa tiêu đề buổi học thật trong Database
+// Sửa thông tin buổi học bằng modal (Reschedule)
 async function editLesson(id) {
     const lesson = lessonsData.find(l => l.id === id);
     if (!lesson) return;
 
-    const newTitle = prompt("Nhập tiêu đề mới cho buổi học:", lesson.title);
-    if (!newTitle || newTitle.trim() === "") return;
-
-    const payload = {
-        title: newTitle,
-        description: lesson.description,
-        lessonDate: lesson.lessonDate
-    };
-
-    try {
-        const response = await fetch(`/api/center/lessons/${id}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (response.ok) {
-            showToast("Thành công", "Đã cập nhật thông tin buổi học vào cơ sở dữ liệu!", "success");
-            await loadLessonsFromServer();
-        } else {
-            showToast("Thất bại", "Không thể cập nhật thông tin buổi học.", "danger");
-        }
-    } catch (err) {
-        console.error("Lỗi khi cập nhật:", err);
-        showToast("Lỗi", "Không thể kết nối máy chủ để cập nhật.", "danger");
+    document.getElementById("editLessonId").value = lesson.id;
+    document.getElementById("editTitle").value = lesson.title || "";
+    document.getElementById("editDescription").value = lesson.description || "";
+    
+    // Định dạng ngày giờ cho input datetime-local
+    if (lesson.lessonDate) {
+        const localDate = new Date(lesson.lessonDate);
+        const pad = (num) => String(num).padStart(2, '0');
+        const formattedDate = `${localDate.getFullYear()}-${pad(localDate.getMonth() + 1)}-${pad(localDate.getDate())}T${pad(localDate.getHours())}:${pad(localDate.getMinutes())}`;
+        document.getElementById("editDate").value = formattedDate;
+    } else {
+        document.getElementById("editDate").value = "";
     }
+
+    document.getElementById("editRoomId").value = lesson.roomId || "";
+    document.getElementById("editSlotId").value = lesson.slotId || "";
+
+    // Mở modal
+    const modalEl = document.getElementById("editLessonModal");
+    let modal = bootstrap.Modal.getInstance(modalEl);
+    if (!modal) {
+        modal = new bootstrap.Modal(modalEl);
+    }
+    modal.show();
 }
 
 // Phát sóng thông báo buổi học tới phụ huynh

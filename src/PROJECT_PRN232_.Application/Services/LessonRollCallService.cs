@@ -53,10 +53,10 @@ namespace PROJECT_PRN232_.Application.Services
             };
         }
 
-        public async Task<bool> SaveRollCallAsync(int lessonId, LessonRollCallBulkUpsertDto dto, int centerUserId)
+        public async Task<bool> SaveRollCallAsync(int lessonId, LessonRollCallBulkUpsertDto dto, int teacherUserId)
         {
             var lesson = await _lessonRepository.GetLessonWithClassAsync(lessonId);
-            if (lesson == null || lesson.Class.CenterId != centerUserId)
+            if (lesson == null || lesson.Class.TeacherId != teacherUserId)
                 return false;
 
             var enrolledIds = await _lessonRepository.GetEnrolledStudentIdsAsync(lesson.ClassId);

@@ -1,5 +1,5 @@
 @page "{lessonId:int}"
-@model PROJECT_PRN232_.WebApp.Pages.Center.Lessons.MaterialsModel
+@model PROJECT_PRN232_.WebApp.Pages.Teacher.Lessons.MaterialsModel
 @{
     ViewData["Title"] = "Quản lý Tài liệu & Học liệu";
 }
@@ -13,8 +13,8 @@
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb small">
-            <li class="breadcrumb-item"><a href="/Center/Dashboard" class="text-decoration-none">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="/Center/Lessons/Lesson/@Model.ClassId" class="text-decoration-none">Quản lý buổi học</a></li>
+            <li class="breadcrumb-item"><a href="/Teacher/Dashboard" class="text-decoration-none">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/Teacher/Lessons/Lesson/@Model.ClassId" class="text-decoration-none">Quản lý buổi học</a></li>
             <li class="breadcrumb-item active" aria-current="page">Học liệu</li>
         </ol>
     </nav>
@@ -28,7 +28,7 @@
             <p class="text-muted mb-0">Buổi học: <strong class="text-dark">@Model.LessonTitle</strong> | Lớp: <strong class="text-dark">@Model.ClassName</strong></p>
         </div>
         <div class="col-auto">
-            <a href="/Center/Lessons/Lesson/@Model.ClassId" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <a href="/Teacher/Lessons/Lesson/@Model.ClassId" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                 <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách buổi học
             </a>
         </div>

@@ -47,6 +47,7 @@ namespace PROJECT_PRN232_.Controllers
         }
 
         [HttpPost("api/center/classes")]
+        [HttpPost("api/center/classes")]
         public async Task<IActionResult> CreateClass([FromBody] ClassCreateWithScheduleDto req)
         {
             if (req == null || req.CreateDto == null)
@@ -66,96 +67,35 @@ namespace PROJECT_PRN232_.Controllers
                 }
             }
 
-            // Parse Lịch học
-            var scheduleList = new List<(DayOfWeek day, int slotId)>();
-            var targetDaysMap = new Dictionary<string, DayOfWeek>
+            // Lấy thông tin môn học để sinh số buổi tương ứng
+            var subjectObj = await _context.Subjects.FirstOrDefaultAsync(s => s.SubjectCode == req.CreateDto.Subject);
+            if (subjectObj == null)
             {
-                { "Thứ 2", DayOfWeek.Monday },
-                { "Thứ 3", DayOfWeek.Tuesday },
-                { "Thứ 4", DayOfWeek.Wednesday },
-                { "Thứ 5", DayOfWeek.Thursday },
-                { "Thứ 6", DayOfWeek.Friday },
-                { "Thứ 7", DayOfWeek.Saturday },
-                { "Chủ nhật", DayOfWeek.Sunday }
-            };
-
-            if (req.DayOfWeek != null && req.SlotId != null)
-            {
-                int count = Math.Min(req.DayOfWeek.Count, req.SlotId.Count);
-                for (int i = 0; i < count; i++)
-                {
-                    if (targetDaysMap.TryGetValue(req.DayOfWeek[i], out DayOfWeek targetDay))
-                    {
-                        scheduleList.Add((targetDay, req.SlotId[i]));
-                    }
-                }
+                return BadRequest(new { message = "Môn học không tồn tại." });
             }
 
-            // 2. Kiểm tra trùng lịch phòng học
-            if (req.CreateRoomId > 0 && scheduleList.Count > 0)
-            {
-                int totalLessonsNeeded = req.CreateDto.TotalLessons > 0 ? req.CreateDto.TotalLessons : 24;
-                var startDate = System.DateTime.Today;
-                var checkingDateTemp = startDate;
-                var lessonsCreatedChecking = 0;
-
-                while (lessonsCreatedChecking < totalLessonsNeeded)
-                {
-                    foreach (var schedule in scheduleList)
-                    {
-                        if (lessonsCreatedChecking >= totalLessonsNeeded) break;
-                        if (schedule.day == checkingDateTemp.DayOfWeek)
-                        {
-                            var hasOverlap = await _context.Lessons
-                                .AnyAsync(l => l.RoomId == req.CreateRoomId && l.SlotId == schedule.slotId && l.LessonDate.Date == checkingDateTemp.Date);
-
-                            if (hasOverlap)
-                            {
-                                var slotObj = await _context.Slots.FindAsync(schedule.slotId);
-                                return BadRequest(new { message = $"Trùng lịch học tại phòng: Phòng đã có lớp khác đăng ký vào ngày {checkingDateTemp:dd/MM/yyyy} ở ca học {slotObj?.SlotName ?? schedule.slotId.ToString()}." });
-                            }
-                            lessonsCreatedChecking++;
-                        }
-                    }
-                    checkingDateTemp = checkingDateTemp.AddDays(1);
-                    if (checkingDateTemp > startDate.AddYears(5)) break;
-                }
-            }
+            int totalLessons = subjectObj.NumberOfSessions;
+            req.CreateDto.TotalLessons = totalLessons;
 
             // Lưu lớp học
             var created = await _classService.CreateClassAsync(req.CreateDto);
 
-            // Sinh các buổi học
-            if (created != null && scheduleList.Count > 0)
+            // Sinh các buổi học tuần tự bắt đầu từ hôm nay
+            if (created != null)
             {
-                int totalLessonsNeeded = req.CreateDto.TotalLessons > 0 ? req.CreateDto.TotalLessons : 24;
-                var startDate = System.DateTime.Today;
-                var currentCheckingDate = startDate;
-                var lessonsCreated = 0;
-
-                while (lessonsCreated < totalLessonsNeeded)
+                for (int i = 0; i < totalLessons; i++)
                 {
-                    foreach (var schedule in scheduleList)
+                    var lesson = new Lesson
                     {
-                        if (lessonsCreated >= totalLessonsNeeded) break;
-                        if (schedule.day == currentCheckingDate.DayOfWeek)
-                        {
-                            var lesson = new Lesson
-                            {
-                                ClassId = created.Id,
-                                Title = $"Buổi {lessonsCreated + 1}",
-                                Description = $"Bài học buổi thứ {lessonsCreated + 1} của lớp {created.ClassName}",
-                                LessonDate = currentCheckingDate,
-                                RoomId = req.CreateRoomId > 0 ? req.CreateRoomId : (int?)null,
-                                SlotId = schedule.slotId,
-                                IsPublished = true
-                            };
-                            _context.Lessons.Add(lesson);
-                            lessonsCreated++;
-                        }
-                    }
-                    currentCheckingDate = currentCheckingDate.AddDays(1);
-                    if (currentCheckingDate > startDate.AddYears(5)) break;
+                        ClassId = created.Id,
+                        Title = $"Buổi {i + 1}",
+                        Description = $"Bài học buổi thứ {i + 1} của lớp {created.ClassName}",
+                        LessonDate = DateTime.Today.AddDays(i),
+                        RoomId = req.CreateRoomId > 0 ? req.CreateRoomId : (int?)null,
+                        SlotId = null,
+                        IsPublished = false
+                    };
+                    _context.Lessons.Add(lesson);
                 }
                 await _context.SaveChangesAsync();
             }
@@ -183,60 +123,21 @@ namespace PROJECT_PRN232_.Controllers
                 }
             }
 
-            // Parse Lịch học
-            var scheduleList = new List<(DayOfWeek day, int slotId)>();
-            var targetDaysMap = new Dictionary<string, DayOfWeek>
+            // Lấy thông tin môn học để sinh số buổi tương ứng
+            var subjectObj = await _context.Subjects.FirstOrDefaultAsync(s => s.SubjectCode == req.UpdateDto.Subject);
+            if (subjectObj == null)
             {
-                { "Thứ 2", DayOfWeek.Monday },
-                { "Thứ 3", DayOfWeek.Tuesday },
-                { "Thứ 4", DayOfWeek.Wednesday },
-                { "Thứ 5", DayOfWeek.Thursday },
-                { "Thứ 6", DayOfWeek.Friday },
-                { "Thứ 7", DayOfWeek.Saturday },
-                { "Chủ nhật", DayOfWeek.Sunday }
-            };
-
-            if (req.DayOfWeek != null && req.SlotId != null)
-            {
-                int count = Math.Min(req.DayOfWeek.Count, req.SlotId.Count);
-                for (int i = 0; i < count; i++)
-                {
-                    if (targetDaysMap.TryGetValue(req.DayOfWeek[i], out DayOfWeek targetDay))
-                    {
-                        scheduleList.Add((targetDay, req.SlotId[i]));
-                    }
-                }
+                return BadRequest(new { message = "Môn học không tồn tại." });
             }
 
-            // 2. Kiểm tra trùng lịch phòng học (loại trừ các buổi của chính lớp này)
-            if (req.UpdateRoomId > 0 && scheduleList.Count > 0)
+            int totalLessons = subjectObj.NumberOfSessions;
+            req.UpdateDto.TotalLessons = totalLessons;
+
+            // Lấy thực thể trước khi cập nhật để so sánh môn học
+            var classEntity = await _context.Classes.AsNoTracking().FirstOrDefaultAsync(c => c.Id == classId);
+            if (classEntity == null)
             {
-                int totalLessonsNeeded = req.UpdateDto.TotalLessons > 0 ? req.UpdateDto.TotalLessons : 24;
-                var startDate = System.DateTime.Today;
-                var checkingDateTemp = startDate;
-                var lessonsCreatedChecking = 0;
-
-                while (lessonsCreatedChecking < totalLessonsNeeded)
-                {
-                    foreach (var schedule in scheduleList)
-                    {
-                        if (lessonsCreatedChecking >= totalLessonsNeeded) break;
-                        if (schedule.day == checkingDateTemp.DayOfWeek)
-                        {
-                            var hasOverlap = await _context.Lessons
-                                .AnyAsync(l => l.ClassId != req.UpdateDto.Id && l.RoomId == req.UpdateRoomId && l.SlotId == schedule.slotId && l.LessonDate.Date == checkingDateTemp.Date);
-
-                            if (hasOverlap)
-                            {
-                                var slotObj = await _context.Slots.FindAsync(schedule.slotId);
-                                return BadRequest(new { message = $"Trùng lịch học tại phòng: Phòng đã có lớp khác đăng ký vào ngày {checkingDateTemp:dd/MM/yyyy} ở ca học {slotObj?.SlotName ?? schedule.slotId.ToString()}." });
-                            }
-                            lessonsCreatedChecking++;
-                        }
-                    }
-                    checkingDateTemp = checkingDateTemp.AddDays(1);
-                    if (checkingDateTemp > startDate.AddYears(5)) break;
-                }
+                return NotFound(new { message = $"Không tìm thấy lớp học ID {classId} để cập nhật." });
             }
 
             var updated = await _classService.UpdateClassAsync(req.UpdateDto);
@@ -245,61 +146,47 @@ namespace PROJECT_PRN232_.Controllers
                 return NotFound(new { message = $"Không tìm thấy lớp học ID {classId} để cập nhật." });
             }
 
-            // Xóa các buổi học cũ (phải xóa các bảng con trước để tránh lỗi FK)
-            var existingLessons = _context.Lessons.Where(l => l.ClassId == req.UpdateDto.Id).ToList();
-            var lessonIds = existingLessons.Select(l => l.Id).ToList();
-
-            if (lessonIds.Any())
+            // Nếu thay đổi Môn học => Sinh lại số buổi học tương ứng
+            if (classEntity.Subject != req.UpdateDto.Subject)
             {
-                // 1. Xóa Materials (tài liệu) thuộc các buổi học này
-                var relatedMaterials = _context.Materials.Where(m => m.LessonId.HasValue && lessonIds.Contains(m.LessonId.Value));
-                _context.Materials.RemoveRange(relatedMaterials);
+                // Xóa các buổi học cũ (phải xóa các bảng con trước để tránh lỗi FK)
+                var existingLessons = _context.Lessons.Where(l => l.ClassId == classId).ToList();
+                var lessonIds = existingLessons.Select(l => l.Id).ToList();
 
-                // 2. Xóa Attendances (điểm danh) thuộc các buổi học này
-                var relatedAttendances = _context.Attendances.Where(a => lessonIds.Contains(a.LessonId));
-                _context.Attendances.RemoveRange(relatedAttendances);
-
-                // 3. Xóa Assessments (đánh giá) thuộc các buổi học này nếu có
-                var relatedAssessments = _context.Assessments.Where(a => lessonIds.Contains(a.LessonId));
-                _context.Assessments.RemoveRange(relatedAssessments);
-
-                // 4. Cuối cùng mới xóa Lessons
-                _context.Lessons.RemoveRange(existingLessons);
-            }
-
-            await _context.SaveChangesAsync();
-
-            // Sinh lịch học mới
-            if (scheduleList.Count > 0)
-            {
-                int totalLessonsNeeded = req.UpdateDto.TotalLessons > 0 ? req.UpdateDto.TotalLessons : 24;
-                var startDate = System.DateTime.Today;
-                var currentCheckingDate = startDate;
-                var lessonsCreated = 0;
-
-                while (lessonsCreated < totalLessonsNeeded)
+                if (lessonIds.Any())
                 {
-                    foreach (var schedule in scheduleList)
+                    // 1. Xóa Materials (tài liệu) thuộc các buổi học này
+                    var relatedMaterials = _context.Materials.Where(m => m.LessonId.HasValue && lessonIds.Contains(m.LessonId.Value));
+                    _context.Materials.RemoveRange(relatedMaterials);
+
+                    // 2. Xóa Attendances (điểm danh) thuộc các buổi học này
+                    var relatedAttendances = _context.Attendances.Where(a => lessonIds.Contains(a.LessonId));
+                    _context.Attendances.RemoveRange(relatedAttendances);
+
+                    // 3. Xóa Assessments (đánh giá) thuộc các buổi học này nếu có
+                    var relatedAssessments = _context.Assessments.Where(a => lessonIds.Contains(a.LessonId));
+                    _context.Assessments.RemoveRange(relatedAssessments);
+
+                    // 4. Cuối cùng mới xóa Lessons
+                    _context.Lessons.RemoveRange(existingLessons);
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Sinh các buổi học mới tuần tự bắt đầu từ hôm nay
+                for (int i = 0; i < totalLessons; i++)
+                {
+                    var lesson = new Lesson
                     {
-                        if (lessonsCreated >= totalLessonsNeeded) break;
-                        if (schedule.day == currentCheckingDate.DayOfWeek)
-                        {
-                            var lesson = new Lesson
-                            {
-                                ClassId = req.UpdateDto.Id,
-                                Title = $"Buổi {lessonsCreated + 1}",
-                                Description = $"Bài học buổi thứ {lessonsCreated + 1} của lớp {req.UpdateDto.ClassName}",
-                                LessonDate = currentCheckingDate,
-                                RoomId = req.UpdateRoomId > 0 ? req.UpdateRoomId : (int?)null,
-                                SlotId = schedule.slotId,
-                                IsPublished = true
-                            };
-                            _context.Lessons.Add(lesson);
-                            lessonsCreated++;
-                        }
-                    }
-                    currentCheckingDate = currentCheckingDate.AddDays(1);
-                    if (currentCheckingDate > startDate.AddYears(5)) break;
+                        ClassId = classId,
+                        Title = $"Buổi {i + 1}",
+                        Description = $"Bài học buổi thứ {i + 1} của lớp {req.UpdateDto.ClassName}",
+                        LessonDate = DateTime.Today.AddDays(i),
+                        RoomId = req.UpdateRoomId > 0 ? req.UpdateRoomId : (int?)null,
+                        SlotId = null,
+                        IsPublished = false
+                    };
+                    _context.Lessons.Add(lesson);
                 }
                 await _context.SaveChangesAsync();
             }
