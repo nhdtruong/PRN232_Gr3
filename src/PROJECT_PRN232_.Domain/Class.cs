@@ -16,6 +16,11 @@ namespace PROJECT_PRN232_.Domain
         [ForeignKey(nameof(CenterId))]
         public virtual User Center { get; set; } = null!;
 
+        public int? TeacherId { get; set; }
+
+        [ForeignKey(nameof(TeacherId))]
+        public virtual User? Teacher { get; set; }
+
         [Required]
         [StringLength(150)]
         public string ClassName { get; set; } = null!;

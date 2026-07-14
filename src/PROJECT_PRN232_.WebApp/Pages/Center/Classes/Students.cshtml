@@ -245,6 +245,11 @@
                         <h5 class="fw-bold text-dark mb-1">Xếp học viên vào lớp</h5>
                         <p class="text-muted small mb-0">Tích chọn các học sinh dưới đây để xếp vào lớp này.</p>
                     </div>
+                    <div>
+                        <button type="button" class="btn btn-sm text-white px-3 fw-semibold shadow-sm rounded-pill" style="background: var(--eb-indigo-gradient);" data-bs-toggle="modal" data-bs-target="#createStudentModal">
+                            <i class="bi bi-person-plus-fill me-1"></i> Thêm mới
+                        </button>
+                    </div>
                 </div>
 
                 <form method="post" asp-page-handler="EnrollMulti">
@@ -340,8 +345,119 @@
     </div>
 </div>
 
+<!-- Create Student Modal -->
+<div class="modal fade" id="createStudentModal" tabindex="-1" aria-labelledby="createStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 bg-light py-3">
+                <h5 class="modal-title fw-bold text-dark" id="createStudentModalLabel">
+                    <i class="bi bi-person-plus-fill text-primary me-2"></i>Thêm Học sinh mới vào lớp
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="CreateStudentAndEnroll">
+                <input type="hidden" asp-for="ClassId" />
+                <div class="modal-body p-4">
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">1. Thông tin Học sinh</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted small">Họ và Tên</label>
+                            <input type="text" asp-for="NewStudentForm.FullName" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted small">Ngày sinh</label>
+                            <input type="date" asp-for="NewStudentForm.DateOfBirth" class="form-control" required />
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">2. Thông tin Phụ huynh</h6>
+                    <div class="mb-3">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" asp-for="NewStudentForm.IsNewParent" value="false" id="oldParentRadio" checked onchange="toggleParentForm()">
+                            <label class="form-check-label" for="oldParentRadio">Chọn phụ huynh có sẵn</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" asp-for="NewStudentForm.IsNewParent" value="true" id="newParentRadio" onchange="toggleParentForm()">
+                            <label class="form-check-label" for="newParentRadio">Tạo phụ huynh mới</label>
+                        </div>
+                    </div>
+
+                    <!-- Select Existing Parent -->
+                    <div id="existingParentSection">
+                        <label class="form-label fw-semibold text-muted small">Chọn Phụ huynh</label>
+                        <select asp-for="NewStudentForm.SelectedParentId" class="form-select" id="existingParentSelect">
+                            <option value="">-- Chọn phụ huynh --</option>
+                            @foreach(var p in Model.ParentsList)
+                            {
+                                <option value="@p.Id">@p.FullName (@p.Username) - @p.Phone</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Create New Parent Form -->
+                    <div id="newParentSection" class="d-none bg-light p-3 rounded-3 mt-2">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Họ và tên Phụ huynh</label>
+                                <input type="text" asp-for="NewStudentForm.ParentFullName" class="form-control" id="npFullName" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Tên đăng nhập</label>
+                                <input type="text" asp-for="NewStudentForm.ParentUsername" class="form-control" id="npUsername" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Mật khẩu</label>
+                                <input type="password" asp-for="NewStudentForm.ParentPassword" class="form-control" id="npPassword" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Số điện thoại</label>
+                                <input type="text" asp-for="NewStudentForm.ParentPhone" class="form-control" />
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold text-muted small">Email</label>
+                                <input type="email" asp-for="NewStudentForm.ParentEmail" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 py-3 bg-light">
+                    <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn text-white px-4 rounded-pill shadow-sm" style="background: var(--eb-indigo-gradient);" onclick="return validateNewStudentForm()">
+                        <i class="bi bi-person-check-fill me-1"></i> Thêm và Xếp lớp
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
+        function toggleParentForm() {
+            const isNew = document.getElementById('newParentRadio').checked;
+            document.getElementById('existingParentSection').classList.toggle('d-none', isNew);
+            document.getElementById('newParentSection').classList.toggle('d-none', !isNew);
+        }
+
+        function validateNewStudentForm() {
+            const isNew = document.getElementById('newParentRadio').checked;
+            if (isNew) {
+                const fn = document.getElementById('npFullName').value;
+                const un = document.getElementById('npUsername').value;
+                const pw = document.getElementById('npPassword').value;
+                if (!fn || !un || !pw) {
+                    alert("Vui lòng điền đủ Họ tên, Tên đăng nhập và Mật khẩu cho phụ huynh mới.");
+                    return false;
+                }
+            } else {
+                const sel = document.getElementById('existingParentSelect').value;
+                if (!sel) {
+                    alert("Vui lòng chọn phụ huynh có sẵn hoặc tạo mới.");
+                    return false;
+                }
+            }
+            return true;
+        }
         function openTransferModal(studentId, studentName) {
             document.getElementById('transferStudentId').value = studentId;
             document.getElementById('transferTitle').textContent = `Chuyển lớp cho học viên: ${studentName}`;

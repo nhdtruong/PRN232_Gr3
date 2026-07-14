@@ -12,5 +12,7 @@ namespace PROJECT_PRN232_.Application.DTOs
         public int TotalLessons { get; set; } = 24;
         public System.DateTime? StartDate { get; set; }
         public System.DateTime? EndDate { get; set; }
+        public int? TeacherId { get; set; }
+        public string? TeacherName { get; set; }
     }
 }
