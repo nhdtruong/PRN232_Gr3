@@ -34,9 +34,12 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Chat
             public int Id { get; set; }
             public string FullName { get; set; } = null!;
             public int UnreadCount { get; set; }
+            public string StudentNames { get; set; } = string.Empty; // Tên con của phụ huynh
+            public string ClassNames { get; set; } = string.Empty;  // Lớp học của con
         }
 
         public List<ParentChatViewModel> Parents { get; set; } = new List<ParentChatViewModel>();
+        public List<string> AvailableClasses { get; set; } = new List<string>();
         public int CurrentUserId { get; set; }
         public int? TargetParentId { get; set; }
 
@@ -45,7 +48,7 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Chat
             CurrentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             TargetParentId = parentId;
             
-            // Get all active parents with their unread message count
+            // Get all active parents with their unread message count, student names and class names
             Parents = await _context.Users
                 .Where(u => u.Role == "Parent" && u.IsActive)
                 .Select(u => new ParentChatViewModel
@@ -56,10 +59,29 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Chat
                         .Count(m => m.ChatChannel.CenterId == CurrentUserId &&
                                     m.ChatChannel.ParentId == u.Id &&
                                     m.SenderId == u.Id &&
-                                    !m.IsRead)
+                                    !m.IsRead),
+                    // Lấy tên con(s) của phụ huynh
+                    StudentNames = string.Join(", ", _context.Students
+                        .Where(s => s.ParentId == u.Id)
+                        .Select(s => s.FullName)),
+                    // Lấy tên lớp(s) của con(s) thuộc center này
+                    ClassNames = string.Join(", ", _context.Students
+                        .Where(s => s.ParentId == u.Id)
+                        .SelectMany(s => s.ClassStudents)
+                        .Where(cs => cs.Class.CenterId == CurrentUserId)
+                        .Select(cs => cs.Class.ClassName)
+                        .Distinct())
                 })
                 .OrderByDescending(p => p.UnreadCount)
                 .ThenBy(p => p.FullName)
+                .ToListAsync();
+
+            // Lấy danh sách tất cả lớp của center này để hiện trong combobox
+            AvailableClasses = await _context.Classes
+                .Where(c => c.CenterId == CurrentUserId)
+                .OrderBy(c => c.ClassName)
+                .Select(c => c.ClassName)
+                .Distinct()
                 .ToListAsync();
         }
 

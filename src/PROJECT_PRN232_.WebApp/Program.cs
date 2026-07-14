@@ -22,6 +22,7 @@ builder.Services.AddScoped<IClassRepository, ClassRepository>();
 builder.Services.AddScoped<IClassService, ClassService>();
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IClassStudentRepository, ClassStudentRepository>();
+builder.Services.AddScoped<ITransferRequestRepository, TransferRequestRepository>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IParentProfileService, ParentProfileService>();
@@ -43,6 +44,7 @@ builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<ITransferRequestService, TransferRequestService>();
 builder.Services.AddSignalR();
 
 // Configure Authentication (Cookie for Web, JWT for API)

@@ -17,6 +17,7 @@ namespace PROJECT_PRN232_.Infrastructure.Data
         public DbSet<Subject> Subjects { get; set; }
         public DbSet<Material> Materials { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
+        public DbSet<ClassTransferRequest> ClassTransferRequests { get; set; } = null!;
         public DbSet<Assessment> Assessments { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<ChatChannel> ChatChannels { get; set; }
@@ -51,6 +52,12 @@ namespace PROJECT_PRN232_.Infrastructure.Data
                 .HasOne(c => c.Center)
                 .WithMany(u => u.CreatedClasses)
                 .HasForeignKey(c => c.CenterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Class>()
+                .HasOne(c => c.Teacher)
+                .WithMany(u => u.TaughtClasses)
+                .HasForeignKey(c => c.TeacherId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Student>()
@@ -116,6 +123,24 @@ namespace PROJECT_PRN232_.Infrastructure.Data
                 .HasOne(sub => sub.Center)
                 .WithMany()
                 .HasForeignKey(sub => sub.CenterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClassTransferRequest>()
+                .HasOne(r => r.FromTeacher)
+                .WithMany()
+                .HasForeignKey(r => r.FromTeacherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClassTransferRequest>()
+                .HasOne(r => r.ToTeacher)
+                .WithMany()
+                .HasForeignKey(r => r.ToTeacherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClassTransferRequest>()
+                .HasOne(r => r.Class)
+                .WithMany()
+                .HasForeignKey(r => r.ClassId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Mã môn học phải duy nhất trong phạm vi từng trung tâm

@@ -246,6 +246,7 @@
                             <th>Tên lớp</th>
                             <th class="text-center" style="width: 100px;">Sĩ số</th>
                             <th>Môn học</th>
+                            <th>Giáo viên</th>
                             <th class="text-center" style="width: 120px;">Tổng số buổi</th>
                             <th style="width: 180px;">Trạng thái</th>
                             <th class="text-center" style="width: 180px;">Thao tác</th>
@@ -432,6 +433,17 @@
                             </div>
 
                             <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small mb-1">Giáo viên</label>
+                                <select class="form-select" id="createClassTeacher">
+                                    <option value="" selected>Chưa phân công</option>
+                                    @foreach (var t in Model.Teachers)
+                                    {
+                                        <option value="@t.Id">@t.FullName (@t.Username)</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
                                 <input class="form-control" type="number" id="createTotalLessons" placeholder="Ví dụ: 24" value="24" required />
                             </div>
@@ -550,6 +562,17 @@
                                     @foreach (var s in Model.Subjects)
                                     {
                                         <option value="@s.SubjectCode" data-sessions="@s.NumberOfSessions">@s.SubjectName (@s.SubjectCode)</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small mb-1">Giáo viên</label>
+                                <select class="form-select" id="editClassTeacher">
+                                    <option value="" selected>Chưa phân công</option>
+                                    @foreach (var t in Model.Teachers)
+                                    {
+                                        <option value="@t.Id">@t.FullName (@t.Username)</option>
                                     }
                                 </select>
                             </div>
@@ -708,6 +731,7 @@
                         <td class="small">
                             <span class="badge bg-primary-subtle text-primary border rounded-pill px-2 py-1">${subjectDisplay}</span>
                         </td>
+                        <td class="fw-semibold text-secondary">${c.teacherName || '<span class="text-muted fst-italic">Chưa có</span>'}</td>
                         <td class="text-center">
                             <span class="badge bg-info-subtle text-info border px-2 py-1"><i class="bi bi-book me-1"></i>${c.totalLessons} buổi</span>
                         </td>
@@ -755,7 +779,8 @@
                     subject: document.getElementById('createClassSubject').value,
                     totalLessons: parseInt(document.getElementById('createTotalLessons').value),
                     maxCapacity: parseInt(document.getElementById('createMaxCapacity').value),
-                    centerId: 1
+                    centerId: 1,
+                    teacherId: document.getElementById('createClassTeacher').value ? parseInt(document.getElementById('createClassTeacher').value) : null
                 },
                 createRoomId: parseInt(document.getElementById('createRoomId').value),
                 dayOfWeek: dayOfWeeks,
@@ -834,6 +859,7 @@
                     document.getElementById('editMaxCapacity').value = data.maxCapacity || 30;
                     document.getElementById('editClassSubject').value = data.subject || '';
                     document.getElementById('editTotalLessons').value = data.totalLessons || 24;
+                    document.getElementById('editClassTeacher').value = data.teacherId || '';
 
                     const formattedId = ("0000" + id).slice(-4);
                     document.getElementById('editClassCode').value = `CLS-${data.centerId || 1}-${new Date().getFullYear()}${("0" + (new Date().getMonth() + 1)).slice(-2)}-${formattedId}`;
@@ -959,7 +985,8 @@
                     subject: document.getElementById('editClassSubject').value,
                     totalLessons: parseInt(document.getElementById('editTotalLessons').value),
                     maxCapacity: parseInt(document.getElementById('editMaxCapacity').value),
-                    centerId: 1
+                    centerId: 1,
+                    teacherId: document.getElementById('editClassTeacher').value ? parseInt(document.getElementById('editClassTeacher').value) : null
                 },
                 updateRoomId: parseInt(document.getElementById('editClassRoom').value),
                 dayOfWeek: dayOfWeeks,

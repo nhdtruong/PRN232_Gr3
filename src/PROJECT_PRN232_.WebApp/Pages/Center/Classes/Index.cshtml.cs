@@ -23,12 +23,14 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
         public List<Room> Rooms { get; set; } = new();
         public List<Slot> Slots { get; set; } = new();
         public List<Subject> Subjects { get; set; } = new();
+        public List<User> Teachers { get; set; } = new();
 
         public async Task OnGetAsync()
         {
             Rooms = await _context.Rooms.OrderBy(r => r.RoomName).ToListAsync();
             Slots = await _context.Slots.OrderBy(s => s.StartTime).ToListAsync();
             Subjects = await _context.Subjects.OrderBy(s => s.SubjectName).ToListAsync();
+            Teachers = await _context.Users.Where(u => u.Role == "Teacher").OrderBy(u => u.FullName).ToListAsync();
         }
     }
 }

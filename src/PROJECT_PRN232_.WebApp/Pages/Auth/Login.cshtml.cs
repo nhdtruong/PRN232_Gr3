@@ -41,6 +41,8 @@ namespace PROJECT_PRN232_.WebApp.Pages.Auth
                     return RedirectToPage("/Parent/Dashboard");
                 if (role == "Center")
                     return RedirectToPage("/Center/Dashboard");
+                if (role == "Teacher")
+                    return RedirectToPage("/Teacher/Dashboard");
                 return RedirectToPage("/Index");
             }
             return Page();

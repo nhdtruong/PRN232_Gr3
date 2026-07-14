@@ -37,6 +37,7 @@ namespace PROJECT_PRN232_.Domain
         // Navigation Properties
         public virtual ICollection<Student> Students { get; set; } = new List<Student>();
         public virtual ICollection<Class> CreatedClasses { get; set; } = new List<Class>();
+        public virtual ICollection<Class> TaughtClasses { get; set; } = new List<Class>();
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
         public virtual ICollection<ChatChannel> CenterChannels { get; set; } = new List<ChatChannel>();
         public virtual ICollection<ChatChannel> ParentChannels { get; set; } = new List<ChatChannel>();

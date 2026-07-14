@@ -1,0 +1,117 @@
+@page
+@model PROJECT_PRN232_.WebApp.Pages.Center.TransferRequestsModel
+@{
+    ViewData["Title"] = "Duyệt đơn đổi lớp";
+}
+
+<div class="container-fluid py-4" style="max-width: 1400px;">
+    <div class="mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="fw-bold text-dark mb-1" style="font-size: 1.85rem;">Phê duyệt đổi lớp</h1>
+            <p class="text-muted mb-0">Quản lý các yêu cầu bàn giao lớp học giữa các Giáo viên.</p>
+        </div>
+    </div>
+
+    <!-- Top Alert Messages Container -->
+    <div id="alertContainer"></div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4">Tên lớp</th>
+                            <th>Giáo viên hiện tại</th>
+                            <th>Giáo viên đề xuất</th>
+                            <th>Lý do</th>
+                            <th>Ngày tạo đơn</th>
+                            <th class="text-end pe-4">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.PendingRequests.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Không có đơn đổi lớp nào đang chờ duyệt.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var req in Model.PendingRequests)
+                            {
+                                <tr id="row-@req.Id">
+                                    <td class="ps-4 fw-bold text-dark">@req.ClassName</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="bg-danger-subtle text-danger rounded-circle d-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
+                                                <i class="bi bi-person-dash"></i>
+                                            </div>
+                                            <span class="fw-semibold">@req.FromTeacherName</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="bg-success-subtle text-success rounded-circle d-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
+                                                <i class="bi bi-person-add"></i>
+                                            </div>
+                                            <span class="fw-semibold">@req.ToTeacherName</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="text-muted small">@req.Reason</span></td>
+                                    <td><span class="text-muted small">@req.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span></td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-success rounded-pill px-3 me-1" onclick="processRequest(@req.Id, true)">Phê duyệt</button>
+                                        <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="processRequest(@req.Id, false)">Từ chối</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function processRequest(id, isApproved) {
+            if (!confirm(`Bạn có chắc muốn ${isApproved ? 'PHÊ DUYỆT' : 'TỪ CHỐI'} yêu cầu này không?`)) return;
+
+            fetch(`/api/classtransfer/${id}/process`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isApproved: isApproved })
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || "Có lỗi xảy ra");
+                return data;
+            })
+            .then(data => {
+                showAlert(data.message, "success");
+                document.getElementById('row-' + id).remove();
+            })
+            .catch(err => {
+                showAlert(err.message, "danger");
+            });
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            container.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4" role="alert">
+                    <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-info-circle-fill'} me-2"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            setTimeout(() => {
+                $(`.alert`).alert('close');
+            }, 5000);
+        }
+    </script>
+}
