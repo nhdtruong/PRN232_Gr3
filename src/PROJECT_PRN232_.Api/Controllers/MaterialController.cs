@@ -40,14 +40,14 @@ namespace PROJECT_PRN232_.Controllers
         /// POST /api/center/lessons/{lessonId}/materials
         /// </summary>
         [HttpPost("api/center/lessons/{lessonId}/materials")]
-        [Authorize(Roles = "Center")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> Upload(int lessonId, [FromBody] MaterialCreateDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var centerUserId = GetUserId();
-            var result = await _materialService.CreateAsync(lessonId, dto, centerUserId);
+            var teacherUserId = GetUserId();
+            var result = await _materialService.CreateAsync(lessonId, dto, teacherUserId);
 
             if (result == null)
             {
@@ -63,7 +63,7 @@ namespace PROJECT_PRN232_.Controllers
         /// Hỗ trợ upload tài liệu (PDF, Word, Excel), ảnh (JPG, PNG) giới hạn tối đa 20MB.
         /// </summary>
         [HttpPost("api/center/materials/upload-file")]
-        [Authorize(Roles = "Center")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> UploadPhysicalFile(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -121,11 +121,11 @@ namespace PROJECT_PRN232_.Controllers
         /// DELETE /api/center/materials/{materialId}
         /// </summary>
         [HttpDelete("api/center/materials/{materialId}")]
-        [Authorize(Roles = "Center")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> Delete(int materialId)
         {
-            var centerUserId = GetUserId();
-            var success = await _materialService.DeleteAsync(materialId, centerUserId);
+            var teacherUserId = GetUserId();
+            var success = await _materialService.DeleteAsync(materialId, teacherUserId);
 
             if (!success)
             {

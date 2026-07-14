@@ -3,13 +3,15 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using PROJECT_PRN232_.Domain;
 using PROJECT_PRN232_.Infrastructure.Data;
 
-namespace PROJECT_PRN232_.WebApp.Pages.Center.Lessons
+namespace PROJECT_PRN232_.WebApp.Pages.Teacher.Lessons
 {
-    [Authorize(Roles = "Center")]
+    [Authorize(Roles = "Teacher")]
     public class LessonModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -29,7 +31,22 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Lessons
         {
             if (ClassId <= 0)
             {
-                return RedirectToPage("/Center/Dashboard");
+                return RedirectToPage("/Teacher/Dashboard");
+            }
+
+            // Bảo mật: Đảm bảo Giáo viên này sở hữu lớp học
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (int.TryParse(userIdStr, out int teacherId))
+            {
+                var isOwner = await _context.Classes.AnyAsync(c => c.Id == ClassId && c.TeacherId == teacherId);
+                if (!isOwner)
+                {
+                    return RedirectToPage("/Teacher/Dashboard");
+                }
+            }
+            else
+            {
+                return RedirectToPage("/Teacher/Dashboard");
             }
 
             Rooms = await _context.Rooms.Where(r => r.Status == "Active").ToListAsync();
