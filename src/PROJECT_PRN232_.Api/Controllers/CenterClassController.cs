@@ -244,9 +244,28 @@ namespace PROJECT_PRN232_.Controllers
                 return NotFound(new { message = $"Không tìm thấy lớp học ID {classId} để cập nhật." });
             }
 
-            // Xóa các buổi học cũ
-            var existingLessons = _context.Lessons.Where(l => l.ClassId == req.UpdateDto.Id);
-            _context.Lessons.RemoveRange(existingLessons);
+            // Xóa các buổi học cũ (phải xóa các bảng con trước để tránh lỗi FK)
+            var existingLessons = _context.Lessons.Where(l => l.ClassId == req.UpdateDto.Id).ToList();
+            var lessonIds = existingLessons.Select(l => l.Id).ToList();
+
+            if (lessonIds.Any())
+            {
+                // 1. Xóa Materials (tài liệu) thuộc các buổi học này
+                var relatedMaterials = _context.Materials.Where(m => m.LessonId.HasValue && lessonIds.Contains(m.LessonId.Value));
+                _context.Materials.RemoveRange(relatedMaterials);
+
+                // 2. Xóa Attendances (điểm danh) thuộc các buổi học này
+                var relatedAttendances = _context.Attendances.Where(a => lessonIds.Contains(a.LessonId));
+                _context.Attendances.RemoveRange(relatedAttendances);
+
+                // 3. Xóa Assessments (đánh giá) thuộc các buổi học này nếu có
+                var relatedAssessments = _context.Assessments.Where(a => lessonIds.Contains(a.LessonId));
+                _context.Assessments.RemoveRange(relatedAssessments);
+
+                // 4. Cuối cùng mới xóa Lessons
+                _context.Lessons.RemoveRange(existingLessons);
+            }
+
             await _context.SaveChangesAsync();
 
             // Sinh lịch học mới
@@ -437,6 +456,7 @@ namespace PROJECT_PRN232_.Controllers
                 totalLessons = classObj.TotalLessons,
                 roomId = firstRoomId,
                 subject = classObj.Subject,
+                teacherId = classObj.TeacherId,
                 lessons = uniqueSchedules
             });
         }

@@ -16,5 +16,7 @@ namespace PROJECT_PRN232_.Application.DTOs
         public string? Subject { get; set; }
 
         public int TotalLessons { get; set; } = 24;
+
+        public int? TeacherId { get; set; }
     }
 }

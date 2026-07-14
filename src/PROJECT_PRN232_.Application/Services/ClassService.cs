@@ -27,7 +27,9 @@ namespace PROJECT_PRN232_.Application.Services
                 Subject = c.Subject,
                 TotalLessons = c.TotalLessons,
                 StartDate = c.StartDate,
-                EndDate = c.EndDate
+                EndDate = c.EndDate,
+                TeacherId = c.TeacherId,
+                TeacherName = c.Teacher?.FullName
             });
         }
 
@@ -47,7 +49,9 @@ namespace PROJECT_PRN232_.Application.Services
                 Subject = classEntity.Subject,
                 TotalLessons = classEntity.TotalLessons,
                 StartDate = classEntity.StartDate,
-                EndDate = classEntity.EndDate
+                EndDate = classEntity.EndDate,
+                TeacherId = classEntity.TeacherId,
+                TeacherName = classEntity.Teacher?.FullName
             };
         }
 
@@ -59,7 +63,8 @@ namespace PROJECT_PRN232_.Application.Services
                 CenterId = dto.CenterId,
                 MaxCapacity = dto.MaxCapacity,
                 Subject = dto.Subject,
-                TotalLessons = dto.TotalLessons
+                TotalLessons = dto.TotalLessons,
+                TeacherId = dto.TeacherId
             };
 
             var createdClass = await _classRepository.AddClassAsync(classEntity);
@@ -75,7 +80,8 @@ namespace PROJECT_PRN232_.Application.Services
                 Subject = createdClass.Subject,
                 TotalLessons = createdClass.TotalLessons,
                 StartDate = createdClass.StartDate,
-                EndDate = createdClass.EndDate
+                EndDate = createdClass.EndDate,
+                TeacherId = createdClass.TeacherId
             };
         }
 
@@ -89,6 +95,7 @@ namespace PROJECT_PRN232_.Application.Services
             classEntity.MaxCapacity = dto.MaxCapacity;
             classEntity.Subject = dto.Subject;
             classEntity.TotalLessons = dto.TotalLessons;
+            classEntity.TeacherId = dto.TeacherId;
 
             return await _classRepository.UpdateClassAsync(classEntity);
         }

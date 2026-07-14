@@ -44,6 +44,26 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
         [BindProperty]
         public int TargetClassId { get; set; }
 
+        public IEnumerable<User> ParentsList { get; set; } = new List<User>();
+
+        [BindProperty]
+        public NewStudentFormModel NewStudentForm { get; set; } = new();
+
+        public class NewStudentFormModel
+        {
+            public string FullName { get; set; } = string.Empty;
+            public DateTime DateOfBirth { get; set; } = DateTime.Today;
+            public bool IsNewParent { get; set; }
+            public int? SelectedParentId { get; set; }
+            
+            // Thông tin Parent mới (nếu chọn IsNewParent)
+            public string? ParentFullName { get; set; }
+            public string? ParentUsername { get; set; }
+            public string? ParentPassword { get; set; }
+            public string? ParentEmail { get; set; }
+            public string? ParentPhone { get; set; }
+        }
+
         public async Task<IActionResult> OnGetAsync(int classId)
         {
             ClassId = classId;
@@ -68,6 +88,12 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
             // Load other active classes for transfer options
             var allClasses = await _classService.GetAllClassesAsync();
             ActiveClasses = allClasses.Where(c => c.Status == "Active" && c.Id != classId).ToList();
+
+            // Load parents for creating new student
+            ParentsList = await _context.Users
+                .Where(u => u.Role == "Parent")
+                .OrderBy(u => u.FullName)
+                .ToListAsync();
 
             return Page();
         }
@@ -136,6 +162,76 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center.Classes
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = ex.Message;
+            }
+
+            return RedirectToPage(new { classId = ClassId });
+        }
+
+        public async Task<IActionResult> OnPostCreateStudentAndEnrollAsync()
+        {
+            try
+            {
+                int parentId;
+
+                if (NewStudentForm.IsNewParent)
+                {
+                    // Check username
+                    if (await _context.Users.AnyAsync(u => u.Username == NewStudentForm.ParentUsername))
+                    {
+                        TempData["ErrorMessage"] = "Tên đăng nhập của phụ huynh đã tồn tại.";
+                        return RedirectToPage(new { classId = ClassId });
+                    }
+
+                    var newParent = new User
+                    {
+                        FullName = NewStudentForm.ParentFullName ?? "",
+                        Username = NewStudentForm.ParentUsername ?? "",
+                        PasswordHash = BCrypt.Net.BCrypt.HashPassword(NewStudentForm.ParentPassword ?? "123456"),
+                        Email = NewStudentForm.ParentEmail,
+                        Phone = NewStudentForm.ParentPhone,
+                        Role = "Parent",
+                        IsActive = true,
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.Users.Add(newParent);
+                    await _context.SaveChangesAsync();
+                    parentId = newParent.Id;
+                }
+                else
+                {
+                    if (NewStudentForm.SelectedParentId == null || NewStudentForm.SelectedParentId <= 0)
+                    {
+                        TempData["ErrorMessage"] = "Vui lòng chọn phụ huynh.";
+                        return RedirectToPage(new { classId = ClassId });
+                    }
+                    parentId = NewStudentForm.SelectedParentId.Value;
+                }
+
+                var newStudent = new Student
+                {
+                    FullName = NewStudentForm.FullName,
+                    DateOfBirth = NewStudentForm.DateOfBirth,
+                    ParentId = parentId,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Students.Add(newStudent);
+                await _context.SaveChangesAsync();
+
+                // Enroll student
+                var enrollSuccess = await _enrollmentService.EnrollStudentAsync(ClassId, newStudent.Id);
+                if (enrollSuccess)
+                {
+                    TempData["SuccessMessage"] = "Thêm học sinh mới và xếp lớp thành công!";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Thêm học sinh thành công nhưng không thể xếp vào lớp.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Lỗi hệ thống: " + ex.Message;
             }
 
             return RedirectToPage(new { classId = ClassId });

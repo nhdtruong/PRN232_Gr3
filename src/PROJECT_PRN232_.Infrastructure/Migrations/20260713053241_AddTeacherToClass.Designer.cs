@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PROJECT_PRN232_.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using PROJECT_PRN232_.Infrastructure.Data;
 namespace PROJECT_PRN232_.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260713053241_AddTeacherToClass")]
+    partial class AddTeacherToClass
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -223,49 +226,6 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                     b.HasIndex("StudentId");
 
                     b.ToTable("ClassStudents");
-                });
-
-            modelBuilder.Entity("PROJECT_PRN232_.Domain.ClassTransferRequest", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ClassId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("FromTeacherId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("ToTeacherId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClassId");
-
-                    b.HasIndex("FromTeacherId");
-
-                    b.HasIndex("ToTeacherId");
-
-                    b.ToTable("ClassTransferRequests");
                 });
 
             modelBuilder.Entity("PROJECT_PRN232_.Domain.Lesson", b =>
@@ -675,33 +635,6 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("PROJECT_PRN232_.Domain.ClassTransferRequest", b =>
-                {
-                    b.HasOne("PROJECT_PRN232_.Domain.Class", "Class")
-                        .WithMany()
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PROJECT_PRN232_.Domain.User", "FromTeacher")
-                        .WithMany()
-                        .HasForeignKey("FromTeacherId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PROJECT_PRN232_.Domain.User", "ToTeacher")
-                        .WithMany()
-                        .HasForeignKey("ToTeacherId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Class");
-
-                    b.Navigation("FromTeacher");
-
-                    b.Navigation("ToTeacher");
                 });
 
             modelBuilder.Entity("PROJECT_PRN232_.Domain.Lesson", b =>

@@ -18,6 +18,7 @@ namespace PROJECT_PRN232_.Infrastructure.Repositories
         {
             return await _context.Classes
                 .Include(c => c.ClassStudents)
+                .Include(c => c.Teacher)
                 .ToListAsync();
         }
 
@@ -25,6 +26,7 @@ namespace PROJECT_PRN232_.Infrastructure.Repositories
         {
             return await _context.Classes
                 .Include(c => c.ClassStudents)
+                .Include(c => c.Teacher)
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
