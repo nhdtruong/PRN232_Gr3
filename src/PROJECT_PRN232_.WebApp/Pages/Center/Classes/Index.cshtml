@@ -502,6 +502,7 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
                                 <select class="form-select" id="editClassSubject" required>
+                                    <option value="">-- Chọn môn học --</option>
                                     @foreach (var s in Model.Subjects)
                                     {
                                         <option value="@s.SubjectCode" data-sessions="@s.NumberOfSessions">@s.SubjectName (@s.SubjectCode)</option>
@@ -713,10 +714,11 @@
         function openEditModal(id) {
             $('.edit-error-container').html('');
             document.getElementById('editClassId').value = id;
-            
+
+            // Reset form trước khi load dữ liệu
             document.getElementById('editClassName').value = '';
             document.getElementById('editMaxCapacity').value = 30;
-            document.getElementById('editClassSubject').value = '';
+            document.getElementById('editClassSubject').value = '';  // chọn placeholder
             document.getElementById('editClassCode').value = '';
 
             fetch(`/api/center/classes/${id}/schedules`)
@@ -724,7 +726,19 @@
                 .then(data => {
                     document.getElementById('editClassName').value = data.className || '';
                     document.getElementById('editMaxCapacity').value = data.maxCapacity || 30;
-                    document.getElementById('editClassSubject').value = data.subject || '';
+
+                    // Set môn học - phải set SAU khi DOM đã sẵn sàng
+                    const subjectSelect = document.getElementById('editClassSubject');
+                    const subjectValue = data.subject || '';
+                    // Thử set trực tiếp
+                    subjectSelect.value = subjectValue;
+                    // Nếu không khớp (trình duyệt không set được), dùng vòng lặp tìm option
+                    if (subjectSelect.value !== subjectValue) {
+                        Array.from(subjectSelect.options).forEach(opt => {
+                            if (opt.value === subjectValue) opt.selected = true;
+                        });
+                    }
+
                     document.getElementById('editClassTeacher').value = data.teacherId || '';
 
                     const formattedId = ("0000" + id).slice(-4);

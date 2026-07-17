@@ -216,9 +216,9 @@ function renderLessons() {
                                 </a>
                             </div>
                             <div class="col-4">
-                                <a href="/Teacher/Lessons/GradeSheet?LessonId=${lesson.id}" class="text-decoration-none text-warning d-block py-1 hover-action">
-                                    <i class="bi bi-award fs-5 d-block mb-1"></i>
-                                    <span class="small fw-bold" style="font-size: 0.75rem;">Điểm số</span>
+                                <a href="/Teacher/Lessons/ClassGradeSheet?ClassId=${lesson.classId}&HighlightLessonId=${lesson.id}" class="text-decoration-none d-block py-1 hover-action" style="color:#7c3aed;">
+                                    <i class="bi bi-bar-chart-line-fill fs-5 d-block mb-1"></i>
+                                    <span class="small fw-bold" style="font-size: 0.75rem;">Bảng điểm</span>
                                 </a>
                             </div>
                         </div>
