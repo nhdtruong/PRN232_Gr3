@@ -107,6 +107,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     badge.innerText = currentCount + 1;
                     badge.classList.remove('d-none');
                 }
+
+                // Tăng badge trên Tab tương ứng (Phụ huynh / Giáo viên)
+                const senderRole = contactItem.getAttribute('data-role'); // 'Parent' or 'Teacher'
+                const tabBadge = senderRole === 'Parent'
+                    ? document.querySelector('#parents-tab .badge')
+                    : document.querySelector('#teachers-tab .badge');
+
+                if (tabBadge) {
+                    let tabCount = parseInt(tabBadge.innerText) || 0;
+                    tabBadge.innerText = tabCount + 1;
+                    tabBadge.style.display = '';
+                } else {
+                    // Badge chưa tồn tại (khi tổng unread = 0 lúc tải trang, server không render badge)
+                    const tabBtn = senderRole === 'Parent'
+                        ? document.getElementById('parents-tab')
+                        : document.getElementById('teachers-tab');
+                    if (tabBtn) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'badge rounded-pill ms-1';
+                        newBadge.style.cssText = 'background: #EF4444; color: #fff; font-size: 0.65rem; min-width: 18px; padding: 2px 5px; box-shadow: 0 2px 6px rgba(239,68,68,0.4);';
+                        newBadge.innerText = '1';
+                        tabBtn.appendChild(newBadge);
+                    }
+                }
             }
         }
 
@@ -205,10 +229,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.classList.remove('has-unread');
                 item.classList.add('active');
 
+                // Lấy số unread của contact này trước khi xóa badge
                 const badge = item.querySelector('.unread-chat-badge');
+                const contactUnreadCount = badge ? (parseInt(badge.innerText) || 0) : 0;
+                const contactRole = item.getAttribute('data-role'); // 'Parent' or 'Teacher'
+
                 if (badge) {
                     badge.innerText = '0';
                     badge.classList.add('d-none');
+                }
+
+                // Giảm badge trên Tab tương ứng (Phụ huynh / Giáo viên)
+                if (contactUnreadCount > 0) {
+                    const tabBadge = contactRole === 'Parent'
+                        ? document.querySelector('#parents-tab .badge')
+                        : document.querySelector('#teachers-tab .badge');
+
+                    if (tabBadge) {
+                        let tabCount = parseInt(tabBadge.innerText) || 0;
+                        tabCount = Math.max(0, tabCount - contactUnreadCount);
+                        tabBadge.innerText = tabCount;
+                        if (tabCount === 0) {
+                            tabBadge.style.display = 'none';
+                        }
+                    }
                 }
 
                 const parentId = parseInt(item.getAttribute('data-parent-id'));
