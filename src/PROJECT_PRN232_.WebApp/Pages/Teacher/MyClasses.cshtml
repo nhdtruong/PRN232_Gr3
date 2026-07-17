@@ -248,6 +248,15 @@
         $(document).ready(function() {
             loadMyClasses();
             loadOtherTeachers();
+
+            // Lắng nghe thông báo realtime để tự động reload danh sách lớp học mà không cần F5
+            window.addEventListener('eb-notification-received', function(e) {
+                const title = e.detail.title || "";
+                if (title.includes("yêu cầu đổi lớp") || title.includes("Phân công giảng dạy")) {
+                    console.log("Real-time update: Reloading classes list due to transfer request update...");
+                    loadMyClasses();
+                }
+            });
         });
     </script>
 }

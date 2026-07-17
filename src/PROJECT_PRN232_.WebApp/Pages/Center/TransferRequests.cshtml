@@ -80,35 +80,66 @@
 @section Scripts {
     <script>
         function processRequest(id, isApproved) {
-            if (!confirm(`Bạn có chắc muốn ${isApproved ? 'PHÊ DUYỆT' : 'TỪ CHỐI'} yêu cầu này không?`)) return;
+            const actionText = isApproved ? 'PHÊ DUYỆT' : 'TỪ CHỐI';
+            const actionColor = isApproved ? '#10B981' : '#EF4444';
+            const actionIcon = isApproved ? 'question' : 'warning';
 
-            fetch(`/api/classtransfer/${id}/process`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isApproved: isApproved })
-            })
-            .then(async res => {
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message || "Có lỗi xảy ra");
-                return data;
-            })
-            .then(data => {
-                showAlert(data.message, "success");
-                document.getElementById('row-' + id).remove();
-                
-                // Cập nhật giảm badge duyệt đổi lớp ở topbar
-                const transferBadge = document.getElementById('transfer-pending-badge');
-                if (transferBadge) {
-                    let currentCount = parseInt(transferBadge.innerText) || 0;
-                    currentCount = Math.max(0, currentCount - 1);
-                    transferBadge.innerText = currentCount;
-                    if (currentCount === 0) {
-                        transferBadge.style.setProperty('display', 'none', 'important');
-                    }
+            Swal.fire({
+                title: 'Xác nhận yêu cầu',
+                text: `Bạn có chắc chắn muốn ${actionText} yêu cầu đổi lớp này không?`,
+                icon: actionIcon,
+                showCancelButton: true,
+                confirmButtonColor: actionColor,
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Đồng ý',
+                cancelButtonText: 'Hủy',
+                background: '#ffffff',
+                customClass: {
+                    popup: 'rounded-4 shadow-lg border-0'
                 }
-            })
-            .catch(err => {
-                showAlert(err.message, "danger");
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/api/classtransfer/${id}/process`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ isApproved: isApproved })
+                    })
+                    .then(async res => {
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || "Có lỗi xảy ra");
+                        return data;
+                    })
+                    .then(data => {
+                        Swal.fire({
+                            title: 'Thành công',
+                            text: data.message,
+                            icon: 'success',
+                            confirmButtonColor: '#4F46E5',
+                            timer: 2000,
+                            timerProgressBar: true
+                        });
+                        document.getElementById('row-' + id).remove();
+                        
+                        // Cập nhật giảm badge duyệt đổi lớp ở topbar
+                        const transferBadge = document.getElementById('transfer-pending-badge');
+                        if (transferBadge) {
+                            let currentCount = parseInt(transferBadge.innerText) || 0;
+                            currentCount = Math.max(0, currentCount - 1);
+                            transferBadge.innerText = currentCount;
+                            if (currentCount === 0) {
+                                transferBadge.style.setProperty('display', 'none', 'important');
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            title: 'Thất bại',
+                            text: err.message,
+                            icon: 'error',
+                            confirmButtonColor: '#EF4444'
+                        });
+                    });
+                }
             });
         }
 

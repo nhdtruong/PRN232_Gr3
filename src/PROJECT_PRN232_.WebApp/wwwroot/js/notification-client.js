@@ -45,6 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show realtime toast
         showToast(notification.title, notification.message);
 
+        // Dispatch custom event for sub-pages to react to notifications in real-time
+        window.dispatchEvent(new CustomEvent('eb-notification-received', { detail: notification }));
+
         // Realtime update for Center's class transfer pending requests badge
         if (role === 'Center' && notification.title === "Yêu cầu đổi lớp mới") {
             const transferBadge = document.getElementById('transfer-pending-badge');
