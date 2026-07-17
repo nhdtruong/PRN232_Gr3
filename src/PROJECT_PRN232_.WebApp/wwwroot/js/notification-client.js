@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── GUARD CLAUSE ─────────────────────────────────────────────────────────
     const globalMeta = document.getElementById('global-chat-metadata');
     if (!globalMeta) return;
-    if (globalMeta.getAttribute('data-current-role') !== 'Parent') return;
+    const role = globalMeta.getAttribute('data-current-role');
+    if (role !== 'Parent' && role !== 'Teacher') return;
     // ─────────────────────────────────────────────────────────────────────────
 
     // Inject the detail modal into DOM (once, on first load)

@@ -91,9 +91,16 @@ namespace PROJECT_PRN232_.WebApp.Pages.Teacher.Lessons
 
             ClassName = classEntity.ClassName;
 
-            // Lấy tất cả buổi học của lớp (dùng làm đầu điểm TX)
-            var lessons = await _context.Lessons
-                .Where(l => l.ClassId == ClassId)
+            // Lấy các buổi học của lớp (chỉ lấy buổi được highlight nếu có)
+            var queryLessons = _context.Lessons
+                .Where(l => l.ClassId == ClassId);
+
+            if (HighlightLessonId > 0)
+            {
+                queryLessons = queryLessons.Where(l => l.Id == HighlightLessonId);
+            }
+
+            var lessons = await queryLessons
                 .OrderBy(l => l.LessonDate)
                 .Select(l => new { l.Id, l.LessonDate, l.Title })
                 .ToListAsync();
@@ -105,7 +112,7 @@ namespace PROJECT_PRN232_.WebApp.Pages.Teacher.Lessons
                 LessonDate = l.LessonDate.ToString("dd/MM")
             }).ToList();
 
-            // Lấy tất cả học sinh trong lớp (kèm điểm GK/CK lưu trong ClassStudent)
+            // Lấy tất cả học sinh trong lớp
             var classStudents = await _context.ClassStudents
                 .Where(cs => cs.ClassId == ClassId)
                 .Include(cs => cs.Student)
@@ -121,8 +128,8 @@ namespace PROJECT_PRN232_.WebApp.Pages.Teacher.Lessons
             var lessonIds = lessons.Select(l => l.Id).ToList();
             var studentIds = classStudents.Select(cs => cs.StudentId).ToList();
 
-            // Lấy toàn bộ Assessment của học sinh trong lớp này cho các buổi học (tất cả là điểm TX)
-            var allAssessments = await _context.Assessments
+            // Lấy toàn bộ DailyAssessment của học sinh trong lớp cho các buổi học này
+            var allAssessments = await _context.DailyAssessments
                 .Where(a => studentIds.Contains(a.StudentId) && lessonIds.Contains(a.LessonId))
                 .ToListAsync();
 
@@ -140,14 +147,12 @@ namespace PROJECT_PRN232_.WebApp.Pages.Teacher.Lessons
                 foreach (var lid in lessonIds)
                 {
                     var a = studentAssessments.FirstOrDefault(x => x.LessonId == lid);
-                    row.TXScores[lid] = (a?.Id, a?.Score, a?.TeacherComment);
+                    row.TXScores[lid] = (a?.Id, a?.Score, a?.Comment);
                 }
 
-                // Điểm Giữa kỳ - lấy từ ClassStudent
-                row.GiuaKy = (null, cs.MidtermScore, cs.MidtermComment);
-
-                // Điểm Cuối kỳ - lấy từ ClassStudent
-                row.CuoiKy = (null, cs.FinalScore, cs.FinalComment);
+                // Không hiển thị GK và CK trên trang này
+                row.GiuaKy = (null, null, null);
+                row.CuoiKy = (null, null, null);
 
                 Students.Add(row);
             }

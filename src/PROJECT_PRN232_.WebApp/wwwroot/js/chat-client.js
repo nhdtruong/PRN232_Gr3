@@ -26,8 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ẨN BADGE NGAY LẬP TỨC khi ở trang chat của Parent
-    if (isChatPage && currentRole === 'parent') {
+    // ẨN BADGE NGAY LẬP TỨC khi ở trang chat của Parent hoặc Teacher
+    if (isChatPage && (currentRole === 'parent' || currentRole === 'teacher')) {
         hideBadges('#chat-badge');
     }
 
@@ -51,8 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3b. Tải tin nhắn & cập nhật số lượng thông báo lập tức trên HTTP (không chờ SignalR)
     if (isChatPage) {
-        if (currentRole === 'parent') {
-            // Parent: Tải tin nhắn và ẩn badge lập tức
+        if (currentRole === 'parent' || currentRole === 'teacher') {
+            // Parent/Teacher: Tải tin nhắn và ẩn badge lập tức
             const parentChannelId = parseInt(pageMetadata.getAttribute('data-parent-channel-id'));
             activeChannelId = parentChannelId;
             otherUserName = pageMetadata.getAttribute('data-parent-center-name');
@@ -119,9 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 badge.classList.remove('d-none');
             });
 
-            const toastMsg = currentRole === 'parent'
+            const toastMsg = (currentRole === 'parent' || currentRole === 'teacher')
                 ? "Bạn có tin nhắn mới từ Trung tâm!"
-                : `Phụ huynh ${message.senderName} vừa gửi tin nhắn mới!`;
+                : `Người dùng ${message.senderName} vừa gửi tin nhắn mới!`;
             showChatToast("Tin nhắn mới", toastMsg);
         }
     });
@@ -496,8 +496,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cập nhật lại badge navbar dựa vào số channel chưa đọc (chỉ dùng cho Center)
     async function updateNavbarChatCount() {
         try {
-            // Parent đang ở trang chat → luôn ẩn badge ngay lập tức, không cần gọi API
-            if (isChatPage && currentRole === 'parent') {
+            // Parent/Teacher đang ở trang chat → luôn ẩn badge ngay lập tức, không cần gọi API
+            if (isChatPage && (currentRole === 'parent' || currentRole === 'teacher')) {
                 hideBadges('#chat-badge');
                 return;
             }

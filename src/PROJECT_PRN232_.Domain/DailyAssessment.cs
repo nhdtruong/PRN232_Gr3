@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PROJECT_PRN232_.Domain
 {
-    public class Assessment
+    public class DailyAssessment
     {
         [Key]
         public int Id { get; set; }
@@ -21,9 +21,9 @@ namespace PROJECT_PRN232_.Domain
         [ForeignKey(nameof(LessonId))]
         public virtual Lesson Lesson { get; set; } = null!;
 
-        public decimal? Score { get; set; } // S? du?c c?u hình thành decimal(4,2) ? DbContext
+        public decimal? Score { get; set; }
 
-        public string? TeacherComment { get; set; }
+        public string? Comment { get; set; }
 
         public DateTime DateAssessed { get; set; } = DateTime.Now;
     }

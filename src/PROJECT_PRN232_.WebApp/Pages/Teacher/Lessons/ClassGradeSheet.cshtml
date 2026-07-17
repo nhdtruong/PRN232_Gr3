@@ -257,61 +257,27 @@ else
             <table class="grade-table" id="grade-table">
                 <thead>
                     <tr>
-                        <th rowspan="2" style="width:42px; text-align:center;">#</th>
-                        <th rowspan="2" style="min-width:200px;">Họ và tên</th>
+                        <th style="width:42px; text-align:center;">#</th>
+                        <th style="min-width:200px;">Họ và tên</th>
 
-                        <!-- TX headers -->
-                        @if (Model.LessonHeaders.Any())
-                        {
-                            <th colspan="@Model.LessonHeaders.Count" class="col-tx col-header-group">
-                                <i class="bi bi-clipboard2-check me-1"></i>Điểm thường xuyên
-                            </th>
-                        }
-                        else
-                        {
-                            <th class="col-tx" style="min-width:80px;">TX</th>
-                        }
-
-                        <th rowspan="2" class="col-tx text-center" style="min-width:80px;">
-                            <i class="bi bi-calculator me-1"></i>TB TX
-                        </th>
-
-                        <!-- GK -->
-                        <th rowspan="2" class="col-gk section-divider text-center" style="min-width:90px;">
-                            <i class="bi bi-file-earmark-text me-1"></i>Giữa kỳ
-                        </th>
-
-                        <!-- CK -->
-                        <th rowspan="2" class="col-ck section-divider text-center" style="min-width:90px;">
-                            <i class="bi bi-award me-1"></i>Cuối kỳ
-                        </th>
-
-                        <!-- Tổng kết -->
-                        <th rowspan="2" class="col-total section-divider text-center" style="min-width:90px;">
-                            <i class="bi bi-star-fill me-1"></i>Tổng kết
-                        </th>
-
-                        <!-- Nhận xét -->
-                        <th rowspan="2" style="min-width:200px;">Nhận xét GV</th>
-                    </tr>
-                    <tr>
+                        <!-- TX header -->
                         @if (Model.LessonHeaders.Any())
                         {
                             @foreach (var h in Model.LessonHeaders)
                             {
-                                bool isHighlighted = Model.HighlightLessonId > 0 && h.LessonId == Model.HighlightLessonId;
-                                <th class="col-tx text-center @(isHighlighted ? "highlighted-column-header" : "")" 
-                                    style="min-width:72px; font-size:0.68rem;" 
-                                    data-lesson-id="@h.LessonId">
-                                    @h.LessonTitle<br />
-                                    <span style="font-weight:400; opacity:0.7;">@h.LessonDate</span>
+                                <th class="col-tx text-center highlighted-column-header" style="min-width:120px;" data-lesson-id="@h.LessonId">
+                                    <i class="bi bi-clipboard2-check me-1"></i>@h.LessonTitle<br />
+                                    <span style="font-weight:400; opacity:0.8; font-size: 0.75rem;">@h.LessonDate</span>
                                 </th>
                             }
                         }
                         else
                         {
-                            <th class="col-tx"></th>
+                            <th class="col-tx">Buổi học</th>
                         }
+
+                        <!-- Nhận xét -->
+                        <th>Nhận xét của buổi học</th>
                     </tr>
                 </thead>
                 <tbody id="grade-tbody">
@@ -327,87 +293,38 @@ else
                                 </div>
                             </td>
 
-                            <!-- TX scores per lesson -->
                             @if (Model.LessonHeaders.Any())
                             {
                                 @foreach (var h in Model.LessonHeaders)
                                 {
                                     var txVal = s.TXScores.ContainsKey(h.LessonId) ? s.TXScores[h.LessonId] : (null, null, null);
-                                    bool isHighlighted = Model.HighlightLessonId > 0 && h.LessonId == Model.HighlightLessonId;
-                                    bool isReadonly = Model.HighlightLessonId > 0 && h.LessonId != Model.HighlightLessonId;
-                                    <td class="text-center @(isHighlighted ? "highlighted-column-cell" : "")" data-lesson-id="@h.LessonId" data-score-type="TX">
+                                    <td class="text-center highlighted-column-cell" data-lesson-id="@h.LessonId" data-score-type="TX">
                                         <div class="score-input-cell">
                                             <input type="number"
-                                                   class="score-input tx-score @(isReadonly ? "readonly-tx-input" : "")"
+                                                   class="score-input tx-score"
                                                    min="0" max="10" step="0.5"
                                                    placeholder="—"
-                                                   readonly="@(isReadonly ? "readonly" : null)"
                                                    data-assessment-id="@(txVal.AssessmentId?.ToString() ?? "")"
                                                    data-lesson-id="@h.LessonId"
                                                    value="@(txVal.Score.HasValue ? txVal.Score.Value.ToString("0.##") : "")" />
                                         </div>
+                                    </td>
+                                    
+                                    <!-- Nhận xét tương ứng với buổi học này -->
+                                    <td>
+                                        <input type="text"
+                                               class="comment-input teacher-comment"
+                                               placeholder="Nhận xét buổi học cho học sinh..."
+                                               value="@(txVal.Comment ?? "")"
+                                               style="font-size:0.85rem;" />
                                     </td>
                                 }
                             }
                             else
                             {
                                 <td class="text-center text-muted small">Chưa có buổi học</td>
+                                <td></td>
                             }
-
-                            <!-- TB TX -->
-                            <td class="text-center" data-cell-type="tb-tx">
-                                @{
-                                    var tbTX = s.TrungBinhTX;
-                                    string tbClass = tbTX == null ? "empty" : (tbTX >= 8 ? "excellent" : tbTX >= 6.5m ? "good" : tbTX >= 5 ? "average" : "poor");
-                                }
-                                <span class="badge-score @tbClass avg-tx-display">
-                                    @(tbTX.HasValue ? tbTX.Value.ToString("0.#") : "—")
-                                </span>
-                            </td>
-
-                            <!-- Giữa kỳ -->
-                            <td class="text-center section-divider" data-score-type="GK">
-                                <div class="score-input-cell">
-                                    <input type="number"
-                                           class="score-input gk-score"
-                                           min="0" max="10" step="0.5"
-                                           placeholder="—"
-                                           data-assessment-id="@(s.GiuaKy.AssessmentId?.ToString() ?? "")"
-                                           value="@(s.GiuaKy.Score.HasValue ? s.GiuaKy.Score.Value.ToString("0.##") : "")" />
-                                </div>
-                            </td>
-
-                            <!-- Cuối kỳ -->
-                            <td class="text-center section-divider" data-score-type="CK">
-                                <div class="score-input-cell">
-                                    <input type="number"
-                                           class="score-input ck-score"
-                                           min="0" max="10" step="0.5"
-                                           placeholder="—"
-                                           data-assessment-id="@(s.CuoiKy.AssessmentId?.ToString() ?? "")"
-                                           value="@(s.CuoiKy.Score.HasValue ? s.CuoiKy.Score.Value.ToString("0.##") : "")" />
-                                </div>
-                            </td>
-
-                            <!-- Tổng kết (computed, readonly) -->
-                            <td class="text-center section-divider" data-cell-type="tongket">
-                                @{
-                                    var tk = s.DiemTongKet;
-                                    string tkClass = tk == null ? "none" : (tk >= 8 ? "ex" : tk >= 6.5m ? "good2" : tk >= 5 ? "avg" : "poor2");
-                                }
-                                <span class="total-badge @tkClass tongket-display">
-                                    @(tk.HasValue ? tk.Value.ToString("0.##") : "—")
-                                </span>
-                            </td>
-
-                            <!-- Nhận xét -->
-                            <td>
-                                <input type="text"
-                                       class="comment-input teacher-comment"
-                                       placeholder="Nhận xét chung về học sinh..."
-                                       value="@(s.CuoiKy.Comment ?? s.GiuaKy.Comment ?? "")"
-                                       style="font-size:0.82rem;" />
-                            </td>
                         </tr>
                     }
                 </tbody>
@@ -426,10 +343,10 @@ else
         <div class="d-flex align-items-center justify-content-between p-4 border-top">
             <div class="text-muted small">
                 <i class="bi bi-info-circle me-1 text-primary"></i>
-                Sau khi lưu, thông báo kết quả sẽ được gửi <strong>tức thì</strong> đến Phụ huynh.
+                Nhập điểm số và nhận xét cho buổi học được chọn. Phụ huynh sẽ nhận được thông báo cập nhật điểm ngay lập tức.
             </div>
             <button id="btn-save-grade-footer" class="btn-save-grade" onclick="document.getElementById('btn-save-grade').click()">
-                <i class="bi bi-cloud-check-fill"></i> Lưu toàn bộ điểm
+                <i class="bi bi-cloud-check-fill"></i> Lưu điểm buổi học
             </button>
         </div>
     </div>
@@ -446,81 +363,13 @@ else
 
         console.log("ClassGradeSheet JS initialized for ClassId:", classId);
 
-        // ── Live tính TB TX và Tổng kết khi nhập điểm ──────────────────────
-        function recalcRow(row) {
-            const txInputs = Array.from(row.querySelectorAll('.tx-score'));
-            const txVals = txInputs.map(i => parseFloat(i.value)).filter(v => !isNaN(v));
-            const tbTX = txVals.length > 0 ? txVals.reduce((a, b) => a + b, 0) / txVals.length : null;
-
-            console.log("recalcRow student row:", row.getAttribute('data-student-id'));
-            console.log("txInputs values:", txInputs.map(i => i.value));
-            console.log("txVals parsed:", txVals, "tbTX:", tbTX);
-
-            const gkInput = row.querySelector('.gk-score');
-            const ckInput = row.querySelector('.ck-score');
-
-            const gk = parseFloat(gkInput?.value ?? '');
-            const ck = parseFloat(ckInput?.value ?? '');
-
-            const avgTXEl = row.querySelector('.avg-tx-display');
-            if (avgTXEl) {
-                if (tbTX !== null) {
-                    avgTXEl.textContent = tbTX.toFixed(1);
-                    avgTXEl.className = 'badge-score ' + scoreClass(tbTX);
-                } else {
-                    avgTXEl.textContent = '—';
-                    avgTXEl.className = 'badge-score empty';
-                }
-            }
-
-            const tkEl = row.querySelector('.tongket-display');
-            if (tkEl) {
-                const hasAny = txVals.length > 0 || !isNaN(gk) || !isNaN(ck);
-                if (hasAny) {
-                    const tk = ((tbTX ?? 0) * 0.3) + ((isNaN(gk) ? 0 : gk) * 0.3) + ((isNaN(ck) ? 0 : ck) * 0.4);
-                    const rounded = Math.round(tk * 100) / 100;
-                    tkEl.textContent = rounded.toFixed(2);
-                    tkEl.className = 'total-badge ' + totalClass(rounded);
-                } else {
-                    tkEl.textContent = '—';
-                    tkEl.className = 'total-badge none';
-                }
-            }
-        }
-
-        function scoreClass(v) {
-            if (v >= 8) return 'excellent';
-            if (v >= 6.5) return 'good';
-            if (v >= 5) return 'average';
-            return 'poor';
-        }
-        function totalClass(v) {
-            if (v >= 8) return 'ex';
-            if (v >= 6.5) return 'good2';
-            if (v >= 5) return 'avg';
-            return 'poor2';
-        }
-
         const rows = document.querySelectorAll('#grade-tbody .grade-row');
         console.log("Found grade rows count:", rows.length);
 
-        rows.forEach(row => {
-            row.querySelectorAll('.score-input').forEach(inp => {
-                inp.addEventListener('input', () => recalcRow(row));
-                inp.addEventListener('change', () => recalcRow(row));
-            });
-        });
-
-        // Tự động cuộn đến cột được highlight và focus ô nhập điểm đầu tiên
-        const highlightedHeader = document.querySelector('.highlighted-column-header');
-        if (highlightedHeader) {
-            console.log("Scrolling to highlighted lesson column...");
-            highlightedHeader.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            
-            const firstInput = document.querySelector('.grade-row td.highlighted-column-cell input');
-            if (firstInput) {
-                setTimeout(() => firstInput.focus(), 300);
-            }
+        // Focus ô nhập điểm đầu tiên
+        const firstInput = document.querySelector('.grade-row td.highlighted-column-cell input');
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 300);
         }
 
         // ── Save ────────────────────────────────────────────────────────────
@@ -552,7 +401,8 @@ else
 
             rows.forEach(row => {
                 const studentId = parseInt(row.getAttribute('data-student-id'));
-                const comment = row.querySelector('.teacher-comment')?.value?.trim() ?? '';
+                const commentInput = row.querySelector('.teacher-comment');
+                const comment = commentInput?.value?.trim() ?? '';
 
                 // TX scores
                 row.querySelectorAll('.tx-score').forEach(inp => {
@@ -561,31 +411,9 @@ else
                     const score = scoreRaw !== '' ? parseFloat(scoreRaw) : null;
                     payload.push({
                         studentId, lessonId,
-                        score, teacherComment: null, scoreType: 'TX'
+                        score, teacherComment: comment || null
                     });
                 });
-
-                // GK
-                const gkInp = row.querySelector('.gk-score');
-                if (gkInp) {
-                    const scoreRaw = gkInp.value.trim();
-                    const score = scoreRaw !== '' ? parseFloat(scoreRaw) : null;
-                    payload.push({
-                        studentId, lessonId: 0,
-                        score, teacherComment: comment || null, scoreType: 'GK'
-                    });
-                }
-
-                // CK
-                const ckInp = row.querySelector('.ck-score');
-                if (ckInp) {
-                    const scoreRaw = ckInp.value.trim();
-                    const score = scoreRaw !== '' ? parseFloat(scoreRaw) : null;
-                    payload.push({
-                        studentId, lessonId: 0,
-                        score, teacherComment: comment || null, scoreType: 'CK'
-                    });
-                }
             });
 
             setBtnLoading(true);
@@ -599,8 +427,8 @@ else
                 if (res.ok || res.status === 200 || res.status === 204) {
                     document.querySelectorAll('.score-input').forEach(i => i.classList.remove('is-valid', 'is-invalid'));
                     showAlert('success',
-                        `<i class="bi bi-check-circle-fill me-2"></i><strong>Lưu bảng điểm thành công!</strong>
-                        <span class="d-block small mt-1 opacity-75"><i class="bi bi-bell-fill me-1"></i>Thông báo đã được gửi đến Phụ huynh.</span>`
+                        `<i class="bi bi-check-circle-fill me-2"></i><strong>Lưu điểm thành công!</strong>
+                        <span class="d-block small mt-1 opacity-75"><i class="bi bi-hourglass-split me-1"></i>Phụ huynh đã nhận được thông báo cập nhật điểm của buổi học này qua ứng dụng.</span>`
                     );
                     alertArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 } else {
@@ -634,7 +462,7 @@ else
         function setBtnLoading(isLoading) {
             if (!btnSave) return;
             btnSave.disabled = isLoading;
-            if (btnText) btnText.textContent = isLoading ? 'Đang lưu...' : 'Lưu toàn bộ điểm';
+            if (btnText) btnText.textContent = isLoading ? 'Đang lưu...' : 'Lưu điểm buổi học';
             if (btnSpinner) btnSpinner.style.display = isLoading ? 'inline-block' : 'none';
         }
     });

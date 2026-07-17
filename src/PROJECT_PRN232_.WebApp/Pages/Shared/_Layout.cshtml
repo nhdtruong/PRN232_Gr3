@@ -485,6 +485,11 @@
                                     <i class="bi bi-collection me-1"></i>Lớp học của tôi
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="eb-nav-link" href="/Teacher/Chat/Index">
+                                    <i class="bi bi-chat-left-text me-1"></i>Hộp thư
+                                </a>
+                            </li>
                         }
                         else if (role == "Parent")
                         {
@@ -514,11 +519,13 @@
                     @* ── RIGHT SIDE: Icon actions + User dropdown ── *@
                     <ul class="navbar-nav align-items-lg-center gap-2">
 
-                        @* Chat Icon — hiển thị cho CẢ HAI role *@
+                        @* Chat Icon — hiển thị cho CẢ BA role *@
                         @{
-                            var chatUrl      = role == "Parent" ? "/Parent/Chat/Index" : "/Center/Chat/Index";
-                            var chatTitle    = role == "Parent" ? "Trò chuyện với Trung tâm" : "Trò chuyện với Phụ huynh";
-                            var chatBadgeId  = role == "Parent" ? "chat-badge" : "center-chat-badge";
+                            var chatUrl      = role == "Parent" ? "/Parent/Chat/Index" : 
+                                               role == "Teacher" ? "/Teacher/Chat/Index" : "/Center/Chat/Index";
+                            var chatTitle    = role == "Parent" ? "Trò chuyện với Trung tâm" : 
+                                               role == "Teacher" ? "Hộp thư với Trung tâm" : "Trò chuyện với Phụ huynh";
+                            var chatBadgeId  = role == "Center" ? "center-chat-badge" : "chat-badge";
                         }
                         <li class="nav-item">
                             <a class="eb-icon-btn" href="@chatUrl" title="@chatTitle" aria-label="@chatTitle">
@@ -529,8 +536,8 @@
                             </a>
                         </li>
 
-                        @* Bell Icon — CHỈ dành cho Parent (nhận thông báo điểm số) *@
-                        @if (role == "Parent")
+                        @* Bell Icon — Dành cho Parent và Teacher (nhận thông báo xếp lớp, điểm số) *@
+                        @if (role == "Parent" || role == "Teacher")
                         {
                             <li class="nav-item dropdown">
                                 <partial name="_NotificationBadgePartial" />

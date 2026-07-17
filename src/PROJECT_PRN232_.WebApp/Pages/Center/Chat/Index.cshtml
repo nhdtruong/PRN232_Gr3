@@ -14,15 +14,40 @@
 
 <div class="container py-2">
     <div class="row">
-        <!-- Cột trái: Danh sách phụ huynh -->
+        <!-- Cột trái: Danh sách cuộc trò chuyện -->
         <div class="col-md-4 mb-4 animate-message">
             <div class="card chat-card shadow-sm border-0 animate-card" style="height: 600px; display: flex; flex-direction: column;">
                 <div class="card-header chat-header-gradient text-white py-3">
-                    <h5 class="mb-0 fw-bold"><i class="bi bi-people-fill me-2"></i> Danh sách Phụ huynh</h5>
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-chat-dots-fill me-2"></i> Hộp thư liên hệ</h5>
                 </div>
-                <div class="p-3 border-bottom bg-light" style="display: flex; flex-direction: column; gap: 8px;">
-                    <input type="text" id="search-contacts" class="form-control form-control-sm" placeholder="Tìm kiếm phụ huynh..." style="border-radius: 20px; padding: 6px 15px;">
-                    <select id="filter-class" class="form-select form-select-sm" style="border-radius: 20px; padding: 5px 15px; border: 1px solid rgba(79,70,229,0.2); font-size: 0.82rem; color: #374151;">
+                
+                <!-- Nav Tabs kiểu Sleek Pill để chọn Phụ huynh / Giáo viên -->
+                <ul class="nav nav-pills nav-fill bg-light p-1 rounded-pill my-2 mx-3 border" id="chat-tabs" role="tablist" style="font-size: 0.85rem;">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-1" id="parents-tab" type="button" role="tab" aria-selected="true" style="padding: 5px 12px; transition: all 0.2s;">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Phụ huynh</span>
+                            @if (Model.TotalParentUnread > 0)
+                            {
+                                <span class="badge rounded-pill ms-1" style="background: #EF4444; color: #fff; font-size: 0.65rem; min-width: 18px; padding: 2px 5px; box-shadow: 0 2px 6px rgba(239,68,68,0.4);">@Model.TotalParentUnread</span>
+                            }
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-1" id="teachers-tab" type="button" role="tab" aria-selected="false" style="padding: 5px 12px; transition: all 0.2s;">
+                            <i class="bi bi-person-badge-fill"></i>
+                            <span>Giáo viên</span>
+                            @if (Model.TotalTeacherUnread > 0)
+                            {
+                                <span class="badge rounded-pill ms-1" style="background: #EF4444; color: #fff; font-size: 0.65rem; min-width: 18px; padding: 2px 5px; box-shadow: 0 2px 6px rgba(239,68,68,0.4);">@Model.TotalTeacherUnread</span>
+                            }
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="px-3 pb-3 border-bottom bg-white" style="display: flex; flex-direction: column; gap: 8px;">
+                    <input type="text" id="search-contacts" class="form-control form-control-sm" placeholder="Tìm kiếm liên hệ..." style="border-radius: 20px; padding: 6px 15px; font-size: 0.85rem;">
+                    <select id="filter-class" class="form-select form-select-sm" style="border-radius: 20px; padding: 5px 15px; border: 1px solid rgba(79, 70, 229, 0.2); font-size: 0.82rem; color: #374151;">
                         <option value="">📚 Tất cả lớp học</option>
                         @foreach (var cls in Model.AvailableClasses)
                         {
@@ -30,49 +55,84 @@
                         }
                     </select>
                 </div>
-                <div class="list-group list-group-flush overflow-auto flex-grow-1" id="contacts-list" style="height: 480px;">
-                    @if (Model.Parents.Count == 0)
+                <div class="list-group list-group-flush overflow-auto flex-grow-1" id="contacts-list" style="height: 400px;">
+                    <!-- Render Phụ huynh -->
+                    @foreach (var parent in Model.Parents)
                     {
-                        <div class="p-4 text-center text-muted small">Không tìm thấy tài khoản Phụ huynh nào.</div>
-                    }
-                    else
-                    {
-                        @foreach (var parent in Model.Parents)
-                        {
-                            var hasUnread = parent.UnreadCount > 0;
-                            <a href="#" class="list-group-item list-group-item-action contact-item @(hasUnread ? "has-unread" : "")" 
-                               data-parent-id="@parent.Id" 
-                               data-parent-name="@parent.FullName"
-                               data-class-names="@parent.ClassNames">
-                                <div class="d-flex align-items-center">
-                                    <div class="contact-avatar me-3">
-                                        @parent.FullName.Substring(0, 1).ToUpper()
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex align-items-center justify-content-between">
-                                            <h6 class="mb-0 text-dark fw-bold small contact-name">@parent.FullName</h6>
-                                            <span class="badge bg-danger rounded-pill unread-chat-badge @(hasUnread ? "" : "d-none")" style="font-size: 0.7rem; padding: 4px 8px;">@parent.UnreadCount</span>
-                                        </div>
-                                        @if (!string.IsNullOrEmpty(parent.StudentNames))
-                                        {
-                                            <span class="text-muted small d-block" style="font-size: 0.72rem;">
-                                                <i class="bi bi-person-fill me-1" style="color: #818cf8; font-size: 0.65rem;"></i>Con: @parent.StudentNames
-                                            </span>
-                                        }
-                                        @if (!string.IsNullOrEmpty(parent.ClassNames))
-                                        {
-                                            <span class="text-muted small d-block" style="font-size: 0.72rem;">
-                                                <i class="bi bi-mortarboard-fill me-1" style="color: #a78bfa; font-size: 0.65rem;"></i>Lớp: @parent.ClassNames
-                                            </span>
-                                        }
-                                        @if (string.IsNullOrEmpty(parent.StudentNames))
-                                        {
-                                            <span class="text-muted small" style="font-size: 0.72rem; font-style: italic;">Chưa có học sinh</span>
-                                        }
-                                    </div>
+                        var hasUnread = parent.UnreadCount > 0;
+                        <a href="#" class="list-group-item list-group-item-action contact-item @(hasUnread ? "has-unread" : "")" 
+                           data-parent-id="@parent.Id" 
+                           data-parent-name="@parent.FullName"
+                           data-class-names="@parent.ClassNames"
+                           data-role="Parent">
+                            <div class="d-flex align-items-center">
+                                <div class="contact-avatar me-3">
+                                    @parent.FullName.Substring(0, 1).ToUpper()
                                 </div>
-                            </a>
-                        }
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <h6 class="mb-0 text-dark fw-bold small contact-name">@parent.FullName</h6>
+                                        <span class="badge bg-danger rounded-pill unread-chat-badge @(hasUnread ? "" : "d-none")" style="font-size: 0.7rem; padding: 4px 8px;">@parent.UnreadCount</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(parent.StudentNames))
+                                    {
+                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">
+                                            <i class="bi bi-person-fill me-1" style="color: #818cf8; font-size: 0.65rem;"></i>Con: @parent.StudentNames
+                                        </span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(parent.ClassNames))
+                                    {
+                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">
+                                            <i class="bi bi-mortarboard-fill me-1" style="color: #a78bfa; font-size: 0.65rem;"></i>Lớp: @parent.ClassNames
+                                        </span>
+                                    }
+                                    @if (string.IsNullOrEmpty(parent.StudentNames))
+                                    {
+                                        <span class="text-muted small" style="font-size: 0.72rem; font-style: italic;">Chưa có học sinh</span>
+                                    }
+                                </div>
+                            </div>
+                        </a>
+                    }
+
+                    <!-- Render Giáo viên -->
+                    @foreach (var teacher in Model.Teachers)
+                    {
+                        var hasUnread = teacher.UnreadCount > 0;
+                        <a href="#" class="list-group-item list-group-item-action contact-item @(hasUnread ? "has-unread" : "")" 
+                           data-parent-id="@teacher.Id" 
+                           data-parent-name="@teacher.FullName"
+                           data-class-names="@teacher.ClassNames"
+                           data-role="Teacher"
+                           style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <div class="contact-avatar me-3" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;">
+                                    @teacher.FullName.Substring(0, 1).ToUpper()
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <h6 class="mb-0 text-dark fw-bold small contact-name">@teacher.FullName</h6>
+                                        <span class="badge bg-danger rounded-pill unread-chat-badge @(hasUnread ? "" : "d-none")" style="font-size: 0.7rem; padding: 4px 8px;">@teacher.UnreadCount</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(teacher.Phone))
+                                    {
+                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">
+                                            <i class="bi bi-telephone-fill me-1 text-secondary" style="font-size: 0.65rem;"></i>SĐT: @teacher.Phone
+                                        </span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(teacher.ClassNames))
+                                    {
+                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">
+                                            <i class="bi bi-mortarboard-fill me-1" style="color: #10B981; font-size: 0.65rem;"></i>Lớp dạy: @teacher.ClassNames
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small" style="font-size: 0.72rem; font-style: italic;">Chưa dạy lớp nào</span>
+                                    }
+                                </div>
+                            </div>
+                        </a>
                     }
                 </div>
             </div>
@@ -148,6 +208,17 @@
         border: 1px solid rgba(79, 70, 229, 0.08) !important;
         box-shadow: 0 10px 30px rgba(30, 27, 75, 0.08) !important;
         background: #fff;
+    }
+
+    #chat-tabs .nav-link {
+        color: #475569;
+        background: transparent;
+        border: none;
+    }
+    #chat-tabs .nav-link.active {
+        color: #fff !important;
+        background: var(--eb-primary) !important;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
     }
 
     .chat-header-gradient {
@@ -334,11 +405,13 @@
 </style>
 
 <script>
-    // ── Combined filter: text search + class combobox ─────────────────────────
+    // ── Combined filter: text search + class combobox + role tabs ─────────────
     (function () {
         const searchInput  = document.getElementById('search-contacts');
         const classFilter  = document.getElementById('filter-class');
         const contactsList = document.getElementById('contacts-list');
+        
+        let currentTabRole = 'Parent'; // Mặc định là Parent
 
         function applyFilter() {
             const keyword   = (searchInput?.value ?? '').trim().toLowerCase();
@@ -348,11 +421,13 @@
             document.querySelectorAll('#contacts-list .contact-item').forEach(item => {
                 const name       = (item.getAttribute('data-parent-name') ?? '').toLowerCase();
                 const classNames = (item.getAttribute('data-class-names') ?? '').toLowerCase();
+                const itemRole   = item.getAttribute('data-role');
 
+                const matchTab   = itemRole === currentTabRole;
                 const matchName  = keyword === '' || name.includes(keyword);
                 const matchClass = className === '' || classNames.includes(className);
 
-                if (matchName && matchClass) {
+                if (matchTab && matchName && matchClass) {
                     item.style.display = '';
                     visibleCount++;
                 } else {
@@ -367,9 +442,10 @@
                     emptyMsg = document.createElement('div');
                     emptyMsg.id = 'filter-empty-msg';
                     emptyMsg.className = 'p-4 text-center text-muted small';
-                    emptyMsg.innerHTML = '<i class="bi bi-search fs-4 d-block mb-2 opacity-50"></i>Không tìm thấy phụ huynh phù hợp.';
                     contactsList?.appendChild(emptyMsg);
                 }
+                const entityText = currentTabRole === 'Parent' ? 'phụ huynh' : 'giáo viên';
+                emptyMsg.innerHTML = `<i class="bi bi-search fs-4 d-block mb-2 opacity-50"></i>Không tìm thấy ${entityText} phù hợp.`;
                 emptyMsg.style.display = '';
             } else if (emptyMsg) {
                 emptyMsg.style.display = 'none';
@@ -378,6 +454,23 @@
 
         searchInput?.addEventListener('input', applyFilter);
         classFilter?.addEventListener('change', applyFilter);
+
+        // Lắng nghe sự kiện click chuyển tab
+        document.getElementById('parents-tab')?.addEventListener('click', function() {
+            document.getElementById('parents-tab').classList.add('active');
+            document.getElementById('teachers-tab').classList.remove('active');
+            currentTabRole = 'Parent';
+            applyFilter();
+        });
+        document.getElementById('teachers-tab')?.addEventListener('click', function() {
+            document.getElementById('teachers-tab').classList.add('active');
+            document.getElementById('parents-tab').classList.remove('active');
+            currentTabRole = 'Teacher';
+            applyFilter();
+        });
+
+        // Run ban đầu
+        applyFilter();
     })();
 </script>
 

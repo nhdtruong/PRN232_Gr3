@@ -62,7 +62,7 @@ namespace PROJECT_PRN232_.Infrastructure.Repositories
                 .Include(c => c.Lessons)
                     .ThenInclude(l => l.Attendances)
                 .Include(c => c.Lessons)
-                    .ThenInclude(l => l.Assessments)
+                    .ThenInclude(l => l.DailyAssessments)
                 .Include(c => c.Lessons)
                     .ThenInclude(l => l.Materials)
                 .Include(c => c.Notifications)
@@ -94,9 +94,9 @@ namespace PROJECT_PRN232_.Infrastructure.Repositories
                     {
                         _context.Attendances.RemoveRange(lesson.Attendances);
                     }
-                    if (lesson.Assessments != null && lesson.Assessments.Any())
+                    if (lesson.DailyAssessments != null && lesson.DailyAssessments.Any())
                     {
-                        _context.Assessments.RemoveRange(lesson.Assessments);
+                        _context.DailyAssessments.RemoveRange(lesson.DailyAssessments);
                     }
                     if (lesson.Materials != null && lesson.Materials.Any())
                     {

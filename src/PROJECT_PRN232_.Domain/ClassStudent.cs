@@ -11,11 +11,5 @@ namespace PROJECT_PRN232_.Domain
         public virtual Student Student { get; set; } = null!;
 
         public DateTime EnrolledAt { get; set; } = DateTime.Now;
-
-        public decimal? MidtermScore { get; set; }
-        public string? MidtermComment { get; set; }
-
-        public decimal? FinalScore { get; set; }
-        public string? FinalComment { get; set; }
     }
 }

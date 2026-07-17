@@ -20,12 +20,18 @@ namespace PROJECT_PRN232_.Controllers
         private readonly IClassService _classService;
         private readonly IEnrollmentService _enrollmentService;
         private readonly AppDbContext _context;
+        private readonly INotificationService _notificationService;
 
-        public CenterClassController(IClassService classService, IEnrollmentService enrollmentService, AppDbContext context)
+        public CenterClassController(
+            IClassService classService,
+            IEnrollmentService enrollmentService,
+            AppDbContext context,
+            INotificationService notificationService)
         {
             _classService = classService;
             _enrollmentService = enrollmentService;
             _context = context;
+            _notificationService = notificationService;
         }
 
         [HttpGet("api/center/classes")]
@@ -98,6 +104,16 @@ namespace PROJECT_PRN232_.Controllers
                     _context.Lessons.Add(lesson);
                 }
                 await _context.SaveChangesAsync();
+
+                // Gửi thông báo phân công giảng dạy cho Giáo viên
+                if (created.TeacherId.HasValue && created.TeacherId.Value > 0)
+                {
+                    try
+                    {
+                        await _notificationService.NotifyTeacherAssignedClassAsync(created.TeacherId.Value, created.Id, created.ClassName);
+                    }
+                    catch (Exception) { /* Ignored */ }
+                }
             }
 
             return CreatedAtAction(nameof(GetClassById), new { classId = created.Id }, created);
@@ -146,6 +162,17 @@ namespace PROJECT_PRN232_.Controllers
                 return NotFound(new { message = $"Không tìm thấy lớp học ID {classId} để cập nhật." });
             }
 
+            // Gửi thông báo phân công giảng dạy cho Giáo viên nếu có thay đổi giáo viên
+            if (req.UpdateDto.TeacherId.HasValue && req.UpdateDto.TeacherId.Value > 0 &&
+                (classEntity == null || classEntity.TeacherId != req.UpdateDto.TeacherId.Value))
+            {
+                try
+                {
+                    await _notificationService.NotifyTeacherAssignedClassAsync(req.UpdateDto.TeacherId.Value, classId, req.UpdateDto.ClassName);
+                }
+                catch (Exception) { /* Ignored */ }
+            }
+
             // Nếu thay đổi Môn học => Sinh lại số buổi học tương ứng
             if (classEntity.Subject != req.UpdateDto.Subject)
             {
@@ -163,9 +190,9 @@ namespace PROJECT_PRN232_.Controllers
                     var relatedAttendances = _context.Attendances.Where(a => lessonIds.Contains(a.LessonId));
                     _context.Attendances.RemoveRange(relatedAttendances);
 
-                    // 3. Xóa Assessments (đánh giá) thuộc các buổi học này nếu có
-                    var relatedAssessments = _context.Assessments.Where(a => lessonIds.Contains(a.LessonId));
-                    _context.Assessments.RemoveRange(relatedAssessments);
+                    // 3. Xóa DailyAssessments (đánh giá thường xuyên) thuộc các buổi học này nếu có
+                    var relatedAssessments = _context.DailyAssessments.Where(a => lessonIds.Contains(a.LessonId));
+                    _context.DailyAssessments.RemoveRange(relatedAssessments);
 
                     // 4. Cuối cùng mới xóa Lessons
                     _context.Lessons.RemoveRange(existingLessons);

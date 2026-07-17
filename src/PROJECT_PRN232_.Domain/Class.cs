@@ -44,5 +44,6 @@ namespace PROJECT_PRN232_.Domain
         public virtual ICollection<ClassStudent> ClassStudents { get; set; } = new List<ClassStudent>();
         public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        public virtual ICollection<ClassTranscript> ClassTranscripts { get; set; } = new List<ClassTranscript>();
     }
 }

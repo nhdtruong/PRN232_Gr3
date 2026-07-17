@@ -27,9 +27,9 @@ namespace PROJECT_PRN232_.Domain
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        // Navigation Properties
         public virtual ICollection<ClassStudent> ClassStudents { get; set; } = new List<ClassStudent>();
         public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
-        public virtual ICollection<Assessment> Assessments { get; set; } = new List<Assessment>();
+        public virtual ICollection<DailyAssessment> DailyAssessments { get; set; } = new List<DailyAssessment>();
+        public virtual ICollection<ClassTranscript> ClassTranscripts { get; set; } = new List<ClassTranscript>();
     }
 }

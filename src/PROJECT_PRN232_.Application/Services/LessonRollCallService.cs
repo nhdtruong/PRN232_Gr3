@@ -9,13 +9,13 @@ namespace PROJECT_PRN232_.Application.Services
     {
         private readonly ILessonRepository _lessonRepository;
         private readonly IAttendanceRepository _attendanceRepository;
-        private readonly IAssessmentRepository _assessmentRepository;
+        private readonly IDailyAssessmentRepository _assessmentRepository;
         private readonly INotificationService _notificationService;
 
         public LessonRollCallService(
             ILessonRepository lessonRepository,
             IAttendanceRepository attendanceRepository,
-            IAssessmentRepository assessmentRepository,
+            IDailyAssessmentRepository assessmentRepository,
             INotificationService notificationService)
         {
             _lessonRepository = lessonRepository;
@@ -48,7 +48,7 @@ namespace PROJECT_PRN232_.Application.Services
                     Note = r.Attendance?.Note,
                     AssessmentId = r.Assessment?.Id,
                     Score = r.Assessment?.Score,
-                    TeacherComment = r.Assessment?.TeacherComment
+                    TeacherComment = r.Assessment?.Comment
                 }).ToList()
             };
         }
@@ -75,11 +75,11 @@ namespace PROJECT_PRN232_.Application.Services
                 })))
                     return false;
 
-                var assessments = dto.Rows.Select(r => new Assessment
+                var assessments = dto.Rows.Select(r => new DailyAssessment
                 {
                     StudentId = r.StudentId,
                     Score = r.Score,
-                    TeacherComment = r.TeacherComment
+                    Comment = r.TeacherComment
                 });
 
                 await _assessmentRepository.UpsertBulkAsync(lessonId, assessments);
@@ -115,11 +115,11 @@ namespace PROJECT_PRN232_.Application.Services
                     Note = r.Note
                 });
 
-                var assessments = dto.Rows.Select(r => new Assessment
+                var assessments = dto.Rows.Select(r => new DailyAssessment
                 {
                     StudentId = r.StudentId,
                     Score = r.Score,
-                    TeacherComment = r.TeacherComment
+                    Comment = r.TeacherComment
                 });
 
                 await _attendanceRepository.UpsertBulkAsync(lessonId, attendances);
@@ -137,19 +137,30 @@ namespace PROJECT_PRN232_.Application.Services
             var rollCallData = await _lessonRepository.GetRollCallDataAsync(lesson.Id, lesson.ClassId);
             var studentMap = rollCallData.ToDictionary(r => r.Student.Id, r => r.Student);
 
+            // Lấy điểm thường xuyên đã lưu của buổi này để gộp vào thông báo
+            var assessmentMap = rollCallData
+                .Where(r => r.Assessment != null)
+                .ToDictionary(r => r.Student.Id, r => r.Assessment);
+
             foreach (var row in rows)
             {
                 if (!studentMap.TryGetValue(row.StudentId, out var student)) continue;
-                if (student.ParentId == 0) continue; // skip student with no parent
+                if (student.ParentId == 0) continue;
 
-                await _notificationService.NotifyAttendanceUpdatedAsync(
+                // Lấy điểm TX nếu đã có (gộp vào thông báo điểm danh)
+                assessmentMap.TryGetValue(row.StudentId, out var assessment);
+
+                // Gửi thông báo tổng hợp (điểm danh + điểm TX nếu có)
+                await _notificationService.NotifyRollCallUpdatedAsync(
                     student.ParentId,
                     lesson.ClassId,
                     lesson.Class.ClassName,
                     lesson.Title,
                     student.FullName,
                     row.Status,
-                    row.Note);
+                    row.Note,
+                    assessment?.Score,
+                    assessment?.Comment);
             }
         }
 
