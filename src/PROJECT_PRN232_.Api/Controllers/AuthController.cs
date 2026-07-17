@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
+using PROJECT_PRN232_.Application.Repositories;
+using System.Collections.Generic;
 
 namespace PROJECT_PRN232_.Controllers
 {
@@ -12,10 +14,12 @@ namespace PROJECT_PRN232_.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AuthService _authService;
+        private readonly IStudentRepository _userRepository;
 
-        public AuthController(AuthService authService)
+        public AuthController(AuthService authService, IStudentRepository userRepository)
         {
             _authService = authService;
+            _userRepository = userRepository;
         }
 
         [HttpPost("register")]
@@ -50,7 +54,8 @@ namespace PROJECT_PRN232_.Controllers
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim(ClaimTypes.Role, user.Role),
+                new Claim("FullName", user.FullName)
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -72,6 +77,58 @@ namespace PROJECT_PRN232_.Controllers
             return Ok(new { message = "Đăng xuất thành công!" });
         }
 
+        [HttpGet("profile")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized(new { message = "Không xác định được người dùng." });
+
+            var user = await _userRepository.GetUserByIdAsync(userId);
+            if (user == null) return NotFound(new { message = "Không tìm thấy hồ sơ." });
+
+            return Ok(new ProfileDto
+            {
+                FullName = user.FullName,
+                Email = user.Email,
+                Phone = user.Phone,
+                Role = user.Role
+            });
+        }
+
+        [HttpPut("profile")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized(new { message = "Không xác định được người dùng." });
+
+            var user = await _userRepository.GetUserByIdAsync(userId);
+            if (user == null) return NotFound(new { message = "Không tìm thấy hồ sơ." });
+
+            user.FullName = dto.FullName;
+            user.Email = dto.Email;
+            user.Phone = dto.Phone;
+
+            await _userRepository.UpdateUserAsync(user);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.Role),
+                new Claim("FullName", user.FullName)
+            };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            return Ok(new { message = "Cập nhật hồ sơ thành công!" });
+        }
+
         [HttpPost("change-password")]
         [Microsoft.AspNetCore.Authorization.Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
@@ -90,7 +147,7 @@ namespace PROJECT_PRN232_.Controllers
             var result = await _authService.ChangePasswordAsync(userId, dto.OldPassword, dto.NewPassword);
             if (!result)
             {
-                return BadRequest(new { message = "Mật khẩu cũ không chính xác hoặc lỗi hệ thống." });
+                return BadRequest(new { message = "Mật khẩu cũ không chính xác." });
             }
 
             return Ok(new { message = "Đổi mật khẩu thành công!" });
