@@ -16,6 +16,8 @@ namespace PROJECT_PRN232_.WebApp.Pages
                     return RedirectToPage("/Parent/Dashboard");
                 if (role == "Center")
                     return RedirectToPage("/Center/Dashboard");
+                if (role == "Teacher")
+                    return RedirectToPage("/Teacher/Dashboard");
             }
             
             // Nếu chưa đăng nhập, đá thẳng ra trang Login luôn

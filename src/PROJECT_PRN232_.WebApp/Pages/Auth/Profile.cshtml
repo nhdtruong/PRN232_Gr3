@@ -1,0 +1,113 @@
+@page
+@model PROJECT_PRN232_.WebApp.Pages.Auth.ProfileModel
+@{
+    ViewData["Title"] = "Hồ sơ cá nhân";
+}
+
+<div class="row justify-content-center fade-in">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h4 class="mb-4" style="color: var(--eb-primary);"><i class="bi bi-person-lines-fill me-2"></i>Hồ sơ cá nhân</h4>
+            
+            <div id="profileMessage" class="alert d-none text-start"></div>
+
+            <form id="formProfile">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Vai trò</label>
+                    <input type="text" class="form-control" id="Input_Role" readonly disabled />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Họ và Tên</label>
+                    <input type="text" class="form-control" id="Input_FullName" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Email</label>
+                    <input type="email" class="form-control" id="Input_Email" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Số điện thoại</label>
+                    <input type="text" class="form-control" id="Input_Phone" />
+                </div>
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" id="btnSubmitProfile" class="btn btn-primary"><i class="bi bi-save me-2"></i>Lưu Thay Đổi</button>
+                    <a href="/" class="btn btn-light text-muted">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", async function() {
+        const msgBox = document.getElementById('profileMessage');
+        const form = document.getElementById('formProfile');
+        const btnSubmit = document.getElementById('btnSubmitProfile');
+
+        // Fetch profile data on load
+        try {
+            const response = await fetch('/api/auth/profile');
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('Input_Role').value = data.role || '';
+                document.getElementById('Input_FullName').value = data.fullName || '';
+                document.getElementById('Input_Email').value = data.email || '';
+                document.getElementById('Input_Phone').value = data.phone || '';
+            } else {
+                msgBox.className = 'alert alert-danger text-start';
+                msgBox.innerText = 'Không thể tải thông tin hồ sơ.';
+            }
+        } catch (error) {
+            msgBox.className = 'alert alert-danger text-start';
+            msgBox.innerText = 'Lỗi kết nối đến máy chủ.';
+        }
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fullName = document.getElementById('Input_FullName').value;
+            const email = document.getElementById('Input_Email').value;
+            const phone = document.getElementById('Input_Phone').value;
+            
+            msgBox.className = 'alert d-none text-start';
+            msgBox.innerText = '';
+            
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang lưu...';
+
+            try {
+                const response = await fetch('/api/auth/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ fullName, email, phone })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    msgBox.className = 'alert alert-success text-start';
+                    msgBox.innerText = data.message || 'Cập nhật hồ sơ thành công!';
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    msgBox.className = 'alert alert-danger text-start';
+                    msgBox.innerText = data.message || 'Đã có lỗi xảy ra.';
+                    if (data.errors) {
+                        const errs = Object.values(data.errors).flat().join('\n');
+                        msgBox.innerText += '\n' + errs;
+                    }
+                }
+            } catch (error) {
+                msgBox.className = 'alert alert-danger text-start';
+                msgBox.innerText = 'Lỗi kết nối đến máy chủ.';
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = '<i class="bi bi-save me-2"></i>Lưu Thay Đổi';
+            }
+        });
+    });
+</script>
+}
