@@ -94,5 +94,8 @@ namespace PROJECT_PRN232_.Application.Services
             decimal? finalScoreTotal);
 
         Task NotifyTeacherAssignedClassAsync(int teacherId, int classId, string className);
+
+        Task NotifyTransferRequestCreatedAsync(int centerId, string fromTeacherName, string toTeacherName, string className, int classId);
+        Task NotifyTransferRequestProcessedAsync(int teacherId, string className, int classId, bool isApproved, bool isFromTeacher);
     }
 }

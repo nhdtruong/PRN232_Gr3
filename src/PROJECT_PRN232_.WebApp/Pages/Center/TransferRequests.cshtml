@@ -95,6 +95,17 @@
             .then(data => {
                 showAlert(data.message, "success");
                 document.getElementById('row-' + id).remove();
+                
+                // Cập nhật giảm badge duyệt đổi lớp ở topbar
+                const transferBadge = document.getElementById('transfer-pending-badge');
+                if (transferBadge) {
+                    let currentCount = parseInt(transferBadge.innerText) || 0;
+                    currentCount = Math.max(0, currentCount - 1);
+                    transferBadge.innerText = currentCount;
+                    if (currentCount === 0) {
+                        transferBadge.style.setProperty('display', 'none', 'important');
+                    }
+                }
             })
             .catch(err => {
                 showAlert(err.message, "danger");

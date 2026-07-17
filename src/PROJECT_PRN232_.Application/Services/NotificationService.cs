@@ -771,5 +771,99 @@ namespace PROJECT_PRN232_.Application.Services
 
             await _realtimeNotifier.PushNotificationToParentAsync(teacherId, dto, unreadCount);
         }
+
+        public async Task NotifyTransferRequestCreatedAsync(int centerId, string fromTeacherName, string toTeacherName, string className, int classId)
+        {
+            if (centerId <= 0) return;
+
+            var messageBody = $@"
+<div class='mb-2'><b>Giáo viên yêu cầu:</b> {fromTeacherName}</div>
+<div class='mb-2'><b>Lớp học:</b> {className}</div>
+<div class='mb-2'><b>Giáo viên nhận:</b> {toTeacherName}</div>
+<hr style='opacity: 0.15; margin: 10px 0;'>
+<div class='text-muted small' style='font-size: 0.85rem;'>Có đơn xin đổi lớp học mới đang chờ bạn phê duyệt.</div>
+";
+
+            var notification = new Notification
+            {
+                ParentId = centerId,
+                ClassId = classId,
+                Title = "Yêu cầu đổi lớp mới",
+                Message = messageBody,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            };
+
+            await _notificationRepository.AddAsync(notification);
+            var unreadCount = await _notificationRepository.CountUnreadByParentAsync(centerId);
+
+            var dto = new NotificationResponseDto
+            {
+                Id = notification.Id,
+                ClassId = notification.ClassId,
+                Title = notification.Title,
+                Message = notification.Message,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt
+            };
+
+            await _realtimeNotifier.PushNotificationToParentAsync(centerId, dto, unreadCount);
+        }
+
+        public async Task NotifyTransferRequestProcessedAsync(int teacherId, string className, int classId, bool isApproved, bool isFromTeacher)
+        {
+            if (teacherId <= 0) return;
+
+            // Nếu là giáo viên nhận bàn giao nhưng đơn bị từ chối thì không cần gửi thông báo
+            if (!isFromTeacher && !isApproved) return;
+
+            string title;
+            string messageBody;
+
+            if (isFromTeacher)
+            {
+                title = isApproved ? $"Đồng ý yêu cầu đổi lớp {className}" : $"Từ chối yêu cầu đổi lớp {className}";
+                messageBody = $@"
+<div class='mb-2'><b>Lớp học:</b> {className}</div>
+<div class='mb-2'><b>Trạng thái:</b> <span class='badge {(isApproved ? "bg-success" : "bg-danger")}'>{(isApproved ? "Đã duyệt" : "Từ chối")}</span></div>
+<hr style='opacity: 0.15; margin: 10px 0;'>
+<div class='text-muted small' style='font-size: 0.85rem;'>{(isApproved ? "Yêu cầu đổi lớp của bạn đã được quản trị viên phê duyệt." : "Yêu cầu đổi lớp của bạn đã bị quản trị viên từ chối.")}</div>
+";
+            }
+            else
+            {
+                title = $"Phân công giảng dạy lớp {className}";
+                messageBody = $@"
+<div class='mb-2'><b>Lớp học:</b> <span class='badge bg-indigo text-white' style='background-color: #4F46E5;'>{className}</span></div>
+<hr style='opacity: 0.15; margin: 10px 0;'>
+<div class='text-muted small' style='font-size: 0.85rem;'>Bạn đã được bàn giao giảng dạy lớp học này sau khi duyệt đơn đổi lớp. Vui lòng kiểm tra trang lớp học của tôi.</div>
+";
+            }
+
+            var notification = new Notification
+            {
+                ParentId = teacherId,
+                ClassId = classId,
+                Title = title,
+                Message = messageBody,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            };
+
+            await _notificationRepository.AddAsync(notification);
+            var unreadCount = await _notificationRepository.CountUnreadByParentAsync(teacherId);
+
+            var dto = new NotificationResponseDto
+            {
+                Id = notification.Id,
+                ClassId = notification.ClassId,
+                Title = notification.Title,
+                Message = notification.Message,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt
+            };
+
+            await _realtimeNotifier.PushNotificationToParentAsync(teacherId, dto, unreadCount);
+        }
     }
 }

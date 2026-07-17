@@ -1,4 +1,5 @@
 @inject PROJECT_PRN232_.Application.Services.IChatService ChatService
+@inject PROJECT_PRN232_.Infrastructure.Data.AppDbContext DbContext
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -433,34 +434,31 @@
                     <ul class="navbar-nav me-auto align-items-lg-center gap-2">
                         @if (role == "Center")
                         {
-                            <li class="nav-item">
-                                <a class="eb-nav-link" href="/Center/Parents/Index">
-                                    <i class="bi bi-people-fill me-1"></i>Quản lý phụ huynh
+                            var pendingTransferCount = DbContext.ClassTransferRequests.Count(r => r.Status == "Pending");
+                            
+                            <li class="nav-item dropdown">
+                                <a class="eb-nav-link dropdown-toggle" href="#" id="centerManagementDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-grid-fill me-1"></i>Quản lý
                                 </a>
+                                <ul class="dropdown-menu border-0 shadow" aria-labelledby="centerManagementDropdown" style="border-radius: 12px; font-size: 0.88rem; min-width: 200px; padding: 6px 0;">
+                                    <li><a class="dropdown-item py-2 px-3 fw-medium text-dark d-flex align-items-center gap-2" href="/Center/Parents/Index"><i class="bi bi-people-fill text-primary"></i>Quản lý phụ huynh</a></li>
+                                    <li><a class="dropdown-item py-2 px-3 fw-medium text-dark d-flex align-items-center gap-2" href="/Center/Students/Index"><i class="bi bi-mortarboard-fill text-success"></i>Quản lý học sinh</a></li>
+                                    <li><a class="dropdown-item py-2 px-3 fw-medium text-dark d-flex align-items-center gap-2" href="/Center/Teachers/Index"><i class="bi bi-person-badge-fill text-warning"></i>Quản lý giáo viên</a></li>
+                                    <li><a class="dropdown-item py-2 px-3 fw-medium text-dark d-flex align-items-center gap-2" href="/Center/Classes/Index"><i class="bi bi-collection-fill text-info"></i>Quản lý lớp học</a></li>
+                                    <li><a class="dropdown-item py-2 px-3 fw-medium text-dark d-flex align-items-center gap-2" href="/Center/Subjects/Index"><i class="bi bi-book-half text-danger"></i>Quản lý môn học</a></li>
+                                </ul>
                             </li>
                             <li class="nav-item">
-                                <a class="eb-nav-link" href="/Center/Students/Index">
-                                    <i class="bi bi-mortarboard me-1"></i>Quản lý học sinh
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="eb-nav-link" href="/Center/Teachers/Index">
-                                    <i class="bi bi-person-badge-fill me-1"></i>Quản lý giáo viên
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="eb-nav-link" href="/Center/Classes/Index">
-                                    <i class="bi bi-collection-fill me-1"></i>Quản lý lớp học
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="eb-nav-link" href="/Center/Subjects/Index">
-                                    <i class="bi bi-book me-1"></i>Quản lý môn học
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="eb-nav-link" href="/Center/TransferRequests">
+                                <a class="eb-nav-link position-relative" href="/Center/TransferRequests" style="margin-right: 15px;">
                                     <i class="bi bi-arrow-left-right me-1"></i>Duyệt đổi lớp
+                                    @if (pendingTransferCount > 0)
+                                    {
+                                        <span id="transfer-pending-badge" class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle" style="font-size: 0.65rem; padding: 3px 6px; transform: translate(-30%, -10%) !important;">@pendingTransferCount</span>
+                                    }
+                                    else
+                                    {
+                                        <span id="transfer-pending-badge" class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle" style="font-size: 0.65rem; padding: 3px 6px; display: none !important; transform: translate(-30%, -10%) !important;">0</span>
+                                    }
                                 </a>
                             </li>
                         }

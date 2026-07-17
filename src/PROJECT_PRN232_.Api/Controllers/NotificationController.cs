@@ -10,7 +10,7 @@ namespace PROJECT_PRN232_.Controllers
 {
     [ApiController]
     [Route("api/notifications")]
-    [Authorize(Roles = "Parent,Center", AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{JwtBearerDefaults.AuthenticationScheme}")]
+    [Authorize(Roles = "Parent,Center,Teacher", AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{JwtBearerDefaults.AuthenticationScheme}")]
     public class NotificationController : ControllerBase
     {
         private readonly INotificationService _notificationService;
@@ -26,7 +26,7 @@ namespace PROJECT_PRN232_.Controllers
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int parentId))
             {
-                return Unauthorized(new { message = "Không xác định được danh tính phụ huynh." });
+                return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             }
 
             var notifications = await _notificationService.GetLatestNotificationsByParentAsync(parentId, limit);
@@ -39,7 +39,7 @@ namespace PROJECT_PRN232_.Controllers
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int parentId))
             {
-                return Unauthorized(new { message = "Không xác định được danh tính phụ huynh." });
+                return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             }
 
             await _notificationService.MarkAllAsReadByParentAsync(parentId);
