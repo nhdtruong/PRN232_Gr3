@@ -142,7 +142,7 @@
 <div class="container-fluid py-4" style="max-width: 1400px;">
     <!-- Breadcrumbs -->
     <div class="mb-3">
-        <a asp-page="/Center/Classes/Index" class="text-decoration-none small text-muted">
+        <a href="/Center/Classes/Index" class="text-decoration-none small text-muted">
             <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách lớp học
         </a>
     </div>
@@ -150,26 +150,13 @@
     <!-- Title Header -->
     <div class="mb-4">
         <h1 class="fw-bold text-dark mb-1" style="font-size: 1.85rem;">
-            👥 Thành viên lớp: <span class="text-primary">@Model.ClassInfo.ClassName</span>
+            👥 Thành viên lớp: <span class="text-primary" id="classTitleName">Đang tải...</span>
         </h1>
         <p class="text-muted mb-0">Quản lý xếp lớp, chuyển lớp hoặc rút tên học viên ra khỏi lớp học.</p>
     </div>
 
-    <!-- Alerts -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4" role="alert" style="background-color: #DCFCE7; color: #15803D;">
-            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4" role="alert" style="background-color: #FEE2E2; color: #B91C1C;">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
+    <!-- Top Alert Messages Container -->
+    <div id="alertContainer"></div>
 
     <div class="row g-4">
         <!-- LEFT: ENROLLED STUDENTS LIST -->
@@ -177,18 +164,10 @@
             <div class="eb-card p-0 overflow-hidden" style="border-radius: 12px;">
                 <div class="p-4 border-bottom">
                     <h5 class="fw-bold text-dark mb-1">Danh sách học viên đang theo học</h5>
-                    <p class="text-muted small mb-0">Hiện tại có <strong>@Model.EnrolledStudents.Count()</strong> học viên đang ở trong lớp này.</p>
+                    <p class="text-muted small mb-0">Hiện tại có <strong id="enrolledCount">0</strong> học viên đang ở trong lớp này.</p>
                 </div>
                 
-                @if (!Model.EnrolledStudents.Any())
-                {
-                    <div class="text-center py-5 text-muted">
-                        <i class="bi bi-people-fill text-secondary opacity-50 display-6 d-block mb-3"></i>
-                        <p class="mb-0 fw-semibold">Chưa có học viên nào trong lớp này.</p>
-                    </div>
-                }
-                else
-                {
+                <div id="enrolledSection">
                     <div class="table-responsive">
                         <table class="eb-table">
                             <thead>
@@ -200,44 +179,22 @@
                                     <th class="text-center" style="width: 200px;">Hành động</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @{ int enrolledIdx = 1; }
-                                @foreach (var s in Model.EnrolledStudents)
-                                {
-                                    <tr>
-                                        <td class="text-center text-muted fw-semibold">@enrolledIdx</td>
-                                        <td>
-                                            <div class="fw-bold" style="color: var(--eb-text-dark);">@s.FullName</div>
-                                            <span class="text-muted small">Mã số: #@s.Id</span>
-                                        </td>
-                                        <td class="small text-muted">@(s.DateOfBirth?.ToString("dd/MM/yyyy") ?? "-")</td>
-                                        <td>
-                                            <span class="badge bg-light text-dark border px-2 py-1">@(s.Gender ?? "-")</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="d-inline-flex gap-2">
-                                                <button class="eb-btn-outline py-1 px-3" onclick="openTransferModal(@s.Id, '@s.FullName')" data-bs-toggle="modal" data-bs-target="#transferModal">
-                                                    <i class="bi bi-arrow-left-right me-1"></i> Chuyển lớp
-                                                </button>
-                                                <form method="post" asp-page-handler="Remove" asp-route-studentId="@s.Id" onsubmit="return confirm('Bạn có chắc chắn muốn xóa học sinh @s.FullName khỏi lớp này?');" style="display:inline;">
-                                                    <input type="hidden" asp-for="ClassId" />
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-3 py-1 px-3 fw-semibold">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    enrolledIdx++;
-                                }
+                            <tbody id="enrolledStudentsList">
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Đang tải...</span>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
-                }
+                </div>
             </div>
         </div>
 
-        <!-- RIGHT: AVAILABLE STUDENTS LIST (TICK TO ENROLL MULTI) -->
+        <!-- RIGHT: AVAILABLE STUDENTS LIST -->
         <div class="col-lg-5">
             <div class="eb-card">
                 <div class="mb-3 d-flex justify-content-between align-items-center">
@@ -252,9 +209,7 @@
                     </div>
                 </div>
 
-                <form method="post" asp-page-handler="EnrollMulti">
-                    <input type="hidden" asp-for="ClassId" />
-
+                <form id="enrollMultiForm" novalidate>
                     <!-- Search filter in available list -->
                     <div class="mb-3">
                         <div class="input-group">
@@ -274,32 +229,10 @@
                     </div>
 
                     <!-- List of students with scrollbar -->
-                    <div class="border rounded-4 overflow-y-auto mb-3" style="max-height: 400px; background-color: var(--eb-bg-light);">
-                        @if (!Model.AvailableStudents.Any())
-                        {
-                            <div class="text-center py-5 text-muted">
-                                <i class="bi bi-person-check-fill opacity-50 display-6 d-block mb-2"></i>
-                                <p class="mb-0 small fw-semibold">Tất cả học viên đã được xếp vào lớp học này.</p>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="list-group list-group-flush" id="availableStudentsList">
-                                @foreach (var s in Model.AvailableStudents)
-                                {
-                                    <div class="list-group-item available-student-item d-flex align-items-center justify-content-between p-3" data-name="@s.FullName.ToLower()" data-id="@s.Id">
-                                        <label class="custom-checkbox-wrapper mb-0 flex-grow-1">
-                                            <input type="checkbox" name="SelectedStudentIds" value="@s.Id" class="student-checkbox" onclick="updateCounter()" />
-                                            <span class="custom-checkbox"></span>
-                                            <div>
-                                                <strong class="text-dark d-block">@s.FullName</strong>
-                                                <span class="text-muted small">Mã số: #@s.Id | Giới tính: @(s.Gender ?? "-")</span>
-                                            </div>
-                                        </label>
-                                    </div>
-                                }
-                            </div>
-                        }
+                    <div class="border rounded-4 overflow-y-auto mb-3" style="max-height: 400px; background-color: var(--eb-bg-light);" id="availableStudentsContainer">
+                        <div class="list-group list-group-flush" id="availableStudentsList">
+                            <!-- Available students loaded here -->
+                        </div>
                     </div>
 
                     <button type="submit" class="eb-btn-primary w-100 justify-content-center py-2.5">
@@ -319,20 +252,15 @@
                 <h5 class="modal-title fw-bold" id="transferTitle" style="color: var(--eb-text-dark);">Chuyển Lớp</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" asp-page-handler="Transfer" id="transferForm">
-                <input type="hidden" asp-for="ClassId" />
-                <input type="hidden" asp-for="StudentId" id="transferStudentId" />
+            <form id="transferForm" novalidate>
+                <input type="hidden" id="transferStudentId" />
                 
                 <div class="modal-body py-3">
                     <div class="mb-3">
-                        <label asp-for="TargetClassId" class="form-label fw-semibold text-muted small">Chọn lớp học mới (Đang hoạt động)</label>
-                        <select asp-for="TargetClassId" class="form-select" required>
-                            @foreach (var c in Model.ActiveClasses)
-                            {
-                                <option value="@c.Id">@c.ClassName (ID: @c.Id)</option>
-                            }
+                        <label class="form-label fw-semibold text-muted small">Chọn lớp học mới (Đang hoạt động)</label>
+                        <select id="targetClassIdSelect" class="form-select" required>
+                            <!-- Target classes loaded here -->
                         </select>
-                        <span asp-validation-for="TargetClassId" class="text-danger small"></span>
                     </div>
                 </div>
                 
@@ -355,42 +283,46 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" asp-page-handler="CreateStudentAndEnroll">
-                <input type="hidden" asp-for="ClassId" />
+            <form id="createStudentAndEnrollForm" novalidate>
                 <div class="modal-body p-4">
+                    <div class="create-student-error-container"></div>
                     <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">1. Thông tin Học sinh</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Họ và Tên</label>
-                            <input type="text" asp-for="NewStudentForm.FullName" class="form-control" required />
+                            <label class="form-label fw-semibold text-muted small">Họ và Tên (*)</label>
+                            <input type="text" id="newStudentFullName" class="form-control" required />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Ngày sinh</label>
-                            <input type="date" asp-for="NewStudentForm.DateOfBirth" class="form-control" required />
+                            <label class="form-label fw-semibold text-muted small">Ngày sinh (*)</label>
+                            <input type="date" id="newStudentDob" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted small">Giới tính</label>
+                            <select id="newStudentGender" class="form-select">
+                                <option value="">Chọn giới tính</option>
+                                <option value="Male">Nam</option>
+                                <option value="Female">Nữ</option>
+                            </select>
                         </div>
                     </div>
 
                     <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">2. Thông tin Phụ huynh</h6>
                     <div class="mb-3">
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" asp-for="NewStudentForm.IsNewParent" value="false" id="oldParentRadio" checked onchange="toggleParentForm()">
+                            <input class="form-check-input" type="radio" name="isNewParentRadio" value="false" id="oldParentRadio" checked onchange="toggleParentForm()">
                             <label class="form-check-label" for="oldParentRadio">Chọn phụ huynh có sẵn</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" asp-for="NewStudentForm.IsNewParent" value="true" id="newParentRadio" onchange="toggleParentForm()">
+                            <input class="form-check-input" type="radio" name="isNewParentRadio" value="true" id="newParentRadio" onchange="toggleParentForm()">
                             <label class="form-check-label" for="newParentRadio">Tạo phụ huynh mới</label>
                         </div>
                     </div>
 
                     <!-- Select Existing Parent -->
                     <div id="existingParentSection">
-                        <label class="form-label fw-semibold text-muted small">Chọn Phụ huynh</label>
-                        <select asp-for="NewStudentForm.SelectedParentId" class="form-select" id="existingParentSelect">
-                            <option value="">-- Chọn phụ huynh --</option>
-                            @foreach(var p in Model.ParentsList)
-                            {
-                                <option value="@p.Id">@p.FullName (@p.Username) - @p.Phone</option>
-                            }
+                        <label class="form-label fw-semibold text-muted small">Chọn Phụ huynh (*)</label>
+                        <select class="form-select" id="existingParentSelect">
+                            <option value="" selected disabled>-- Chọn phụ huynh --</option>
                         </select>
                     </div>
 
@@ -398,31 +330,31 @@
                     <div id="newParentSection" class="d-none bg-light p-3 rounded-3 mt-2">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small">Họ và tên Phụ huynh</label>
-                                <input type="text" asp-for="NewStudentForm.ParentFullName" class="form-control" id="npFullName" />
+                                <label class="form-label fw-semibold text-muted small">Họ và tên Phụ huynh (*)</label>
+                                <input type="text" class="form-control" id="npFullName" />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small">Tên đăng nhập</label>
-                                <input type="text" asp-for="NewStudentForm.ParentUsername" class="form-control" id="npUsername" />
+                                <label class="form-label fw-semibold text-muted small">Tên đăng nhập (*)</label>
+                                <input type="text" class="form-control" id="npUsername" />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small">Mật khẩu</label>
-                                <input type="password" asp-for="NewStudentForm.ParentPassword" class="form-control" id="npPassword" />
+                                <label class="form-label fw-semibold text-muted small">Mật khẩu (*)</label>
+                                <input type="password" class="form-control" id="npPassword" />
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small">Số điện thoại</label>
-                                <input type="text" asp-for="NewStudentForm.ParentPhone" class="form-control" />
+                                <input type="text" class="form-control" id="npPhone" />
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label fw-semibold text-muted small">Email</label>
-                                <input type="email" asp-for="NewStudentForm.ParentEmail" class="form-control" />
+                                <input type="email" class="form-control" id="npEmail" />
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 py-3 bg-light">
                     <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn text-white px-4 rounded-pill shadow-sm" style="background: var(--eb-indigo-gradient);" onclick="return validateNewStudentForm()">
+                    <button type="submit" class="btn text-white px-4 rounded-pill shadow-sm" style="background: var(--eb-indigo-gradient);">
                         <i class="bi bi-person-check-fill me-1"></i> Thêm và Xếp lớp
                     </button>
                 </div>
@@ -432,39 +364,463 @@
 </div>
 
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        const classId = @Model.ClassId;
+        let enrolledIds = [];
+
         function toggleParentForm() {
             const isNew = document.getElementById('newParentRadio').checked;
             document.getElementById('existingParentSection').classList.toggle('d-none', isNew);
             document.getElementById('newParentSection').classList.toggle('d-none', !isNew);
         }
 
-        function validateNewStudentForm() {
-            const isNew = document.getElementById('newParentRadio').checked;
-            if (isNew) {
-                const fn = document.getElementById('npFullName').value;
-                const un = document.getElementById('npUsername').value;
-                const pw = document.getElementById('npPassword').value;
-                if (!fn || !un || !pw) {
-                    alert("Vui lòng điền đủ Họ tên, Tên đăng nhập và Mật khẩu cho phụ huynh mới.");
-                    return false;
-                }
-            } else {
-                const sel = document.getElementById('existingParentSelect').value;
-                if (!sel) {
-                    alert("Vui lòng chọn phụ huynh có sẵn hoặc tạo mới.");
-                    return false;
-                }
-            }
-            return true;
+        function loadClassInfo() {
+            fetch(`/api/center/classes/${classId}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("Không tìm thấy thông tin lớp học.");
+                    return res.json();
+                })
+                .then(c => {
+                    document.getElementById('classTitleName').textContent = c.className;
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('classTitleName').textContent = "Không rõ";
+                });
         }
+
+        function loadMembers() {
+            // Load enrolled students
+            fetch(`/api/center/classes/${classId}/students`)
+                .then(res => {
+                    if (!res.ok) throw new Error("Lỗi tải thành viên lớp.");
+                    return res.json();
+                })
+                .then(enrolledList => {
+                    const tbody = document.getElementById('enrolledStudentsList');
+                    document.getElementById('enrolledCount').textContent = enrolledList.length;
+                    enrolledIds = enrolledList.map(s => s.id);
+
+                    if (enrolledList.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="bi bi-people-fill text-secondary opacity-50 display-6 d-block mb-3"></i>
+                                    <p class="mb-0 fw-semibold">Chưa có học viên nào trong lớp này.</p>
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        let html = '';
+                        enrolledList.forEach((s, idx) => {
+                            const dobStr = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : '-';
+                            html += `
+                                <tr>
+                                    <td class="text-center text-muted fw-semibold">${idx + 1}</td>
+                                    <td>
+                                        <div class="fw-bold" style="color: var(--eb-text-dark);">${s.fullName}</div>
+                                        <span class="text-muted small">Mã số: #${s.id}</span>
+                                    </td>
+                                    <td class="small text-muted">${dobStr}</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border px-2 py-1">${s.gender || "-"}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-inline-flex gap-2">
+                                            <button class="eb-btn-outline py-1 px-3" onclick="openTransferModal(${s.id}, '${s.fullName}')" data-bs-toggle="modal" data-bs-target="#transferModal">
+                                                <i class="bi bi-arrow-left-right me-1"></i> Chuyển lớp
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm rounded-3 py-1 px-3 fw-semibold" onclick="removeStudent(${s.id}, '${s.fullName}')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        tbody.innerHTML = html;
+                    }
+
+                    // Once enrolled list is loaded, reload available list to filter out enrolled students
+                    loadAvailableStudents();
+                })
+                .catch(err => {
+                    document.getElementById('enrolledStudentsList').innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-danger">
+                                <i class="bi bi-exclamation-triangle fs-3 d-block mb-2"></i> ${err.message}
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+
+        function loadAvailableStudents() {
+            fetch('/api/center/students')
+                .then(res => {
+                    if (!res.ok) throw new Error("Không thể tải danh sách học viên.");
+                    return res.json();
+                })
+                .then(allStudents => {
+                    // Filter out enrolled students
+                    const available = allStudents.filter(s => !enrolledIds.includes(s.id));
+                    const container = document.getElementById('availableStudentsList');
+                    document.getElementById('checkAllStudents').checked = false;
+                    updateCounter();
+
+                    if (available.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-person-check-fill opacity-50 display-6 d-block mb-2"></i>
+                                <p class="mb-0 small fw-semibold">Tất cả học viên đã được xếp vào lớp học này.</p>
+                            </div>
+                        `;
+                    } else {
+                        let html = '';
+                        available.forEach(s => {
+                            html += `
+                                <div class="list-group-item available-student-item d-flex align-items-center justify-content-between p-3" data-name="${s.fullName.toLowerCase()}" data-id="${s.id}">
+                                    <label class="custom-checkbox-wrapper mb-0 flex-grow-1">
+                                        <input type="checkbox" value="${s.id}" class="student-checkbox" onclick="updateCounter()" />
+                                        <span class="custom-checkbox"></span>
+                                        <div>
+                                            <strong class="text-dark d-block">${s.fullName}</strong>
+                                            <span class="text-muted small">Mã số: #${s.id} | Giới tính: ${s.gender || "-"}</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            `;
+                        });
+                        container.innerHTML = html;
+                    }
+                })
+                .catch(err => {
+                    console.error("Lỗi tải học sinh khả dụng:", err);
+                    document.getElementById('availableStudentsList').innerHTML = `
+                        <div class="text-center py-5 text-danger">${err.message}</div>
+                    `;
+                });
+        }
+
+        function loadParents() {
+            fetch('/api/center/parents')
+                .then(res => {
+                    if (!res.ok) throw new Error("Không thể tải phụ huynh.");
+                    return res.json();
+                })
+                .then(parents => {
+                    const select = document.getElementById('existingParentSelect');
+                    select.innerHTML = '<option value="" selected disabled>-- Chọn phụ huynh --</option>';
+                    parents.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = `${p.fullName} (${p.username}) - ${p.phone || 'Chưa có SĐT'}`;
+                        select.appendChild(opt);
+                    });
+                })
+                .catch(err => console.error("Lỗi tải phụ huynh:", err));
+        }
+
+        function loadActiveClasses() {
+            fetch('/api/center/classes')
+                .then(res => {
+                    if (!res.ok) throw new Error("Không thể tải lớp học.");
+                    return res.json();
+                })
+                .then(classes => {
+                    const select = document.getElementById('targetClassIdSelect');
+                    select.innerHTML = '';
+                    const activeClasses = classes.filter(c => c.status === 'Active' && c.id !== classId);
+                    activeClasses.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = `${c.className} (ID: ${c.id})`;
+                        select.appendChild(opt);
+                    });
+                })
+                .catch(err => console.error("Lỗi tải lớp hoạt động:", err));
+        }
+
+        function removeStudent(studentId, studentName) {
+            if (!confirm(`Bạn có chắc chắn muốn xóa học sinh ${studentName} khỏi lớp này?`)) return;
+
+            fetch(`/api/center/classes/${classId}/students/${studentId}`, {
+                method: 'DELETE'
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || "Không thể rút tên học sinh.");
+                return data;
+            })
+            .then(data => {
+                showAlert(data.message, "success");
+                loadMembers();
+            })
+            .catch(err => {
+                showAlert(err.message, "danger");
+            });
+        }
+
         function openTransferModal(studentId, studentName) {
             document.getElementById('transferStudentId').value = studentId;
             document.getElementById('transferTitle').textContent = `Chuyển lớp cho học viên: ${studentName}`;
         }
 
+        // Handle Transfer Submit
+        document.getElementById('transferForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const studentId = document.getElementById('transferStudentId').value;
+            const targetId = document.getElementById('targetClassIdSelect').value;
+
+            if (!targetId) {
+                alert("Vui lòng chọn lớp học mục tiêu.");
+                return;
+            }
+
+            fetch(`/api/center/students/${studentId}/transfer-class`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fromClassId: classId,
+                    toClassId: parseInt(targetId)
+                })
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || "Lỗi chuyển lớp.");
+                return data;
+            })
+            .then(data => {
+                bootstrap.Modal.getInstance(document.getElementById('transferModal')).hide();
+                showAlert(data.message, "success");
+                loadMembers();
+            })
+            .catch(err => {
+                alert(err.message);
+            });
+        });
+
+        // Handle Enroll Multi Submit
+        document.getElementById('enrollMultiForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                alert("Vui lòng chọn ít nhất một học sinh từ danh sách để xếp lớp!");
+                return;
+            }
+
+            const promises = Array.from(checkedBoxes).map(box => {
+                const studentId = parseInt(box.value);
+                return fetch(`/api/center/classes/${classId}/students`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ studentId: studentId })
+                }).then(async res => {
+                    const data = await res.json();
+                    return { ok: res.ok, message: data.message, id: studentId };
+                });
+            });
+
+            Promise.all(promises)
+                .then(results => {
+                    const successes = results.filter(r => r.ok);
+                    const failures = results.filter(r => !r.ok);
+
+                    if (successes.length > 0) {
+                        showAlert(`Đã xếp lớp thành công cho ${successes.length} học sinh!`, "success");
+                    }
+                    if (failures.length > 0) {
+                        const failDetails = failures.map(f => `Học sinh ID ${f.id}: ${f.message}`).join('<br>');
+                        showAlert(`Có ${failures.length} học sinh xếp lớp thất bại:<br>${failDetails}`, "danger");
+                    }
+                    loadMembers();
+                })
+                .catch(err => {
+                    showAlert("Có lỗi hệ thống xảy ra khi xếp lớp.", "danger");
+                });
+        });
+
+        // Handle Create Student and Enroll Submit
+        document.getElementById('createStudentAndEnrollForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            $('.create-student-error-container').html('');
+
+            const fullName = document.getElementById('newStudentFullName').value.trim();
+            const dateOfBirth = document.getElementById('newStudentDob').value;
+            const gender = document.getElementById('newStudentGender').value || null;
+            const isNewParent = document.getElementById('newParentRadio').checked;
+
+            const clientErrors = [];
+
+            if (!fullName) {
+                clientErrors.push("Họ và tên học sinh không được để trống.");
+            } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠƯưăâêôơưẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼẾỀỂỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲÝỶỸỴạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳýỷỹỵ\s]+$/.test(fullName)) {
+                clientErrors.push("Họ và tên học sinh chỉ được chứa chữ cái và khoảng trắng.");
+            }
+
+            if (!dateOfBirth) {
+                clientErrors.push("Ngày sinh học sinh không được để trống.");
+            } else if (new Date(dateOfBirth) > new Date()) {
+                clientErrors.push("Ngày sinh không được vượt quá ngày hiện tại.");
+            }
+
+            let parentId = null;
+
+            // Parent values if choosing existing parent
+            if (!isNewParent) {
+                parentId = document.getElementById('existingParentSelect').value;
+                if (!parentId) {
+                    clientErrors.push("Vui lòng chọn phụ huynh liên kết.");
+                }
+            } else {
+                // New parent values
+                const pFullName = document.getElementById('npFullName').value.trim();
+                const pUsername = document.getElementById('npUsername').value.trim();
+                const pPassword = document.getElementById('npPassword').value.trim();
+                let pPhone = document.getElementById('npPhone').value.trim();
+                const pEmail = document.getElementById('npEmail').value.trim();
+
+                if (!pFullName) clientErrors.push("Họ và tên Phụ huynh không được để trống.");
+                if (!pUsername) clientErrors.push("Tên đăng nhập Phụ huynh không được để trống.");
+                if (!pPassword) clientErrors.push("Mật khẩu Phụ huynh không được để trống.");
+
+                if (pPhone) {
+                    pPhone = pPhone.replace(/[\s\-\(\)]/g, "");
+                    if (pPhone.startsWith("+84")) {
+                        pPhone = "0" + pPhone.substring(3);
+                    } else if (pPhone.startsWith("84") && pPhone.length > 9) {
+                        pPhone = "0" + pPhone.substring(2);
+                    }
+                    if (!/^(0[3|5|7|8|9])[0-9]{8}$/.test(pPhone)) {
+                        clientErrors.push("Số điện thoại Phụ huynh không hợp lệ (phải gồm 10 chữ số và bắt đầu bằng đầu số di động VN như 03, 05, 07, 08, 09).");
+                    }
+                }
+
+                if (pEmail && !/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(pEmail)) {
+                    clientErrors.push("Địa chỉ email Phụ huynh không đúng định dạng.");
+                }
+            }
+
+            if (clientErrors.length > 0) {
+                $('.create-student-error-container').html(`
+                    <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
+                        <ul class="mb-0 ps-3">
+                            ${clientErrors.map(err => `<li>${err}</li>`).join('')}
+                        </ul>
+                    </div>
+                `);
+                return;
+            }
+
+            // Start sequential flow
+            let flowPromise = Promise.resolve();
+
+            if (isNewParent) {
+                const parentCreateData = {
+                    fullName: document.getElementById('npFullName').value.trim(),
+                    username: document.getElementById('npUsername').value.trim(),
+                    password: document.getElementById('npPassword').value.trim(),
+                    phone: document.getElementById('npPhone').value.trim() || null,
+                    email: document.getElementById('npEmail').value.trim() || null
+                };
+
+                // Sanitize parent phone
+                if (parentCreateData.phone) {
+                    let sanitizedPhone = parentCreateData.phone.replace(/[\s\-\(\)]/g, "");
+                    if (sanitizedPhone.startsWith("+84")) {
+                        sanitizedPhone = "0" + sanitizedPhone.substring(3);
+                    } else if (sanitizedPhone.startsWith("84") && sanitizedPhone.length > 9) {
+                        sanitizedPhone = "0" + sanitizedPhone.substring(2);
+                    }
+                    parentCreateData.phone = sanitizedPhone;
+                }
+
+                flowPromise = fetch('/api/center/parents', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(parentCreateData)
+                })
+                .then(async res => {
+                    const data = await res.json();
+                    if (!res.ok) {
+                        let errMsg = data.message || "Tạo phụ huynh mới thất bại.";
+                        if (data.errors) {
+                            const errorList = [];
+                            for (const key in data.errors) {
+                                if (data.errors.hasOwnProperty(key)) {
+                                    errorList.push(...data.errors[key]);
+                                }
+                            }
+                            errMsg = errorList.join(', ');
+                        }
+                        throw new Error(errMsg);
+                    }
+                    return data.id; // Returns created parent ID
+                });
+            } else {
+                flowPromise = Promise.resolve(parseInt(parentId));
+            }
+
+            flowPromise
+                .then(resolvedParentId => {
+                    // Create student DTO
+                    const studentCreateData = {
+                        fullName: fullName,
+                        dateOfBirth: dateOfBirth,
+                        gender: gender,
+                        parentId: resolvedParentId
+                    };
+
+                    return fetch('/api/center/students', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(studentCreateData)
+                    })
+                    .then(async res => {
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || "Tạo học sinh mới thất bại.");
+                        return data.id; // Returns created student ID
+                    });
+                })
+                .then(resolvedStudentId => {
+                    // Enroll student in class
+                    return fetch(`/api/center/classes/${classId}/students`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ studentId: resolvedStudentId })
+                    })
+                    .then(async res => {
+                        const data = await res.json();
+                        if (!res.ok) throw new Error("Đã tạo học sinh và phụ huynh nhưng không thể xếp vào lớp học: " + (data.message || "Lỗi."));
+                        return data;
+                    });
+                })
+                .then(() => {
+                    bootstrap.Modal.getInstance(document.getElementById('createStudentModal')).hide();
+                    showAlert("Thêm học sinh mới và xếp lớp thành công!", "success");
+                    loadMembers();
+                    // Clear fields
+                    document.getElementById('newStudentFullName').value = '';
+                    document.getElementById('newStudentDob').value = '';
+                    document.getElementById('newStudentGender').value = '';
+                    document.getElementById('existingParentSelect').value = '';
+                    document.getElementById('npFullName').value = '';
+                    document.getElementById('npUsername').value = '';
+                    document.getElementById('npPassword').value = '';
+                    document.getElementById('npPhone').value = '';
+                    document.getElementById('npEmail').value = '';
+                })
+                .catch(err => {
+                    $('.create-student-error-container').html(`
+                        <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i> ${err.message}
+                        </div>
+                    `);
+                });
+        });
+
         function toggleSelectAll(masterCheckbox) {
-            // Lấy tất cả checkbox của những học sinh ĐANG HIỂN THỊ
             const items = document.querySelectorAll('.available-student-item');
             items.forEach(item => {
                 if (item.style.display !== 'none') {
@@ -497,7 +853,6 @@
                         item.style.setProperty('display', 'flex', 'important');
                     } else {
                         item.style.setProperty('display', 'none', 'important');
-                        // Bỏ tích checkbox nếu bị ẩn đi
                         const checkbox = item.querySelector('.student-checkbox');
                         if (checkbox) {
                             checkbox.checked = false;
@@ -505,10 +860,29 @@
                     }
                 });
 
-                // Reset select all state on search filter change
                 document.getElementById('checkAllStudents').checked = false;
                 updateCounter();
             });
         }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            container.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4" role="alert">
+                    <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-info-circle-fill'} me-2"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            setTimeout(() => {
+                $(`.alert`).alert('close');
+            }, 8000);
+        }
+
+        $(document).ready(function() {
+            loadClassInfo();
+            loadMembers();
+            loadParents();
+            loadActiveClasses();
+        });
     </script>
 }

@@ -75,7 +75,7 @@
                 <h5 class="modal-title fw-bold text-dark">📝 Thêm học sinh mới</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="createStudentForm">
+            <form id="createStudentForm" novalidate>
                 <div class="modal-body px-4 py-3" style="background-color: #F8FAFC;">
                     <div class="create-error-container"></div>
                     <div class="mb-3">
@@ -122,7 +122,7 @@
                 <h5 class="modal-title fw-bold text-dark">✏️ Cập nhật thông tin học sinh</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="editStudentForm">
+            <form id="editStudentForm" novalidate>
                 <input type="hidden" id="editStudentId" />
                 <div class="modal-body px-4 py-3" style="background-color: #F8FAFC;">
                     <div class="edit-error-container"></div>
@@ -495,11 +495,20 @@
 
             const clientErrors = [];
 
+            if (!fullName && !parentIdVal && !dateOfBirth && !gender) {
+                $('.create-error-container').html(`
+                    <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Vui lòng điền thông tin học sinh trước khi lưu.
+                    </div>
+                `);
+                return;
+            }
+
             if (!fullName) {
                 clientErrors.push("Họ và tên học sinh không được để trống.");
             } else if (fullName.length < 2 || fullName.length > 100) {
                 clientErrors.push("Họ và tên học sinh phải từ 2 đến 100 ký tự.");
-            } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠƯưăâêôơư\s]+$/.test(fullName)) {
+            } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠƯưăâêôơưẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼẾỀỂỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲÝỶỸỴạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳýỷỹỵ\s]+$/.test(fullName)) {
                 clientErrors.push("Họ và tên chỉ được chứa chữ cái và khoảng trắng.");
             }
 
@@ -691,11 +700,59 @@
             $('.edit-error-container').html('');
 
             const id = document.getElementById('editStudentId').value;
+            const parentIdVal = document.getElementById('editParentId').value;
+            const fullName = document.getElementById('editFullName').value.trim();
+            const dateOfBirth = document.getElementById('editDateOfBirth').value;
+            const gender = document.getElementById('editGender').value || null;
+
+            const clientErrors = [];
+
+            if (!fullName && !parentIdVal && !dateOfBirth && !gender) {
+                $('.edit-error-container').html(`
+                    <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Vui lòng điền đầy đủ thông tin trước khi lưu.
+                    </div>
+                `);
+                return;
+            }
+
+            if (!fullName) {
+                clientErrors.push("Họ và tên học sinh không được để trống.");
+            } else if (fullName.length < 2 || fullName.length > 100) {
+                clientErrors.push("Họ và tên học sinh phải từ 2 đến 100 ký tự.");
+            } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠƯưăâêôơưẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼẾỀỂỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲÝỶỸỴạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳýỷỹỵ\s]+$/.test(fullName)) {
+                clientErrors.push("Họ và tên chỉ được chứa chữ cái và khoảng trắng.");
+            }
+
+            if (!parentIdVal) {
+                clientErrors.push("Vui lòng chọn một phụ huynh liên kết.");
+            }
+
+            if (dateOfBirth) {
+                const dob = new Date(dateOfBirth);
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                if (dob > today) {
+                    clientErrors.push("Ngày sinh không được vượt quá ngày hiện tại.");
+                }
+            }
+
+            if (clientErrors.length > 0) {
+                $('.edit-error-container').html(`
+                    <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
+                        <ul class="mb-0 ps-3">
+                            ${clientErrors.map(err => `<li>${err}</li>`).join('')}
+                        </ul>
+                    </div>
+                `);
+                return;
+            }
+
             const bodyData = {
-                parentId: parseInt(document.getElementById('editParentId').value),
-                fullName: document.getElementById('editFullName').value,
-                dateOfBirth: document.getElementById('editDateOfBirth').value || null,
-                gender: document.getElementById('editGender').value || null
+                parentId: parseInt(parentIdVal),
+                fullName: fullName,
+                dateOfBirth: dateOfBirth || null,
+                gender: gender
             };
 
             fetch(`/api/center/students/${id}`, {
@@ -706,7 +763,21 @@
             .then(async res => {
                 if (!res.ok) {
                     const errData = await res.json();
-                    throw new Error(errData.message || "Cập nhật học sinh thất bại.");
+                    let errMsg = "";
+                    if (errData.message) {
+                        errMsg = `<li>${errData.message}</li>`;
+                    } else if (errData.errors) {
+                        const errorList = [];
+                        for (const key in errData.errors) {
+                            if (errData.errors.hasOwnProperty(key)) {
+                                errorList.push(...errData.errors[key]);
+                            }
+                        }
+                        errMsg = errorList.map(err => `<li>${err}</li>`).join('');
+                    } else {
+                        errMsg = "<li>Cập nhật học sinh thất bại.</li>";
+                    }
+                    throw new Error(errMsg);
                 }
             })
             .then(() => {
@@ -717,7 +788,9 @@
             .catch(err => {
                 $('.edit-error-container').html(`
                     <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>${err.message}
+                        <ul class="mb-0 ps-3">
+                            ${err.message.startsWith('<li>') ? err.message : `<li>${err.message}</li>`}
+                        </ul>
                     </div>
                 `);
             });
