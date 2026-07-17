@@ -434,53 +434,38 @@
                         @if (role == "Center")
                         {
                             <li class="nav-item">
-                                <a class="eb-nav-link" href="/Center/Dashboard">
-                                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                                <a class="eb-nav-link" href="/Center/Parents/Index">
+                                    <i class="bi bi-people-fill me-1"></i>Quản lý phụ huynh
                                 </a>
                             </li>
-
-                            <!-- Dropdown: Quản lý (gom Phụ huynh, Học sinh, Lớp học) -->
-                            <li class="nav-item dropdown">
-                                <a class="eb-nav-link dropdown-toggle" href="#"
-                                   role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-grid-3x3-gap me-1"></i>Quản lý
+                            <li class="nav-item">
+                                <a class="eb-nav-link" href="/Center/Students/Index">
+                                    <i class="bi bi-mortarboard me-1"></i>Quản lý học sinh
                                 </a>
-                                <ul class="dropdown-menu eb-dropdown-menu">
-                                    <li>
-                                        <a class="dropdown-item eb-dropdown-item" href="/Center/Parents/Index">
-                                            <i class="bi bi-people-fill me-2" style="color: var(--eb-primary);"></i>Phụ huynh
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item eb-dropdown-item" href="/Center/Teachers/Index">
-                                            <i class="bi bi-person-badge-fill me-2" style="color: var(--eb-primary);"></i>Giáo viên
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item eb-dropdown-item" href="/Center/Students/Index">
-                                            <i class="bi bi-mortarboard me-2" style="color: var(--eb-primary);"></i>Học sinh
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item eb-dropdown-item" href="/Center/Classes/Index">
-                                            <i class="bi bi-collection-fill me-2" style="color: var(--eb-primary);"></i>Lớp học
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item eb-dropdown-item" href="/Center/TransferRequests">
-                                            <i class="bi bi-arrow-left-right me-2" style="color: var(--eb-primary);"></i>Duyệt đổi lớp
-                                        </a>
-                                    </li>
-                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a class="eb-nav-link" href="/Center/Teachers/Index">
+                                    <i class="bi bi-person-badge-fill me-1"></i>Quản lý giáo viên
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="eb-nav-link" href="/Center/Classes/Index">
+                                    <i class="bi bi-collection-fill me-1"></i>Quản lý lớp học
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="eb-nav-link" href="/Center/Subjects/Index">
+                                    <i class="bi bi-book me-1"></i>Quản lý môn học
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="eb-nav-link" href="/Center/TransferRequests">
+                                    <i class="bi bi-arrow-left-right me-1"></i>Duyệt đổi lớp
+                                </a>
                             </li>
                         }
                         else if (role == "Teacher")
                         {
-                            <li class="nav-item">
-                                <a class="eb-nav-link" href="/Teacher/Dashboard">
-                                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
-                                </a>
-                            </li>
                             <li class="nav-item">
                                 <a class="eb-nav-link" href="/Teacher/MyClasses">
                                     <i class="bi bi-collection me-1"></i>Lớp học của tôi
@@ -494,11 +479,6 @@
                         }
                         else if (role == "Parent")
                         {
-                            <li class="nav-item">
-                                <a class="eb-nav-link" href="/Parent/Dashboard">
-                                    <i class="bi bi-house me-1"></i>Trang chủ
-                                </a>
-                            </li>
                             <li class="nav-item">
                                 <a class="eb-nav-link" href="/Parent/ChildrenClasses">
                                     <i class="bi bi-collection me-1"></i>Lớp của con

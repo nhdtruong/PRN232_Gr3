@@ -18,10 +18,12 @@ namespace PROJECT_PRN232_.Controllers
     public class ClassController : ControllerBase
     {
         private readonly IClassService _classService;
+        private readonly AppDbContext _context;
 
-        public ClassController(IClassService classService)
+        public ClassController(IClassService classService, AppDbContext context)
         {
             _classService = classService;
+            _context = context;
         }
 
         [HttpGet]
@@ -89,6 +91,55 @@ namespace PROJECT_PRN232_.Controllers
             }
 
             return NoContent();
+        }
+
+        [HttpGet("my-classes")]
+        [Authorize(Roles = "Teacher")]
+        public async Task<IActionResult> GetMyClasses()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int teacherId))
+            {
+                return Unauthorized(new { message = "Không xác định danh tính giáo viên." });
+            }
+
+            var classes = await _context.Classes
+                .Where(c => c.TeacherId == teacherId && c.Status == "Active")
+                .Select(c => new
+                {
+                    c.Id,
+                    c.ClassName,
+                    Subject = c.Subject ?? "Chưa có môn",
+                    c.MaxCapacity,
+                    c.TotalLessons
+                })
+                .ToListAsync();
+
+            return Ok(classes);
+        }
+
+        [HttpGet("other-teachers")]
+        [Authorize(Roles = "Teacher")]
+        public async Task<IActionResult> GetOtherTeachers()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int teacherId))
+            {
+                return Unauthorized(new { message = "Không xác định danh tính giáo viên." });
+            }
+
+            var teachers = await _context.Users
+                .Where(u => u.Role == "Teacher" && u.IsActive && u.Id != teacherId)
+                .OrderBy(u => u.FullName)
+                .Select(u => new
+                {
+                    u.Id,
+                    u.FullName,
+                    u.Username
+                })
+                .ToListAsync();
+
+            return Ok(teachers);
         }
     }
 }
