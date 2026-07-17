@@ -47,6 +47,14 @@ namespace PROJECT_PRN232_.Infrastructure.Data
                 .WithMany(s => s.ClassStudents)
                 .HasForeignKey(cs => cs.StudentId);
 
+            modelBuilder.Entity<ClassStudent>()
+                .Property(cs => cs.MidtermScore)
+                .HasColumnType("decimal(4,2)");
+
+            modelBuilder.Entity<ClassStudent>()
+                .Property(cs => cs.FinalScore)
+                .HasColumnType("decimal(4,2)");
+
             // Prevent multiple cascade delete paths from User -> Class/Student/Notification
             modelBuilder.Entity<Class>()
                 .HasOne(c => c.Center)
