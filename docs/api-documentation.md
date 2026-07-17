@@ -1,4 +1,4 @@
-﻿EduBridge API Documentation
+EduBridge API Documentation
 Tài liệu này tổng hợp toàn bộ các API endpoint hiện có trong hệ thống backend của dự án EduBridge (PRN232_Gr3). Các API này phục vụ cho ứng dụng Web Client (Razor Pages) và có thể sử dụng cho ứng dụng Mobile App/SPA thông qua JWT token (hoặc Cookie Auth).
 
 1. Xác thực & Hồ sơ chung (Authentication & Universal Profile)
@@ -34,6 +34,12 @@ POST /api/center/classes/{classId}/students: Thêm học viên vào lớp.
 DELETE /api/center/classes/{classId}/students/{studentId}: Xóa/rút học viên khỏi lớp.
 
 POST /api/center/students/{studentId}/transfer-class: Chuyển lớp cho học viên.
+
+**Dành cho Role Giáo viên (Teacher):**
+
+GET /api/Class/my-classes: Lấy danh sách các lớp học được phân công và đang hoạt động (Active).
+
+GET /api/Class/other-teachers: Lấy danh sách các giáo viên khác để phục vụ đơn xin đổi lớp.
 
 3. Quản lý Buổi học (Lessons)
 Quản lý lịch học chi tiết của từng Lớp học.
