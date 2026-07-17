@@ -198,7 +198,7 @@ namespace PROJECT_PRN232_.Controllers
         [StringLength(100, ErrorMessage = "Email không được vượt quá 100 ký tự.")]
         public string? Email { get; set; }
 
-        [RegularExpression(@"^(0[3|5|7|8|9])[0-9]{8}$", ErrorMessage = "Số điện thoại không hợp lệ (phải gồm 10 chữ số và bắt đầu bằng số 0).")]
+        [RegularExpression(@"^(0)[0-9]{9}$", ErrorMessage = "Số điện thoại không hợp lệ (phải gồm 10 chữ số và bắt đầu bằng số 0).")]
         public string? Phone { get; set; }
     }
 
@@ -213,7 +213,7 @@ namespace PROJECT_PRN232_.Controllers
         [StringLength(100, ErrorMessage = "Email không được vượt quá 100 ký tự.")]
         public string? Email { get; set; }
 
-        [RegularExpression(@"^(0[3|5|7|8|9])[0-9]{8}$", ErrorMessage = "Số điện thoại không hợp lệ (phải gồm 10 chữ số và bắt đầu bằng số 0).")]
+        [RegularExpression(@"^(0)[0-9]{9}$", ErrorMessage = "Số điện thoại không hợp lệ (phải gồm 10 chữ số và bắt đầu bằng số 0).")]
         public string? Phone { get; set; }
     }
 }
