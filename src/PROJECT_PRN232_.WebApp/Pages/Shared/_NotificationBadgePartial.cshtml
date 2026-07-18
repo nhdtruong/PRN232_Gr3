@@ -3,12 +3,17 @@
 
 @{
     var unreadCount = 0;
-    if (User.Identity?.IsAuthenticated == true && User.IsInRole("Parent"))
+    if (User.Identity?.IsAuthenticated == true)
     {
-        var parentIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (int.TryParse(parentIdClaim, out var parentId))
+        var isParent = User.IsInRole("Parent");
+        var isTeacher = User.IsInRole("Teacher");
+        if (isParent || isTeacher)
         {
-            unreadCount = await NotificationRepository.CountUnreadByParentAsync(parentId);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdClaim, out var userId))
+            {
+                unreadCount = await NotificationRepository.CountUnreadByParentAsync(userId);
+            }
         }
     }
 }

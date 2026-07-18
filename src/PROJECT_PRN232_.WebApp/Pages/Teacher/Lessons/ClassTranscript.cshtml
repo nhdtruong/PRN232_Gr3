@@ -1,0 +1,489 @@
+@page
+@model PROJECT_PRN232_.WebApp.Pages.Teacher.Lessons.ClassTranscriptModel
+@{
+    ViewData["Title"] = Model.ClassName != null
+        ? $"Bảng điểm định kỳ - {Model.ClassName}"
+        : "Bảng điểm định kỳ";
+}
+
+<style>
+    .grade-page { background: #f8fafc; min-height: 100vh; }
+    .grade-card {
+        background: #fff;
+        border-radius: 20px;
+        border: 1px solid rgba(79,70,229,0.08);
+        box-shadow: 0 8px 32px rgba(79,70,229,0.06);
+    }
+    .grade-header {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border-radius: 20px 20px 0 0;
+        padding: 1.5rem 2rem;
+    }
+    .stat-chip {
+        background: rgba(255,255,255,0.15);
+        border-radius: 12px;
+        padding: 0.5rem 1rem;
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .grade-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .grade-table thead th {
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 12px 10px;
+        border-bottom: 2px solid #e2e8f0;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+    .grade-table thead th.col-tx { background: #eff6ff; color: #1d4ed8; }
+    .grade-table thead th.col-gk { background: #fff7ed; color: #c2410c; }
+    .grade-table thead th.col-ck { background: #f0fdf4; color: #15803d; }
+    .grade-table thead th.col-total { background: linear-gradient(135deg,#4f46e5,#7c3aed); color: #fff; }
+    .grade-table tbody tr:hover { background: #f8faff; }
+    .grade-table tbody td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+        font-size: 0.88rem;
+    }
+    .score-input-cell {
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .score-input {
+        width: 68px;
+        text-align: center;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 5px 8px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        transition: all 0.2s;
+        -moz-appearance: textfield;
+        background: #fff;
+        color: #1e293b;
+    }
+    .score-input::-webkit-outer-spin-button,
+    .score-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .score-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+        outline: none;
+    }
+    .score-input.is-valid { border-color: #22c55e; background: #f0fdf4; }
+    .score-input.is-invalid { border-color: #ef4444; background: #fef2f2; }
+    
+    .comment-input {
+        width: 100%;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-size: 0.82rem;
+        color: #475569;
+        transition: all 0.2s;
+    }
+    .comment-input:focus {
+        border-color: #a78bfa;
+        box-shadow: 0 0 0 3px rgba(167,139,250,0.12);
+        outline: none;
+    }
+    .badge-score {
+        display: inline-block;
+        min-width: 46px;
+        text-align: center;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+    .badge-score.excellent { background: #dcfce7; color: #15803d; }
+    .badge-score.good { background: #dbeafe; color: #1d4ed8; }
+    .badge-score.average { background: #fef9c3; color: #92400e; }
+    .badge-score.poor { background: #fee2e2; color: #b91c1c; }
+    .badge-score.empty { background: #f1f5f9; color: #94a3b8; }
+    
+    .student-avatar {
+        width: 34px; height: 34px; border-radius: 50%;
+        background: linear-gradient(135deg, #a5b4fc, #818cf8);
+        color: #fff; font-weight: 700; font-size: 0.85rem;
+        display: inline-flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(129,140,248,0.3);
+    }
+    .section-divider {
+        border-left: 2px solid #e2e8f0;
+    }
+    .btn-save-grade {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff; border: none; border-radius: 14px;
+        padding: 12px 32px; font-weight: 700; font-size: 0.95rem;
+        box-shadow: 0 4px 16px rgba(79,70,229,0.25);
+        transition: all 0.2s;
+        display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-save-grade:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(79,70,229,0.35);
+        color: #fff;
+    }
+    .table-wrapper { overflow-x: auto; border-radius: 0 0 20px 20px; }
+    .total-badge {
+        display: inline-block; min-width: 52px;
+        text-align: center; padding: 5px 12px;
+        border-radius: 20px; font-weight: 800; font-size: 0.9rem;
+    }
+    .total-badge.ex { background: linear-gradient(135deg,#4ade80,#22c55e); color: #fff; }
+    .total-badge.good2 { background: linear-gradient(135deg,#60a5fa,#3b82f6); color: #fff; }
+    .total-badge.avg { background: linear-gradient(135deg,#fbbf24,#f59e0b); color: #fff; }
+    .total-badge.poor2 { background: linear-gradient(135deg,#f87171,#ef4444); color: #fff; }
+    .total-badge.none { background: #f1f5f9; color: #94a3b8; }
+</style>
+
+<div class="grade-page container-fluid py-4">
+    @if (Model.ErrorMessage != null)
+    {
+        <div class="alert alert-danger d-flex align-items-center gap-3 mt-4 rounded-4 border-0 shadow-sm">
+            <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+            <div><strong>Lỗi!</strong> @Model.ErrorMessage</div>
+        </div>
+        <div class="text-center mt-3">
+            <a href="/Teacher/Dashboard" class="btn btn-outline-secondary rounded-pill px-4">
+                <i class="bi bi-arrow-left me-1"></i> Quay về Dashboard
+            </a>
+        </div>
+    }
+    else
+    {
+        <!-- Breadcrumb & Header -->
+        <div class="row align-items-center mb-4">
+            <div class="col">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 small">
+                        <li class="breadcrumb-item"><a href="/Teacher/Dashboard" class="text-decoration-none">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="/Teacher/Lessons/Lesson/@Model.ClassId" class="text-decoration-none">Buổi học</a></li>
+                        <li class="breadcrumb-item active">Bảng điểm định kỳ</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 fw-bold text-dark mb-0">
+                    <i class="bi bi-star-fill text-primary me-2"></i>Bảng điểm định kỳ (Giữa kỳ / Cuối kỳ)
+                </h1>
+                <div class="text-muted small mt-1">
+                    <i class="bi bi-building me-1"></i>Lớp học: <strong>@Model.ClassName</strong>
+                </div>
+            </div>
+            <div class="col-auto d-flex gap-2">
+                <a href="/Teacher/Lessons/Lesson/@Model.ClassId" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                    <i class="bi bi-arrow-left me-1"></i> Quay lại
+                </a>
+                <button id="btn-save-transcript" class="btn-save-grade">
+                    <i class="bi bi-cloud-check-fill"></i>
+                    <span id="btn-save-text">Lưu bảng điểm</span>
+                    <span id="btn-save-spinner" class="spinner-border spinner-border-sm" role="status" style="display:none;"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Alert area -->
+        <div id="save-alert-area" class="mb-3" style="display:none;"></div>
+
+        <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 fw-semibold">
+                <i class="bi bi-people-fill me-1"></i>@Model.Students.Count học sinh
+            </span>
+            <span class="small text-muted ms-auto">
+                <i class="bi bi-info-circle me-1"></i>
+                Hệ số: <strong>TX (30%) + GK (30%) + CK (40%)</strong>. Điểm tổng kết tự động tính khi nhập đủ 3 đầu điểm.
+            </span>
+        </div>
+
+        <!-- Main grade card -->
+        <div class="grade-card mb-4">
+            <!-- Header gradient -->
+            <div class="grade-header d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="fw-bold text-white mb-1">
+                        <i class="bi bi-table me-2"></i>Bảng điểm tổng hợp lớp học
+                    </h5>
+                    <div class="d-flex gap-2 mt-2">
+                        <span class="stat-chip"><i class="bi bi-clipboard2-check"></i> Thường xuyên (30%)</span>
+                        <span class="stat-chip"><i class="bi bi-file-earmark-text"></i> Giữa kỳ (30%)</span>
+                        <span class="stat-chip"><i class="bi bi-award"></i> Cuối kỳ (40%)</span>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div class="text-white-50 small">Thang điểm</div>
+                    <div class="text-white fw-bold fs-5">0 – 10</div>
+                </div>
+            </div>
+
+            <!-- Hidden metadata -->
+            <div id="grade-metadata" data-class-id="@Model.ClassId" style="display:none;"></div>
+
+            <!-- Table -->
+            <div class="table-wrapper">
+                <table class="grade-table" id="grade-table">
+                    <thead>
+                        <tr>
+                            <th style="width:42px; text-align:center;">#</th>
+                            <th style="min-width:180px;">Họ và tên</th>
+                            <th class="col-tx text-center" style="width:110px;">TB TX (30%)</th>
+                            
+                            <th class="col-gk section-divider text-center" style="width:110px;">Giữa kỳ (30%)</th>
+                            <th class="col-gk text-center" style="min-width:200px;">Nhận xét Giữa kỳ</th>
+                            
+                            <th class="col-ck section-divider text-center" style="width:110px;">Cuối kỳ (40%)</th>
+                            <th class="col-ck text-center" style="min-width:200px;">Nhận xét Cuối kỳ</th>
+                            
+                            <th class="col-total section-divider text-center" style="width:110px;">Tổng kết</th>
+                        </tr>
+                    </thead>
+                    <tbody id="grade-tbody">
+                        @for (int i = 0; i < Model.Students.Count; i++)
+                        {
+                            var s = Model.Students[i];
+                            <tr class="grade-row" data-student-id="@s.StudentId">
+                                <td class="text-center text-muted fw-semibold">@(i + 1)</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="student-avatar">@s.StudentName.Substring(0, 1).ToUpper()</div>
+                                        <span class="fw-semibold text-dark">@s.StudentName</span>
+                                    </div>
+                                </td>
+
+                                <!-- TB TX (Read-only) -->
+                                <td class="text-center">
+                                    @{
+                                        string tbClass = s.AverageDailyScore == null ? "empty" : (s.AverageDailyScore >= 8 ? "excellent" : s.AverageDailyScore >= 6.5m ? "good" : s.AverageDailyScore >= 5 ? "average" : "poor");
+                                    }
+                                    <span class="badge-score @tbClass avg-tx-display">
+                                        @(s.AverageDailyScore.HasValue ? s.AverageDailyScore.Value.ToString("0.##") : "—")
+                                    </span>
+                                </td>
+
+                                <!-- Giữa kỳ -->
+                                <td class="text-center section-divider">
+                                    <div class="score-input-cell">
+                                        <input type="number"
+                                               class="score-input gk-score"
+                                               min="0" max="10" step="0.1"
+                                               placeholder="—"
+                                               value="@(s.MidTermScore.HasValue ? s.MidTermScore.Value.ToString("0.##") : "")" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="text"
+                                           class="comment-input gk-comment"
+                                           placeholder="Nhận xét giữa kỳ học sinh..."
+                                           value="@(s.MidTermComment ?? "")" />
+                                </td>
+
+                                <!-- Cuối kỳ -->
+                                <td class="text-center section-divider">
+                                    <div class="score-input-cell">
+                                        <input type="number"
+                                               class="score-input ck-score"
+                                               min="0" max="10" step="0.1"
+                                               placeholder="—"
+                                               value="@(s.FinalScore.HasValue ? s.FinalScore.Value.ToString("0.##") : "")" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="text"
+                                           class="comment-input ck-comment"
+                                           placeholder="Nhận xét cuối kỳ học sinh..."
+                                           value="@(s.FinalComment ?? "")" />
+                                </td>
+
+                                <!-- Tổng kết -->
+                                <td class="text-center section-divider">
+                                    @{
+                                        string tkClass = s.FinalScoreTotal == null ? "none" : (s.FinalScoreTotal >= 8 ? "ex" : s.FinalScoreTotal >= 6.5m ? "good2" : s.FinalScoreTotal >= 5 ? "avg" : "poor2");
+                                    }
+                                    <span class="total-badge @tkClass tongket-display">
+                                        @(s.FinalScoreTotal.HasValue ? s.FinalScoreTotal.Value.ToString("0.##") : "—")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!Model.Students.Any())
+            {
+                <div class="text-center p-5 text-muted">
+                    <i class="bi bi-people fs-2 d-block mb-2 opacity-50"></i>
+                    Không có học sinh trong lớp học này.
+                </div>
+            }
+
+            <div class="d-flex align-items-center justify-content-between p-4 border-top">
+                <div class="text-muted small">
+                    <i class="bi bi-info-circle me-1 text-primary"></i>
+                    Lưu bảng điểm định kỳ sẽ cập nhật điểm số và bắn thông báo trực tiếp đến Phụ huynh của từng học sinh.
+                </div>
+                <button id="btn-save-transcript-footer" class="btn-save-grade" onclick="document.getElementById('btn-save-transcript').click()">
+                    <i class="bi bi-cloud-check-fill"></i> Lưu bảng điểm
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const classId = parseInt(document.getElementById('grade-metadata')?.getAttribute('data-class-id') ?? '0');
+        const alertArea = document.getElementById('save-alert-area');
+        const btnSave = document.getElementById('btn-save-transcript');
+        const btnText = document.getElementById('btn-save-text');
+        const btnSpinner = document.getElementById('btn-save-spinner');
+
+        const rows = document.querySelectorAll('#grade-tbody .grade-row');
+
+        // Live tính toán điểm tổng kết
+        function recalcRow(row) {
+            const avgTXText = row.querySelector('.avg-tx-display')?.textContent?.trim() ?? '—';
+            const tbTX = avgTXText === '—' ? null : parseFloat(avgTXText);
+
+            const gkInp = row.querySelector('.gk-score');
+            const ckInp = row.querySelector('.ck-score');
+
+            const gk = gkInp && gkInp.value.trim() !== '' ? parseFloat(gkInp.value) : null;
+            const ck = ckInp && ckInp.value.trim() !== '' ? parseFloat(ckInp.value) : null;
+
+            const tkEl = row.querySelector('.tongket-display');
+            if (tkEl) {
+                if (tbTX !== null && gk !== null && ck !== null) {
+                    const total = tbTX * 0.3 + gk * 0.3 + ck * 0.4;
+                    const rounded = Math.round(total * 100) / 100;
+                    tkEl.textContent = rounded.toFixed(2);
+                    tkEl.className = 'total-badge ' + totalClass(rounded);
+                } else {
+                    tkEl.textContent = '—';
+                    tkEl.className = 'total-badge none';
+                }
+            }
+        }
+
+        function totalClass(v) {
+            if (v >= 8) return 'ex';
+            if (v >= 6.5) return 'good2';
+            if (v >= 5) return 'avg';
+            return 'poor2';
+        }
+
+        rows.forEach(row => {
+            row.querySelectorAll('.score-input').forEach(inp => {
+                inp.addEventListener('input', () => recalcRow(row));
+                inp.addEventListener('change', () => recalcRow(row));
+            });
+        });
+
+        btnSave?.addEventListener('click', async () => {
+            let hasError = false;
+            document.querySelectorAll('.score-input').forEach(inp => {
+                const v = inp.value.trim();
+                if (v !== '') {
+                    const n = parseFloat(v);
+                    if (isNaN(n) || n < 0 || n > 10) {
+                        inp.classList.add('is-invalid');
+                        hasError = true;
+                    } else {
+                        inp.classList.remove('is-invalid');
+                        inp.classList.add('is-valid');
+                    }
+                } else {
+                    inp.classList.remove('is-invalid', 'is-valid');
+                }
+            });
+
+            if (hasError) {
+                showAlert('danger', '<i class="bi bi-x-circle-fill me-2"></i><strong>Lỗi!</strong> Điểm phải từ 0 đến 10.');
+                return;
+            }
+
+            const payload = [];
+            rows.forEach(row => {
+                const studentId = parseInt(row.getAttribute('data-student-id'));
+                
+                const gkInp = row.querySelector('.gk-score');
+                const gkCommentInp = row.querySelector('.gk-comment');
+                const gkScore = gkInp && gkInp.value.trim() !== '' ? parseFloat(gkInp.value) : null;
+                const gkComment = gkCommentInp ? gkCommentInp.value.trim() : '';
+
+                const ckInp = row.querySelector('.ck-score');
+                const ckCommentInp = row.querySelector('.ck-comment');
+                const ckScore = ckInp && ckInp.value.trim() !== '' ? parseFloat(ckInp.value) : null;
+                const ckComment = ckCommentInp ? ckCommentInp.value.trim() : '';
+
+                payload.push({
+                    studentId,
+                    midTermScore: gkScore,
+                    midTermComment: gkComment || null,
+                    finalScore: ckScore,
+                    finalComment: ckComment || null
+                });
+            });
+
+            setBtnLoading(true);
+            try {
+                const res = await fetch(`/api/classes/${classId}/transcript`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok || res.status === 200 || res.status === 204) {
+                    document.querySelectorAll('.score-input').forEach(i => i.classList.remove('is-valid', 'is-invalid'));
+                    showAlert('success',
+                        `<i class="bi bi-check-circle-fill me-2"></i><strong>Lưu bảng điểm định kỳ thành công!</strong>
+                        <span class="d-block small mt-1 opacity-75"><i class="bi bi-send-fill me-1"></i>Hệ thống đã bắn thông báo trực tiếp kết quả học tập giữa kỳ/cuối kỳ đến cho các Phụ huynh.</span>`
+                    );
+                    alertArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    let msg = `HTTP ${res.status}`;
+                    try { const d = await res.json(); msg = d.message || d.title || msg; } catch {}
+                    showAlert('danger', `<i class="bi bi-x-circle-fill me-2"></i><strong>Lưu thất bại!</strong> ${msg}`);
+                }
+            } catch (e) {
+                showAlert('danger', `<i class="bi bi-wifi-off me-2"></i><strong>Lỗi kết nối!</strong> Không thể kết nối đến máy chủ.`);
+            } finally {
+                setBtnLoading(false);
+            }
+        });
+
+        function showAlert(type, html) {
+            if (!alertArea) return;
+            alertArea.style.display = 'block';
+            alertArea.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible d-flex align-items-start gap-2 shadow-sm rounded-4 border-0 px-4 py-3">
+                    <div class="flex-grow-1">${html}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>`;
+            if (type === 'success') {
+                setTimeout(() => {
+                    const el = alertArea.querySelector('.alert');
+                    if (el) { el.classList.add('fade'); setTimeout(() => { alertArea.innerHTML = ''; alertArea.style.display = 'none'; }, 300); }
+                }, 7000);
+            }
+        }
+
+        function setBtnLoading(isLoading) {
+            if (!btnSave) return;
+            btnSave.disabled = isLoading;
+            if (btnText) btnText.textContent = isLoading ? 'Đang lưu...' : 'Lưu bảng điểm';
+            if (btnSpinner) btnSpinner.style.display = isLoading ? 'inline-block' : 'none';
+        }
+    });
+    </script>
+}

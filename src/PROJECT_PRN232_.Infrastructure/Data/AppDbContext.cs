@@ -18,7 +18,8 @@ namespace PROJECT_PRN232_.Infrastructure.Data
         public DbSet<Material> Materials { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<ClassTransferRequest> ClassTransferRequests { get; set; } = null!;
-        public DbSet<Assessment> Assessments { get; set; }
+        public DbSet<DailyAssessment> DailyAssessments { get; set; }
+        public DbSet<ClassTranscript> ClassTranscripts { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<ChatChannel> ChatChannels { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
@@ -72,13 +73,48 @@ namespace PROJECT_PRN232_.Infrastructure.Data
                 .HasForeignKey(n => n.ParentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Assessment>()
+            // DailyAssessment
+            modelBuilder.Entity<DailyAssessment>()
+                .ToTable("DailyAssessment")
                 .Property(a => a.Score)
                 .HasColumnType("decimal(4,2)");
 
-            modelBuilder.Entity<Assessment>()
+            modelBuilder.Entity<DailyAssessment>()
                 .HasIndex(a => new { a.StudentId, a.LessonId })
                 .IsUnique();
+
+            // ClassTranscript
+            modelBuilder.Entity<ClassTranscript>()
+                .ToTable("ClassTranscript")
+                .HasKey(ct => new { ct.ClassId, ct.StudentId });
+
+            modelBuilder.Entity<ClassTranscript>()
+                .HasOne(ct => ct.Class)
+                .WithMany()
+                .HasForeignKey(ct => ct.ClassId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClassTranscript>()
+                .HasOne(ct => ct.Student)
+                .WithMany()
+                .HasForeignKey(ct => ct.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClassTranscript>()
+                .Property(ct => ct.MidTermScore)
+                .HasColumnType("decimal(4,2)");
+
+            modelBuilder.Entity<ClassTranscript>()
+                .Property(ct => ct.FinalScore)
+                .HasColumnType("decimal(4,2)");
+
+            modelBuilder.Entity<ClassTranscript>()
+                .Property(ct => ct.AverageDailyScore)
+                .HasColumnType("decimal(4,2)");
+
+            modelBuilder.Entity<ClassTranscript>()
+                .Property(ct => ct.FinalScoreTotal)
+                .HasColumnType("decimal(4,2)");
 
             modelBuilder.Entity<Attendance>()
                 .HasIndex(a => new { a.StudentId, a.LessonId })

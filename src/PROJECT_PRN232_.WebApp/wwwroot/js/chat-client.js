@@ -26,8 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ẨN BADGE NGAY LẬP TỨC khi ở trang chat của Parent
-    if (isChatPage && currentRole === 'parent') {
+    // ẨN BADGE NGAY LẬP TỨC khi ở trang chat của Parent hoặc Teacher
+    if (isChatPage && (currentRole === 'parent' || currentRole === 'teacher')) {
         hideBadges('#chat-badge');
     }
 
@@ -51,8 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3b. Tải tin nhắn & cập nhật số lượng thông báo lập tức trên HTTP (không chờ SignalR)
     if (isChatPage) {
-        if (currentRole === 'parent') {
-            // Parent: Tải tin nhắn và ẩn badge lập tức
+        if (currentRole === 'parent' || currentRole === 'teacher') {
+            // Parent/Teacher: Tải tin nhắn và ẩn badge lập tức
             const parentChannelId = parseInt(pageMetadata.getAttribute('data-parent-channel-id'));
             activeChannelId = parentChannelId;
             otherUserName = pageMetadata.getAttribute('data-parent-center-name');
@@ -107,6 +107,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     badge.innerText = currentCount + 1;
                     badge.classList.remove('d-none');
                 }
+
+                // Tăng badge trên Tab tương ứng (Phụ huynh / Giáo viên)
+                const senderRole = contactItem.getAttribute('data-role'); // 'Parent' or 'Teacher'
+                const tabBadge = senderRole === 'Parent'
+                    ? document.querySelector('#parents-tab .badge')
+                    : document.querySelector('#teachers-tab .badge');
+
+                if (tabBadge) {
+                    let tabCount = parseInt(tabBadge.innerText) || 0;
+                    tabBadge.innerText = tabCount + 1;
+                    tabBadge.style.display = '';
+                } else {
+                    // Badge chưa tồn tại (khi tổng unread = 0 lúc tải trang, server không render badge)
+                    const tabBtn = senderRole === 'Parent'
+                        ? document.getElementById('parents-tab')
+                        : document.getElementById('teachers-tab');
+                    if (tabBtn) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'badge rounded-pill ms-1';
+                        newBadge.style.cssText = 'background: #EF4444; color: #fff; font-size: 0.65rem; min-width: 18px; padding: 2px 5px; box-shadow: 0 2px 6px rgba(239,68,68,0.4);';
+                        newBadge.innerText = '1';
+                        tabBtn.appendChild(newBadge);
+                    }
+                }
             }
         }
 
@@ -119,9 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 badge.classList.remove('d-none');
             });
 
-            const toastMsg = currentRole === 'parent'
+            const toastMsg = (currentRole === 'parent' || currentRole === 'teacher')
                 ? "Bạn có tin nhắn mới từ Trung tâm!"
-                : `Phụ huynh ${message.senderName} vừa gửi tin nhắn mới!`;
+                : `Người dùng ${message.senderName} vừa gửi tin nhắn mới!`;
             showChatToast("Tin nhắn mới", toastMsg);
         }
     });
@@ -205,10 +229,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.classList.remove('has-unread');
                 item.classList.add('active');
 
+                // Lấy số unread của contact này trước khi xóa badge
                 const badge = item.querySelector('.unread-chat-badge');
+                const contactUnreadCount = badge ? (parseInt(badge.innerText) || 0) : 0;
+                const contactRole = item.getAttribute('data-role'); // 'Parent' or 'Teacher'
+
                 if (badge) {
                     badge.innerText = '0';
                     badge.classList.add('d-none');
+                }
+
+                // Giảm badge trên Tab tương ứng (Phụ huynh / Giáo viên)
+                if (contactUnreadCount > 0) {
+                    const tabBadge = contactRole === 'Parent'
+                        ? document.querySelector('#parents-tab .badge')
+                        : document.querySelector('#teachers-tab .badge');
+
+                    if (tabBadge) {
+                        let tabCount = parseInt(tabBadge.innerText) || 0;
+                        tabCount = Math.max(0, tabCount - contactUnreadCount);
+                        tabBadge.innerText = tabCount;
+                        if (tabCount === 0) {
+                            tabBadge.style.display = 'none';
+                        }
+                    }
                 }
 
                 const parentId = parseInt(item.getAttribute('data-parent-id'));
@@ -496,8 +540,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cập nhật lại badge navbar dựa vào số channel chưa đọc (chỉ dùng cho Center)
     async function updateNavbarChatCount() {
         try {
-            // Parent đang ở trang chat → luôn ẩn badge ngay lập tức, không cần gọi API
-            if (isChatPage && currentRole === 'parent') {
+            // Parent/Teacher đang ở trang chat → luôn ẩn badge ngay lập tức, không cần gọi API
+            if (isChatPage && (currentRole === 'parent' || currentRole === 'teacher')) {
                 hideBadges('#chat-badge');
                 return;
             }

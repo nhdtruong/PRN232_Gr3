@@ -71,5 +71,31 @@ namespace PROJECT_PRN232_.Application.Services
         /// Gửi thông báo tổng hợp (Lớp, Buổi, Thời gian, danh sách tài liệu) khi Center xuất bản buổi học.
         /// </summary>
         Task NotifyPublishedLessonAsync(int lessonId, int classId, string className, string lessonTitle, DateTime lessonDate, List<string> materialTitles, bool isRebroadcast = false);
+
+        Task NotifyDailyGradeUpdatedAsync(
+            int parentId,
+            int classId,
+            string className,
+            string lessonTitle,
+            string studentName,
+            decimal? score,
+            string? comment);
+
+        Task NotifyClassTranscriptUpdatedAsync(
+            int parentId,
+            int classId,
+            string className,
+            string studentName,
+            decimal? midtermScore,
+            string? midtermComment,
+            decimal? finalScore,
+            string? finalComment,
+            decimal? averageDailyScore,
+            decimal? finalScoreTotal);
+
+        Task NotifyTeacherAssignedClassAsync(int teacherId, int classId, string className);
+
+        Task NotifyTransferRequestCreatedAsync(int centerId, string fromTeacherName, string toTeacherName, string className, int classId);
+        Task NotifyTransferRequestProcessedAsync(int teacherId, string className, int classId, bool isApproved, bool isFromTeacher);
     }
 }

@@ -26,7 +26,7 @@ namespace PROJECT_PRN232_.Controllers
         /// GET /api/center/classes/{classId}/lessons
         /// </summary>
         [HttpGet("api/center/classes/{classId}/lessons")]
-        [Authorize(Roles = "Center")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> GetByClass(int classId)
         {
             var lessons = await _lessonService.GetLessonsByClassIdAsync(classId);
@@ -38,18 +38,18 @@ namespace PROJECT_PRN232_.Controllers
         /// POST /api/center/classes/{classId}/lessons
         /// </summary>
         [HttpPost("api/center/classes/{classId}/lessons")]
-        [Authorize(Roles = "Center")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> Create(int classId, [FromBody] LessonCreateDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             dto.ClassId = classId;
-            var centerUserId = GetUserId();
+            var teacherUserId = GetUserId();
 
             try
             {
-                var result = await _lessonService.CreateAsync(dto, centerUserId);
+                var result = await _lessonService.CreateAsync(dto, teacherUserId);
                 if (result == null)
                 {
                     return BadRequest(new { message = "Không thể tạo buổi học. Vui lòng kiểm tra quyền sở hữu lớp học hoặc lớp học đã bị khóa/đóng." });
@@ -71,7 +71,7 @@ namespace PROJECT_PRN232_.Controllers
         /// GET /api/center/lessons/{lessonId}
         /// </summary>
         [HttpGet("api/center/lessons/{lessonId}", Name = "GetById")]
-        [Authorize(Roles = "Center")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> GetById(int lessonId)
         {
             var lesson = await _lessonService.GetByIdAsync(lessonId);
@@ -87,18 +87,18 @@ namespace PROJECT_PRN232_.Controllers
         /// PUT /api/center/lessons/{lessonId}
         /// </summary>
         [HttpPut("api/center/lessons/{lessonId}")]
-        [Authorize(Roles = "Center")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> Update(int lessonId, [FromBody] LessonUpdateDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var centerUserId = GetUserId();
+            var teacherUserId = GetUserId();
             dto.Id = lessonId;
 
             try
             {
-                var success = await _lessonService.UpdateAsync(dto, centerUserId);
+                var success = await _lessonService.UpdateAsync(dto, teacherUserId);
                 if (!success)
                 {
                     return BadRequest(new { message = "Không thể cập nhật buổi học. Vui lòng kiểm tra quyền sở hữu hoặc trạng thái lớp học." });
@@ -116,11 +116,11 @@ namespace PROJECT_PRN232_.Controllers
         /// DELETE /api/center/lessons/{lessonId}
         /// </summary>
         [HttpDelete("api/center/lessons/{lessonId}")]
-        [Authorize(Roles = "Center")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> Delete(int lessonId)
         {
-            var centerUserId = GetUserId();
-            var success = await _lessonService.DeleteAsync(lessonId, centerUserId);
+            var teacherUserId = GetUserId();
+            var success = await _lessonService.DeleteAsync(lessonId, teacherUserId);
 
             if (!success)
             {
@@ -150,11 +150,11 @@ namespace PROJECT_PRN232_.Controllers
         /// POST /api/center/lessons/{lessonId}/publish
         /// </summary>
         [HttpPost("api/center/lessons/{lessonId}/publish")]
-        [Authorize(Roles = "Center")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> Publish(int lessonId)
         {
-            var centerUserId = GetUserId();
-            var success = await _lessonService.PublishAsync(lessonId, centerUserId);
+            var teacherUserId = GetUserId();
+            var success = await _lessonService.PublishAsync(lessonId, teacherUserId);
 
             if (!success)
             {

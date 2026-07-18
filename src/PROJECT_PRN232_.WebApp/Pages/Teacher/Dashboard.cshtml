@@ -1,10 +1,71 @@
 @page
 @model PROJECT_PRN232_.WebApp.Pages.Teacher.DashboardModel
 @{
-    ViewData["Title"] = "Teacher Dashboard";
+    ViewData["Title"] = "Dashboard Giáo Viên";
 }
 
-<div class="container mx-auto mt-8">
-    <h1 class="text-3xl font-bold mb-6">Teacher Dashboard</h1>
-    <p>Chào mừng bạn đến với trang dành cho Giáo viên.</p>
+<style>
+    :root {
+        --eb-indigo-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
+        --eb-success-gradient: linear-gradient(135deg, #10B981, #059669);
+        --eb-text-dark: #1E293B;
+        --eb-text-muted: #64748B;
+    }
+
+    .hover-card {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+    }
+</style>
+
+<div class="container py-4">
+    <!-- Banner chào mừng -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 rounded-4 bg-white">
+                <div class="card-body text-center p-5">
+                    <h1 class="display-5 text-primary mb-3 fw-bold">👨‍🏫 Xin chào Giáo Viên!</h1>
+                    <p class="lead text-muted mb-0">Chúc bạn có một ngày làm việc hiệu quả. Dưới đây là các chức năng quản lý giảng dạy của bạn.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHU VỰC QUẢN TRỊ DÀNH CHO GIÁO VIÊN -->
+    <div class="row g-4 justify-content-center mb-5">
+        <!-- Lớp học của tôi -->
+        <div class="col-md-5">
+            <div class="card h-100 shadow-sm border-0 rounded-4 hover-card" style="border: 2px solid #7c3aed !important;">
+                <div class="card-body text-center p-4">
+                    <div class="display-4 text-warning mb-3">
+                        🏫
+                    </div>
+                    <h3 class="card-title fw-bold" style="color: #7c3aed;">Lớp học của tôi</h3>
+                    <p class="card-text text-muted">Xem danh sách lớp học được phân công giảng dạy, theo dõi danh sách học viên, quản lý buổi học, điểm danh và nhập điểm số.</p>
+                    <a href="/Teacher/MyClasses" class="btn text-white rounded-pill px-4 py-2.5 mt-2 fw-semibold shadow-sm w-100" style="background: var(--eb-indigo-gradient); border: none;">
+                        <i class="bi bi-collection-fill me-1"></i> Truy cập lớp học
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trò chuyện -->
+        <div class="col-md-5">
+            <div class="card h-100 shadow-sm border-0 rounded-4 hover-card" style="border: 2px solid #10b981 !important;">
+                <div class="card-body text-center p-4">
+                    <div class="display-4 text-success mb-3">
+                        💬
+                    </div>
+                    <h3 class="card-title fw-bold" style="color: #10b981;">Trò chuyện</h3>
+                    <p class="card-text text-muted">Gửi tin nhắn phản hồi, trao đổi trực tiếp và liên lạc thời gian thực với quản trị viên Trung tâm.</p>
+                    <a href="/Teacher/Chat/Index" class="btn text-white rounded-pill px-4 py-2.5 mt-2 fw-semibold shadow-sm w-100" style="background: var(--eb-success-gradient); border: none;">
+                        <i class="bi bi-chat-left-dots-fill me-1"></i> Nhắn tin ngay
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

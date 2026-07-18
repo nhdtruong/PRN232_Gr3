@@ -423,7 +423,7 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
-                                <select class="form-select" id="createClassSubject" required onchange="updateCreateTotalLessons()">
+                                <select class="form-select" id="createClassSubject" required>
                                     <option value="" selected disabled>Chọn môn học</option>
                                     @foreach (var s in Model.Subjects)
                                     {
@@ -444,11 +444,6 @@
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
-                                <input class="form-control" type="number" id="createTotalLessons" placeholder="Ví dụ: 24" value="24" required />
-                            </div>
-
-                            <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Phòng học (*)</label>
                                 <select class="form-select" id="createRoomId" required>
                                     <option value="" selected disabled>Chọn phòng học</option>
@@ -462,58 +457,6 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Sĩ số tối đa (*)</label>
                                 <input id="createMaxCapacity" class="form-control" type="number" value="30" required />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Section: Lịch học -->
-                    <div class="bg-white rounded-3 p-4 border">
-                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                            <h6 class="fw-bold text-dark mb-0">Lịch học</h6>
-                            <button type="button" class="btn btn-primary btn-sm rounded-3 px-3 d-inline-flex align-items-center gap-1" id="btnAddScheduleRow">
-                                <i class="bi bi-plus-lg"></i> Thêm lịch
-                            </button>
-                        </div>
-
-                        <!-- Schedule Rows Container -->
-                        <div id="scheduleRowsContainer">
-                            <div class="row g-2 align-items-center schedule-row-item mb-2 pb-2 border-bottom">
-                                <div class="col-md-3">
-                                    <label class="small text-muted fw-semibold d-block mb-1">Thứ (*)</label>
-                                    <select class="form-select form-select-sm" name="CreateDayOfWeek[]" required>
-                                        <option value="Thứ 2">Thứ 2</option>
-                                        <option value="Thứ 3">Thứ 3</option>
-                                        <option value="Thứ 4">Thứ 4</option>
-                                        <option value="Thứ 5">Thứ 5</option>
-                                        <option value="Thứ 6">Thứ 6</option>
-                                        <option value="Thứ 7">Thứ 7</option>
-                                        <option value="Chủ nhật">Chủ nhật</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="small text-muted fw-semibold d-block mb-1">Ca học gợi ý</label>
-                                    <select class="form-select form-select-sm slot-suggestion-select" name="CreateSlotId[]" onchange="onSlotSuggestionChanged(this)">
-                                        <option value="" selected>Tự chọn giờ</option>
-                                        @foreach (var s in Model.Slots)
-                                        {
-                                            <option value="@s.Id" data-start="@s.StartTime.ToString(@"hh\:mm")" data-end="@s.EndTime.ToString(@"hh\:mm")">@s.SlotName (@s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm"))</option>
-                                        }
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="small text-muted fw-semibold d-block mb-1">Giờ bắt đầu (*)</label>
-                                    <input type="time" class="form-control form-control-sm start-time-input" required />
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="small text-muted fw-semibold d-block mb-1">Giờ kết thúc (*)</label>
-                                    <input type="time" class="form-control form-control-sm end-time-input" required />
-                                </div>
-                                <div class="col-md-1 text-end">
-                                    <label class="small text-muted fw-semibold d-block mb-1" style="visibility: hidden;">Xóa</label>
-                                    <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeScheduleRow(this)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -558,7 +501,8 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Môn học (*)</label>
-                                <select class="form-select" id="editClassSubject" required onchange="updateEditTotalLessons()">
+                                <select class="form-select" id="editClassSubject" required>
+                                    <option value="">-- Chọn môn học --</option>
                                     @foreach (var s in Model.Subjects)
                                     {
                                         <option value="@s.SubjectCode" data-sessions="@s.NumberOfSessions">@s.SubjectName (@s.SubjectCode)</option>
@@ -578,11 +522,6 @@
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small mb-1">Tổng số buổi (*)</label>
-                                <input class="form-control" type="number" id="editTotalLessons" value="24" required />
-                            </div>
-
-                            <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Phòng học (*)</label>
                                 <select class="form-select" id="editClassRoom" required>
                                     @foreach (var r in Model.Rooms)
@@ -595,58 +534,6 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Sĩ số tối đa (*)</label>
                                 <input class="form-control" type="number" id="editMaxCapacity" required />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Section: Lịch học -->
-                    <div class="bg-white rounded-3 p-4 border">
-                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                            <h6 class="fw-bold text-dark mb-0">Lịch học</h6>
-                            <button type="button" class="btn btn-primary btn-sm rounded-3 px-3 d-inline-flex align-items-center gap-1" id="btnEditAddScheduleRow">
-                                <i class="bi bi-plus-lg"></i> Thêm lịch
-                            </button>
-                        </div>
-
-                        <!-- Schedule Rows Container -->
-                        <div id="editScheduleRowsContainer">
-                            <div class="row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom">
-                                <div class="col-md-3">
-                                    <label class="small text-muted fw-semibold d-block mb-1">Thứ (*)</label>
-                                    <select class="form-select form-select-sm" name="UpdateDayOfWeek[]" required>
-                                        <option value="Thứ 2">Thứ 2</option>
-                                        <option value="Thứ 3">Thứ 3</option>
-                                        <option value="Thứ 4">Thứ 4</option>
-                                        <option value="Thứ 5">Thứ 5</option>
-                                        <option value="Thứ 6">Thứ 6</option>
-                                        <option value="Thứ 7">Thứ 7</option>
-                                        <option value="Chủ nhật">Chủ nhật</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="small text-muted fw-semibold d-block mb-1">Ca học gợi ý</label>
-                                    <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
-                                        <option value="" selected>Tự chọn giờ</option>
-                                        @foreach (var s in Model.Slots)
-                                        {
-                                            <option value="@s.Id" data-start="@s.StartTime.ToString(@"hh\:mm")" data-end="@s.EndTime.ToString(@"hh\:mm")">@s.SlotName (@s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm"))</option>
-                                        }
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="small text-muted fw-semibold d-block mb-1">Giờ bắt đầu (*)</label>
-                                    <input type="time" class="form-control form-control-sm start-time-input" required />
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="small text-muted fw-semibold d-block mb-1">Giờ kết thúc (*)</label>
-                                    <input type="time" class="form-control form-control-sm end-time-input" required />
-                                </div>
-                                <div class="col-md-1 text-end">
-                                    <label class="small text-muted fw-semibold d-block mb-1" style="visibility: hidden;">Xóa</label>
-                                    <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeEditScheduleRow(this)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -738,9 +625,6 @@
                         <td>${statusBadge}</td>
                         <td class="text-center">
                             <div class="d-inline-flex gap-2">
-                                <a href="/Center/Lessons/Lesson/${c.id}" class="eb-action-btn view" title="Xếp lịch học & Quản lý buổi học">
-                                    <i class="bi bi-calendar-event"></i>
-                                </a>
                                 <a href="/Center/Classes/Students?classId=${c.id}" class="eb-action-btn view" title="Học viên">
                                     <i class="bi bi-people"></i>
                                 </a>
@@ -763,28 +647,18 @@
             e.preventDefault();
             $('.create-error-container').html('');
 
-            // Thu thập dữ liệu Lịch học
-            const dayOfWeeks = [];
-            const slotIds = [];
-            document.querySelectorAll('#scheduleRowsContainer select[name="CreateDayOfWeek[]"]').forEach(el => {
-                dayOfWeeks.push(el.value);
-            });
-            document.querySelectorAll('#scheduleRowsContainer select[name="CreateSlotId[]"]').forEach(el => {
-                if (el.value) slotIds.push(parseInt(el.value));
-            });
-
             const bodyData = {
                 createDto: {
                     className: document.getElementById('createClassName').value,
                     subject: document.getElementById('createClassSubject').value,
-                    totalLessons: parseInt(document.getElementById('createTotalLessons').value),
+                    totalLessons: 0,
                     maxCapacity: parseInt(document.getElementById('createMaxCapacity').value),
                     centerId: 1,
                     teacherId: document.getElementById('createClassTeacher').value ? parseInt(document.getElementById('createClassTeacher').value) : null
                 },
                 createRoomId: parseInt(document.getElementById('createRoomId').value),
-                dayOfWeek: dayOfWeeks,
-                slotId: slotIds
+                dayOfWeek: [],
+                slotId: []
             };
 
             fetch('/api/center/classes', {
@@ -840,25 +714,31 @@
         function openEditModal(id) {
             $('.edit-error-container').html('');
             document.getElementById('editClassId').value = id;
-            
+
+            // Reset form trước khi load dữ liệu
             document.getElementById('editClassName').value = '';
             document.getElementById('editMaxCapacity').value = 30;
-            document.getElementById('editClassSubject').value = '';
-            document.getElementById('editTotalLessons').value = 24;
+            document.getElementById('editClassSubject').value = '';  // chọn placeholder
             document.getElementById('editClassCode').value = '';
-
-            const container = document.getElementById('editScheduleRowsContainer');
-            container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading schedule...</div>';
 
             fetch(`/api/center/classes/${id}/schedules`)
                 .then(res => res.json())
                 .then(data => {
-                    container.innerHTML = '';
-                    
                     document.getElementById('editClassName').value = data.className || '';
                     document.getElementById('editMaxCapacity').value = data.maxCapacity || 30;
-                    document.getElementById('editClassSubject').value = data.subject || '';
-                    document.getElementById('editTotalLessons').value = data.totalLessons || 24;
+
+                    // Set môn học - phải set SAU khi DOM đã sẵn sàng
+                    const subjectSelect = document.getElementById('editClassSubject');
+                    const subjectValue = data.subject || '';
+                    // Thử set trực tiếp
+                    subjectSelect.value = subjectValue;
+                    // Nếu không khớp (trình duyệt không set được), dùng vòng lặp tìm option
+                    if (subjectSelect.value !== subjectValue) {
+                        Array.from(subjectSelect.options).forEach(opt => {
+                            if (opt.value === subjectValue) opt.selected = true;
+                        });
+                    }
+
                     document.getElementById('editClassTeacher').value = data.teacherId || '';
 
                     const formattedId = ("0000" + id).slice(-4);
@@ -872,94 +752,9 @@
                             roomEl.selectedIndex = 0;
                         }
                     }
-
-                    const lessons = data.lessons;
-                    const slotsOptionsRef = globalSlotsOptions;
-
-                    if (!lessons || lessons.length === 0) {
-                        container.innerHTML = `
-                            <div class="row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom">
-                                <div class="col-md-3">
-                                    <select class="form-select form-select-sm edit-day-select" name="UpdateDayOfWeek[]" required>
-                                        <option value="Thứ 2" selected>Thứ 2</option>
-                                        <option value="Thứ 3">Thứ 3</option>
-                                        <option value="Thứ 4">Thứ 4</option>
-                                        <option value="Thứ 5">Thứ 5</option>
-                                        <option value="Thứ 6">Thứ 6</option>
-                                        <option value="Thứ 7">Thứ 7</option>
-                                        <option value="Chủ nhật">Chủ nhật</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
-                                        ${slotsOptionsRef}
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <input type="time" class="form-control form-control-sm start-time-input" required />
-                                </div>
-                                <div class="col-md-2">
-                                    <input type="time" class="form-control form-control-sm end-time-input" required />
-                                </div>
-                                <div class="col-md-1 text-end">
-                                    <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeEditScheduleRow(this)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                        return;
-                    }
-
-                    lessons.forEach((l, idx) => {
-                        const newRow = document.createElement('div');
-                        newRow.className = 'row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom';
-                        
-                        const daysMap = { 0: "Chủ nhật", 1: "Thứ 2", 2: "Thứ 3", 3: "Thứ 4", 4: "Thứ 5", 5: "Thứ 6", 6: "Thứ 7" };
-                        const vnDay = daysMap[l.dayOfWeek] || "Thứ 2";
-
-                        newRow.innerHTML = `
-                            <div class="col-md-3">
-                                <select class="form-select form-select-sm edit-day-select" name="UpdateDayOfWeek[]" required>
-                                    <option value="Thứ 2" ${vnDay === "Thứ 2" ? "selected" : ""}>Thứ 2</option>
-                                    <option value="Thứ 3" ${vnDay === "Thứ 3" ? "selected" : ""}>Thứ 3</option>
-                                    <option value="Thứ 4" ${vnDay === "Thứ 4" ? "selected" : ""}>Thứ 4</option>
-                                    <option value="Thứ 5" ${vnDay === "Thứ 5" ? "selected" : ""}>Thứ 5</option>
-                                    <option value="Thứ 6" ${vnDay === "Thứ 6" ? "selected" : ""}>Thứ 6</option>
-                                    <option value="Thứ 7" ${vnDay === "Thứ 7" ? "selected" : ""}>Thứ 7</option>
-                                    <option value="Chủ nhật" ${vnDay === "Chủ nhật" ? "selected" : ""}>Chủ nhật</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
-                                    ${slotsOptionsRef}
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <input type="time" class="form-control form-control-sm start-time-input" required />
-                            </div>
-                            <div class="col-md-2">
-                                <input type="time" class="form-control form-control-sm end-time-input" required />
-                            </div>
-                            <div class="col-md-1 text-end">
-                                <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeEditScheduleRow(this)">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        `;
-
-                        container.appendChild(newRow);
-
-                        const selectElement = newRow.querySelector('.slot-suggestion-select');
-                        if (l.slotId && selectElement) {
-                            selectElement.value = l.slotId;
-                            onSlotSuggestionChanged(selectElement);
-                        }
-                    });
                 })
                 .catch(err => {
-                    console.error("Lỗi lấy lịch học:", err);
-                    container.innerHTML = '<div class="text-danger small text-center py-2">Không thể tải lịch học.</div>';
+                    console.error("Lỗi lấy thông tin lớp:", err);
                 });
         }
 
@@ -969,28 +764,20 @@
             $('.edit-error-container').html('');
 
             const classId = parseInt(document.getElementById('editClassId').value);
-            const dayOfWeeks = [];
-            const slotIds = [];
-            document.querySelectorAll('#editScheduleRowsContainer select[name="UpdateDayOfWeek[]"]').forEach(el => {
-                dayOfWeeks.push(el.value);
-            });
-            document.querySelectorAll('#editScheduleRowsContainer select[name="UpdateSlotId[]"]').forEach(el => {
-                if (el.value) slotIds.push(parseInt(el.value));
-            });
 
             const bodyData = {
                 updateDto: {
                     id: classId,
                     className: document.getElementById('editClassName').value,
                     subject: document.getElementById('editClassSubject').value,
-                    totalLessons: parseInt(document.getElementById('editTotalLessons').value),
+                    totalLessons: 0,
                     maxCapacity: parseInt(document.getElementById('editMaxCapacity').value),
                     centerId: 1,
                     teacherId: document.getElementById('editClassTeacher').value ? parseInt(document.getElementById('editClassTeacher').value) : null
                 },
                 updateRoomId: parseInt(document.getElementById('editClassRoom').value),
-                dayOfWeek: dayOfWeeks,
-                slotId: slotIds
+                dayOfWeek: [],
+                slotId: []
             };
 
             fetch(`/api/center/classes/${classId}`, {
@@ -1053,116 +840,6 @@
             document.getElementById('filterClassName').value = '';
             document.getElementById('filterStatus').value = '';
             renderClassesTable(allClasses);
-        }
-
-        // --- SCRIPTS THÊM HÀNG LỊCH ĐỘNG ---
-        document.getElementById('btnAddScheduleRow').addEventListener('click', function() {
-            const container = document.getElementById('scheduleRowsContainer');
-            const newRow = document.createElement('div');
-            newRow.className = 'row g-2 align-items-center schedule-row-item mb-2 pb-2 border-bottom';
-            const slotsOptions = globalSlotsOptions;
-
-            newRow.innerHTML = `
-                <div class="col-md-3">
-                    <select class="form-select form-select-sm" name="CreateDayOfWeek[]" required>
-                        <option value="Thứ 2">Thứ 2</option>
-                        <option value="Thứ 3">Thứ 3</option>
-                        <option value="Thứ 4">Thứ 4</option>
-                        <option value="Thứ 5">Thứ 5</option>
-                        <option value="Thứ 6">Thứ 6</option>
-                        <option value="Thứ 7">Thứ 7</option>
-                        <option value="Chủ nhật">Chủ nhật</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <select class="form-select form-select-sm slot-suggestion-select" name="CreateSlotId[]" onchange="onSlotSuggestionChanged(this)">
-                        ${slotsOptions}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <input type="time" class="form-control form-control-sm start-time-input" required />
-                </div>
-                <div class="col-md-2">
-                    <input type="time" class="form-control form-control-sm end-time-input" required />
-                </div>
-                <div class="col-md-1 text-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeScheduleRow(this)">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            `;
-            container.appendChild(newRow);
-        });
-
-        function removeScheduleRow(button) {
-            const rows = document.querySelectorAll('.schedule-row-item');
-            if (rows.length > 1) {
-                button.closest('.schedule-row-item').remove();
-            } else {
-                alert("Lớp học phải đăng ký tối thiểu một lịch học!");
-            }
-        }
-
-        function onSlotSuggestionChanged(selectElement) {
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-            const row = selectElement.closest('.schedule-row-item, .edit-schedule-row-item');
-            const startTimeInput = row.querySelector('.start-time-input');
-            const endTimeInput = row.querySelector('.end-time-input');
-
-            if (selectedOption && selectedOption.value !== "") {
-                startTimeInput.value = selectedOption.getAttribute('data-start');
-                endTimeInput.value = selectedOption.getAttribute('data-end');
-            } else {
-                startTimeInput.value = "";
-                endTimeInput.value = "";
-            }
-        }
-
-        document.getElementById('btnEditAddScheduleRow').addEventListener('click', function() {
-            const container = document.getElementById('editScheduleRowsContainer');
-            const newRow = document.createElement('div');
-            newRow.className = 'row g-2 align-items-center edit-schedule-row-item mb-2 pb-2 border-bottom';
-            const slotsOptions = globalSlotsOptions;
-
-            newRow.innerHTML = `
-                <div class="col-md-3">
-                    <select class="form-select form-select-sm" name="UpdateDayOfWeek[]" required>
-                        <option value="Thứ 2">Thứ 2</option>
-                        <option value="Thứ 3">Thứ 3</option>
-                        <option value="Thứ 4">Thứ 4</option>
-                        <option value="Thứ 5">Thứ 5</option>
-                        <option value="Thứ 6">Thứ 6</option>
-                        <option value="Thứ 7">Thứ 7</option>
-                        <option value="Chủ nhật">Chủ nhật</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <select class="form-select form-select-sm slot-suggestion-select" name="UpdateSlotId[]" onchange="onSlotSuggestionChanged(this)">
-                        ${slotsOptions}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <input type="time" class="form-control form-control-sm start-time-input" required />
-                </div>
-                <div class="col-md-2">
-                    <input type="time" class="form-control form-control-sm end-time-input" required />
-                </div>
-                <div class="col-md-1 text-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm border-0 mt-1" onclick="removeEditScheduleRow(this)">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            `;
-            container.appendChild(newRow);
-        });
-
-        function removeEditScheduleRow(button) {
-            const rows = document.querySelectorAll('.edit-schedule-row-item');
-            if (rows.length > 1) {
-                button.closest('.edit-schedule-row-item').remove();
-            } else {
-                alert("Lớp học phải đăng ký tối thiểu một lịch học!");
-            }
         }
 
         function updateCreateTotalLessons() {

@@ -33,7 +33,7 @@ namespace PROJECT_PRN232_.Infrastructure.Repositories
             return ids.ToHashSet();
         }
 
-        public async Task<IEnumerable<(Student Student, Attendance? Attendance, Assessment? Assessment)>> GetRollCallDataAsync(
+        public async Task<IEnumerable<(Student Student, Attendance? Attendance, DailyAssessment? Assessment)>> GetRollCallDataAsync(
             int lessonId, int classId, int? parentIdFilter = null)
         {
             var query = _context.ClassStudents
@@ -53,7 +53,7 @@ namespace PROJECT_PRN232_.Infrastructure.Repositories
                 .Where(a => a.LessonId == lessonId)
                 .ToDictionaryAsync(a => a.StudentId);
 
-            var assessments = await _context.Assessments
+            var assessments = await _context.DailyAssessments
                 .Where(a => a.LessonId == lessonId)
                 .ToDictionaryAsync(a => a.StudentId);
 

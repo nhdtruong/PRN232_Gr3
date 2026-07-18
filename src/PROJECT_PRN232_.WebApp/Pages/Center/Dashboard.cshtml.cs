@@ -24,17 +24,8 @@ namespace PROJECT_PRN232_.WebApp.Pages.Center
             _context = context;
         }
 
-        public IList<Class> Classes { get; set; } = new List<Class>();
-
-        public async Task OnGetAsync()
+        public void OnGet()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(userIdClaim, out int centerId))
-            {
-                Classes = await _context.Classes
-                    .Where(c => c.CenterId == centerId)
-                    .ToListAsync();
-            }
         }
     }
 }

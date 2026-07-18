@@ -22,39 +22,6 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("PROJECT_PRN232_.Domain.Assessment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DateAssessed")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("LessonId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("Score")
-                        .HasColumnType("decimal(4,2)");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TeacherComment")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LessonId");
-
-                    b.HasIndex("StudentId", "LessonId")
-                        .IsUnique();
-
-                    b.ToTable("Assessments");
-                });
-
             modelBuilder.Entity("PROJECT_PRN232_.Domain.Attendance", b =>
                 {
                     b.Property<int>("Id")
@@ -225,6 +192,49 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                     b.ToTable("ClassStudents");
                 });
 
+            modelBuilder.Entity("PROJECT_PRN232_.Domain.ClassTranscript", b =>
+                {
+                    b.Property<int>("ClassId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("AverageDailyScore")
+                        .HasColumnType("decimal(4,2)");
+
+                    b.Property<int?>("ClassId1")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FinalComment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("FinalScore")
+                        .HasColumnType("decimal(4,2)");
+
+                    b.Property<decimal?>("FinalScoreTotal")
+                        .HasColumnType("decimal(4,2)");
+
+                    b.Property<string>("MidTermComment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("MidTermScore")
+                        .HasColumnType("decimal(4,2)");
+
+                    b.Property<int?>("StudentId1")
+                        .HasColumnType("int");
+
+                    b.HasKey("ClassId", "StudentId");
+
+                    b.HasIndex("ClassId1");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("StudentId1");
+
+                    b.ToTable("ClassTranscript", (string)null);
+                });
+
             modelBuilder.Entity("PROJECT_PRN232_.Domain.ClassTransferRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -266,6 +276,39 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                     b.HasIndex("ToTeacherId");
 
                     b.ToTable("ClassTransferRequests");
+                });
+
+            modelBuilder.Entity("PROJECT_PRN232_.Domain.DailyAssessment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DateAssessed")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Score")
+                        .HasColumnType("decimal(4,2)");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LessonId");
+
+                    b.HasIndex("StudentId", "LessonId")
+                        .IsUnique();
+
+                    b.ToTable("DailyAssessment", (string)null);
                 });
 
             modelBuilder.Entity("PROJECT_PRN232_.Domain.Lesson", b =>
@@ -564,25 +607,6 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("PROJECT_PRN232_.Domain.Assessment", b =>
-                {
-                    b.HasOne("PROJECT_PRN232_.Domain.Lesson", "Lesson")
-                        .WithMany("Assessments")
-                        .HasForeignKey("LessonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PROJECT_PRN232_.Domain.Student", "Student")
-                        .WithMany("Assessments")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Lesson");
-
-                    b.Navigation("Student");
-                });
-
             modelBuilder.Entity("PROJECT_PRN232_.Domain.Attendance", b =>
                 {
                     b.HasOne("PROJECT_PRN232_.Domain.Lesson", "Lesson")
@@ -677,6 +701,33 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("PROJECT_PRN232_.Domain.ClassTranscript", b =>
+                {
+                    b.HasOne("PROJECT_PRN232_.Domain.Class", "Class")
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PROJECT_PRN232_.Domain.Class", null)
+                        .WithMany("ClassTranscripts")
+                        .HasForeignKey("ClassId1");
+
+                    b.HasOne("PROJECT_PRN232_.Domain.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PROJECT_PRN232_.Domain.Student", null)
+                        .WithMany("ClassTranscripts")
+                        .HasForeignKey("StudentId1");
+
+                    b.Navigation("Class");
+
+                    b.Navigation("Student");
+                });
+
             modelBuilder.Entity("PROJECT_PRN232_.Domain.ClassTransferRequest", b =>
                 {
                     b.HasOne("PROJECT_PRN232_.Domain.Class", "Class")
@@ -702,6 +753,25 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                     b.Navigation("FromTeacher");
 
                     b.Navigation("ToTeacher");
+                });
+
+            modelBuilder.Entity("PROJECT_PRN232_.Domain.DailyAssessment", b =>
+                {
+                    b.HasOne("PROJECT_PRN232_.Domain.Lesson", "Lesson")
+                        .WithMany("DailyAssessments")
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PROJECT_PRN232_.Domain.Student", "Student")
+                        .WithMany("DailyAssessments")
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lesson");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("PROJECT_PRN232_.Domain.Lesson", b =>
@@ -793,6 +863,8 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
                 {
                     b.Navigation("ClassStudents");
 
+                    b.Navigation("ClassTranscripts");
+
                     b.Navigation("Lessons");
 
                     b.Navigation("Notifications");
@@ -800,9 +872,9 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
 
             modelBuilder.Entity("PROJECT_PRN232_.Domain.Lesson", b =>
                 {
-                    b.Navigation("Assessments");
-
                     b.Navigation("Attendances");
+
+                    b.Navigation("DailyAssessments");
 
                     b.Navigation("Materials");
                 });
@@ -819,11 +891,13 @@ namespace PROJECT_PRN232_.Infrastructure.Migrations
 
             modelBuilder.Entity("PROJECT_PRN232_.Domain.Student", b =>
                 {
-                    b.Navigation("Assessments");
-
                     b.Navigation("Attendances");
 
                     b.Navigation("ClassStudents");
+
+                    b.Navigation("ClassTranscripts");
+
+                    b.Navigation("DailyAssessments");
                 });
 
             modelBuilder.Entity("PROJECT_PRN232_.Domain.Subject", b =>

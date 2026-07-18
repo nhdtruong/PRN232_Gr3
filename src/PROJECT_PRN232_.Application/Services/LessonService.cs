@@ -37,14 +37,14 @@ namespace PROJECT_PRN232_.Application.Services
             return MapToDto(lesson);
         }
 
-        public async Task<LessonResponseDto> CreateAsync(LessonCreateDto dto, int centerUserId)
+        public async Task<LessonResponseDto> CreateAsync(LessonCreateDto dto, int teacherUserId)
         {
             var classObj = await _lessonRepository.GetClassByIdAsync(dto.ClassId);
             if (classObj == null)
             {
                 throw new ArgumentException("Lớp học không tồn tại.");
             }
-            if (classObj.CenterId != centerUserId)
+            if (classObj.TeacherId != teacherUserId)
             {
                 throw new UnauthorizedAccessException("Bạn không có quyền thêm buổi học cho lớp này.");
             }
@@ -73,12 +73,12 @@ namespace PROJECT_PRN232_.Application.Services
             return MapToDto(created);
         }
 
-        public async Task<bool> UpdateAsync(LessonUpdateDto dto, int centerUserId)
+        public async Task<bool> UpdateAsync(LessonUpdateDto dto, int teacherUserId)
         {
             var existing = await _lessonRepository.GetLessonWithClassAsync(dto.Id);
             if (existing == null) return false;
 
-            if (existing.Class.CenterId != centerUserId) return false;
+            if (existing.Class.TeacherId != teacherUserId) return false;
 
             if (dto.RoomId.HasValue && dto.SlotId.HasValue)
             {
@@ -98,12 +98,12 @@ namespace PROJECT_PRN232_.Application.Services
             return await _lessonRepository.UpdateAsync(existing);
         }
 
-        public async Task<bool> DeleteAsync(int lessonId, int centerUserId)
+        public async Task<bool> DeleteAsync(int lessonId, int teacherUserId)
         {
             var existingLesson = await _lessonRepository.GetLessonWithClassAsync(lessonId);
             if (existingLesson == null) return false;
 
-            if (existingLesson.Class.CenterId != centerUserId) return false;
+            if (existingLesson.Class.TeacherId != teacherUserId) return false;
 
             return await _lessonRepository.DeleteAsync(lessonId);
         }
@@ -120,12 +120,12 @@ namespace PROJECT_PRN232_.Application.Services
             return lessons.Where(l => l.IsPublished).Select(MapToDto);
         }
 
-        public async Task<bool> PublishAsync(int lessonId, int centerUserId)
+        public async Task<bool> PublishAsync(int lessonId, int teacherUserId)
         {
             var lesson = await _lessonRepository.GetLessonWithMaterialsAsync(lessonId);
             if (lesson == null) return false;
 
-            if (lesson.Class.CenterId != centerUserId) return false;
+            if (lesson.Class.TeacherId != teacherUserId) return false;
 
             bool isRebroadcast = lesson.IsPublished;
 

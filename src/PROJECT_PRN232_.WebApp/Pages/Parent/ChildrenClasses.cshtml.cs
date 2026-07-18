@@ -8,10 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using PROJECT_PRN232_.Infrastructure.Data;
 using PROJECT_PRN232_.Domain;
 using PROJECT_PRN232_.Application.Services;
-using PROJECT_PRN232_.Application.DTOs;
-using PROJECT_PRN232_.Application.Repositories;
-using PROJECT_PRN232_.Infrastructure.Data;
-using PROJECT_PRN232_.Application.Services;
 
 namespace PROJECT_PRN232_.WebApp.Pages.Parent
 {

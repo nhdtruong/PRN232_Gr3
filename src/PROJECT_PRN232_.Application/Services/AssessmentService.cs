@@ -9,11 +9,11 @@ namespace PROJECT_PRN232_.Application.Services
 {
     public class AssessmentService : IAssessmentService
     {
-        private readonly IAssessmentRepository _assessmentRepository;
+        private readonly IDailyAssessmentRepository _assessmentRepository;
         private readonly ILessonRepository _lessonRepository;
         private readonly IStudentRepository _studentRepository;
 
-        public AssessmentService(IAssessmentRepository assessmentRepository, ILessonRepository lessonRepository, IStudentRepository studentRepository)
+        public AssessmentService(IDailyAssessmentRepository assessmentRepository, ILessonRepository lessonRepository, IStudentRepository studentRepository)
         {
             _assessmentRepository = assessmentRepository;
             _lessonRepository = lessonRepository;
@@ -47,13 +47,13 @@ namespace PROJECT_PRN232_.Application.Services
             if (!ValidateScores(dto.Items))
                 return false;
 
-            var entities = dto.Items.Select(i => new Assessment
+            var entities = dto.Items.Select(i => new DailyAssessment
             {
                 Id = i.Id ?? 0,
                 StudentId = i.StudentId,
                 LessonId = lessonId,
                 Score = i.Score,
-                TeacherComment = i.TeacherComment
+                Comment = i.TeacherComment
             });
 
             await _assessmentRepository.UpsertBulkAsync(lessonId, entities);
@@ -84,7 +84,7 @@ namespace PROJECT_PRN232_.Application.Services
             return list.Select(MapToDto);
         }
 
-        private static AssessmentResponseDto MapToDto(Assessment a) => new()
+        private static AssessmentResponseDto MapToDto(DailyAssessment a) => new()
         {
             Id = a.Id,
             StudentId = a.StudentId,
@@ -93,7 +93,7 @@ namespace PROJECT_PRN232_.Application.Services
             LessonTitle = a.Lesson?.Title ?? string.Empty,
             ClassName = a.Lesson?.Class?.ClassName ?? string.Empty,
             Score = a.Score,
-            TeacherComment = a.TeacherComment,
+            TeacherComment = a.Comment,
             DateAssessed = a.DateAssessed
         };
 

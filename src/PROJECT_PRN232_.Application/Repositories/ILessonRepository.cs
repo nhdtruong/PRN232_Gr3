@@ -8,7 +8,7 @@ namespace PROJECT_PRN232_.Application.Repositories
     {
         Task<Lesson?> GetLessonWithClassAsync(int lessonId);
         Task<HashSet<int>> GetEnrolledStudentIdsAsync(int classId);
-        Task<IEnumerable<(Student Student, Attendance? Attendance, Assessment? Assessment)>> GetRollCallDataAsync(int lessonId, int classId, int? parentIdFilter = null);
+        Task<IEnumerable<(Student Student, Attendance? Attendance, DailyAssessment? Assessment)>> GetRollCallDataAsync(int lessonId, int classId, int? parentIdFilter = null);
 
         Task<IEnumerable<Lesson>> GetByClassIdAsync(int classId);
         Task<Lesson> CreateAsync(Lesson lesson);

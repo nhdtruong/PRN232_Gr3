@@ -78,7 +78,7 @@
                 <h5 class="modal-title fw-bold text-dark">📝 Tạo tài khoản phụ huynh</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="createParentForm">
+            <form id="createParentForm" novalidate>
                 <div class="modal-body px-4 py-3" style="background-color: #F8FAFC;">
                     <div class="create-error-container"></div>
                     <div class="mb-3">
@@ -119,7 +119,7 @@
                 <h5 class="modal-title fw-bold text-dark">✏️ Cập nhật thông tin phụ huynh</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="editParentForm">
+            <form id="editParentForm" novalidate>
                 <input type="hidden" id="editParentId" />
                 <div class="modal-body px-4 py-3" style="background-color: #F8FAFC;">
                     <div class="edit-error-container"></div>
@@ -342,15 +342,33 @@
             const username = document.getElementById('createUsername').value.trim();
             const password = document.getElementById('createPassword').value.trim();
             const email = document.getElementById('createEmail').value.trim();
-            const phone = document.getElementById('createPhone').value.trim();
+            let phone = document.getElementById('createPhone').value.trim();
+
+            if (phone) {
+                phone = phone.replace(/[\s\-\(\)]/g, "");
+                if (phone.startsWith("+84")) {
+                    phone = "0" + phone.substring(3);
+                } else if (phone.startsWith("84") && phone.length > 9) {
+                    phone = "0" + phone.substring(2);
+                }
+            }
 
             const clientErrors = [];
+
+            if (!fullName && !username && !password && !email && !phone) {
+                $('.create-error-container').html(`
+                    <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Vui lòng điền thông tin phụ huynh trước khi lưu.
+                    </div>
+                `);
+                return;
+            }
 
             if (!fullName) {
                 clientErrors.push("Họ và tên không được để trống.");
             } else if (fullName.length < 2 || fullName.length > 100) {
                 clientErrors.push("Họ và tên phải từ 2 đến 100 ký tự.");
-            } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠƯưăâêôơư\s]+$/.test(fullName)) {
+            } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠƯưăâêôơưẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼẾỀỂỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲÝỶỸỴạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳýỷỹỵ\s]+$/.test(fullName)) {
                 clientErrors.push("Họ và tên chỉ được chứa chữ cái và khoảng trắng.");
             }
 
@@ -468,10 +486,61 @@
             $('.edit-error-container').html('');
 
             const id = document.getElementById('editParentId').value;
+            const fullName = document.getElementById('editFullName').value.trim();
+            const email = document.getElementById('editEmail').value.trim();
+            let phone = document.getElementById('editPhone').value.trim();
+
+            if (phone) {
+                phone = phone.replace(/[\s\-\(\)]/g, "");
+                if (phone.startsWith("+84")) {
+                    phone = "0" + phone.substring(3);
+                } else if (phone.startsWith("84") && phone.length > 9) {
+                    phone = "0" + phone.substring(2);
+                }
+            }
+
+            const clientErrors = [];
+
+            if (!fullName && !email && !phone) {
+                $('.edit-error-container').html(`
+                    <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Vui lòng điền đầy đủ thông tin trước khi lưu.
+                    </div>
+                `);
+                return;
+            }
+
+            if (!fullName) {
+                clientErrors.push("Họ và tên không được để trống.");
+            } else if (fullName.length < 2 || fullName.length > 100) {
+                clientErrors.push("Họ và tên phải từ 2 đến 100 ký tự.");
+            } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠƯưăâêôơưẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼẾỀỂỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲÝỶỸỴạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳýỷỹỵ\s]+$/.test(fullName)) {
+                clientErrors.push("Họ và tên chỉ được chứa chữ cái và khoảng trắng.");
+            }
+
+            if (email && !/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email)) {
+                clientErrors.push("Địa chỉ email không đúng định dạng.");
+            }
+
+            if (phone && !/^(0[3|5|7|8|9])[0-9]{8}$/.test(phone)) {
+                clientErrors.push("Số điện thoại không hợp lệ (phải gồm 10 chữ số và bắt đầu bằng đầu số di động VN như 03, 05, 07, 08, 09).");
+            }
+
+            if (clientErrors.length > 0) {
+                $('.edit-error-container').html(`
+                    <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
+                        <ul class="mb-0 ps-3">
+                            ${clientErrors.map(err => `<li>${err}</li>`).join('')}
+                        </ul>
+                    </div>
+                `);
+                return;
+            }
+
             const bodyData = {
-                fullName: document.getElementById('editFullName').value,
-                email: document.getElementById('editEmail').value || null,
-                phone: document.getElementById('editPhone').value || null
+                fullName: fullName,
+                email: email || null,
+                phone: phone || null
             };
 
             fetch(`/api/center/parents/${id}`, {
@@ -482,7 +551,21 @@
             .then(async res => {
                 if (!res.ok) {
                     const errData = await res.json();
-                    throw new Error(errData.message || "Cập nhật phụ huynh thất bại.");
+                    let errMsg = "";
+                    if (errData.message) {
+                        errMsg = `<li>${errData.message}</li>`;
+                    } else if (errData.errors) {
+                        const errorList = [];
+                        for (const key in errData.errors) {
+                            if (errData.errors.hasOwnProperty(key)) {
+                                errorList.push(...errData.errors[key]);
+                            }
+                        }
+                        errMsg = errorList.map(err => `<li>${err}</li>`).join('');
+                    } else {
+                        errMsg = "<li>Cập nhật phụ huynh thất bại.</li>";
+                    }
+                    throw new Error(errMsg);
                 }
             })
             .then(() => {
@@ -493,7 +576,9 @@
             .catch(err => {
                 $('.edit-error-container').html(`
                     <div class="alert alert-danger border-0 py-2 rounded-3" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>${err.message}
+                        <ul class="mb-0 ps-3">
+                            ${err.message.startsWith('<li>') ? err.message : `<li>${err.message}</li>`}
+                        </ul>
                     </div>
                 `);
             });

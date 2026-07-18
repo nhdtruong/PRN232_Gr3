@@ -13,15 +13,27 @@ namespace PROJECT_PRN232_.Application.Services
         private readonly INotificationRepository _notificationRepository;
         private readonly IRealtimeNotifier _realtimeNotifier;
         private readonly IClassStudentRepository _classStudentRepository;
+        private readonly IAttendanceRepository _attendanceRepository;
+        private readonly IDailyAssessmentRepository _assessmentRepository;
+        private readonly ILessonRepository _lessonRepository;
+        private readonly IClassTranscriptRepository _transcriptRepository;
 
         public NotificationService(
             INotificationRepository notificationRepository,
             IRealtimeNotifier realtimeNotifier,
-            IClassStudentRepository classStudentRepository)
+            IClassStudentRepository classStudentRepository,
+            IAttendanceRepository attendanceRepository,
+            IDailyAssessmentRepository assessmentRepository,
+            ILessonRepository lessonRepository,
+            IClassTranscriptRepository transcriptRepository)
         {
             _notificationRepository = notificationRepository;
             _realtimeNotifier = realtimeNotifier;
             _classStudentRepository = classStudentRepository;
+            _attendanceRepository = attendanceRepository;
+            _assessmentRepository = assessmentRepository;
+            _lessonRepository = lessonRepository;
+            _transcriptRepository = transcriptRepository;
         }
 
         // ── Thông báo Kết quả học tập & Điểm danh (RollCall, Ghi chú, Điểm, Nhận xét) ──
@@ -438,34 +450,151 @@ namespace PROJECT_PRN232_.Application.Services
         public async Task NotifyPublishedLessonAsync(int lessonId, int classId, string className, string lessonTitle, DateTime lessonDate, List<string> materialTitles, bool isRebroadcast = false)
         {
             var parentIds = await _classStudentRepository.GetParentIdsInClassAsync(classId);
-
             var dateStr = lessonDate.ToString("HH:mm - dd/MM/yyyy");
 
             foreach (var parentId in parentIds)
             {
                 if (parentId == 0) continue;
 
-                var studentInClass = await _classStudentRepository.GetStudentInClassForParentAsync(classId, parentId);
-                var studentId = studentInClass?.Id ?? 0;
+                // Lấy thông tin học sinh
+                var student = await _classStudentRepository.GetStudentInClassForParentAsync(classId, parentId);
+                if (student == null) continue;
+
+                var studentId = student.Id;
+                var studentName = student.FullName;
+
+                // 1. Chuyên cần
+                var attendance = await _attendanceRepository.GetByStudentAndLessonAsync(studentId, lessonId);
+
+                string attendanceHtml = "";
+                if (attendance != null)
+                {
+                    var statusText = attendance.Status switch
+                    {
+                        AttendanceStatus.Present => "<span class='badge bg-success'>Có mặt</span>",
+                        AttendanceStatus.Absent => "<span class='badge bg-danger'>Vắng mặt</span>",
+                        AttendanceStatus.Late => "<span class='badge bg-warning text-dark'>Đi trễ</span>",
+                        AttendanceStatus.Excused => "<span class='badge bg-info text-dark'>Vắng có phép</span>",
+                        _ => "<span class='badge bg-secondary'>Chưa điểm danh</span>"
+                    };
+                    var noteText = !string.IsNullOrWhiteSpace(attendance.Note) ? $" ({attendance.Note})" : "";
+                    attendanceHtml = $"<div><b>Trạng thái:</b> {statusText}{noteText}</div>";
+                }
+                else
+                {
+                    attendanceHtml = "<div class='text-muted' style='font-style: italic;'>Chưa ghi nhận điểm danh</div>";
+                }
+
+                // 2. Điểm số hôm nay (Thường xuyên)
+                var scoreObj = await _assessmentRepository.GetByStudentAndLessonAsync(studentId, lessonId);
+
+                string scoreHtml = "";
+                if (scoreObj != null && scoreObj.Score.HasValue)
+                {
+                    var commentText = !string.IsNullOrWhiteSpace(scoreObj.Comment)
+                        ? $"<div class='mt-1 text-muted small'>Nhận xét: {scoreObj.Comment}</div>"
+                        : "";
+                    scoreHtml = $"<div><b>Điểm số:</b> <strong class='text-primary'>{scoreObj.Score.Value.ToString("0.##")}</strong> / 10 {commentText}</div>";
+                }
+                else
+                {
+                    scoreHtml = "<div class='text-muted' style='font-style: italic;'>Không có điểm số hoặc nhận xét cho buổi này</div>";
+                }
+
+                // 3. Điểm giữa kỳ & Cuối kỳ & Điểm TB Thường xuyên (lấy từ ClassTranscript)
+                string examGradesHtml = "";
+                var transcript = await _transcriptRepository.GetByStudentAndClassAsync(studentId, classId);
+                var gkScore = transcript?.MidTermScore;
+                var ckScore = transcript?.FinalScore;
+                var tbTX = transcript?.AverageDailyScore;
+                var finalTotal = transcript?.FinalScoreTotal;
+
+                if (gkScore.HasValue || ckScore.HasValue || tbTX.HasValue)
+                {
+                    examGradesHtml += $@"
+                    <div style='margin-bottom: 16px;'>
+                        <div style='font-weight: 700; font-size: 0.9rem; text-transform: uppercase; color: #64748b; margin-bottom: 8px; letter-spacing: 0.05em;'>🏆 Đánh giá & Điểm tổng hợp</div>
+                        <div style='padding: 10px; background: #fdfdfd; border-radius: 8px; border: 1px solid #f1f5f9; font-size: 0.85rem;'>";
+
+                    if (tbTX.HasValue)
+                    {
+                        examGradesHtml += $"<div style='margin-bottom: 4px;'><b>Trung bình Thường xuyên (30%):</b> <strong style='color: #4f46e5;'>{tbTX.Value.ToString("0.##")}</strong> / 10</div>";
+                    }
+                    if (gkScore.HasValue)
+                    {
+                        var gkComment = !string.IsNullOrWhiteSpace(transcript?.MidTermComment) ? $" ({transcript.MidTermComment})" : "";
+                        examGradesHtml += $"<div style='margin-bottom: 4px;'><b>Điểm Giữa kỳ (30%):</b> <strong style='color: #ea580c;'>{gkScore.Value.ToString("0.##")}</strong> / 10{gkComment}</div>";
+                    }
+                    if (ckScore.HasValue)
+                    {
+                        var ckComment = !string.IsNullOrWhiteSpace(transcript?.FinalComment) ? $" ({transcript.FinalComment})" : "";
+                        examGradesHtml += $"<div style='margin-bottom: 4px;'><b>Điểm Cuối kỳ (40%):</b> <strong style='color: #16a34a;'>{ckScore.Value.ToString("0.##")}</strong> / 10{ckComment}</div>";
+                    }
+
+                    if (finalTotal.HasValue)
+                    {
+                        examGradesHtml += $"<hr style='opacity: 0.15; margin: 8px 0;'><div style='font-weight: 700; font-size: 0.9rem;'>Tổng kết lớp học: <span class='badge bg-success'>{finalTotal.Value.ToString("0.##")}</span></div>";
+                    }
+
+                    examGradesHtml += "</div></div>";
+                }
+
+                // 4. Học liệu / Slide bài học
+                string materialsHtml = "";
+                if (materialTitles != null && materialTitles.Any())
+                {
+                    var materialList = string.Join("", materialTitles.Select(m => $"<li style='margin-bottom:4px;'>{m}</li>"));
+                    materialsHtml = $@"
+                    <div style='margin-bottom: 16px;'>
+                        <div style='font-weight: 700; font-size: 0.9rem; text-transform: uppercase; color: #64748b; margin-bottom: 8px; letter-spacing: 0.05em;'>📚 Tài liệu & Bài tập buổi học</div>
+                        <ul style='padding-left: 20px; margin-bottom: 0; font-size: 0.85rem; color: #475569;'>
+                            {materialList}
+                        </ul>
+                    </div>";
+                }
 
                 var messageBody = $@"
-<div class='mb-2'><b>Lớp học:</b> {className}</div>
-<div class='mb-2'><b>Buổi học:</b> {lessonTitle}</div>
-<div class='mb-2'><b>Thời gian lớp học:</b> <span class='badge bg-primary'>{dateStr}</span></div>
-<div class='text-center mt-3'>
-    <a href='/Parent/Lessons?ChildId={studentId}&LessonId={lessonId}' 
-       class='btn btn-sm px-4 fw-semibold text-white d-inline-block' 
-       style='background: linear-gradient(135deg, #4F46E5, #7C3AED); border: none; border-radius: 8px; font-size: 0.82rem; text-decoration: none; padding: 6px 16px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);'>
-        <i class='bi bi-folder2-open me-1'></i> Xem tài liệu học tập
-    </a>
-</div>
-";
+<div class='published-lesson-report' style='font-family: inherit; color: #1e293b; background: #fff; border-radius: 12px; padding: 4px; border: none;'>
+    <div style='background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 8px; padding: 12px; margin-bottom: 16px;'>
+        <div style='margin-bottom: 4px;'><b>Lớp học:</b> {className}</div>
+        <div style='margin-bottom: 4px;'><b>Buổi học:</b> {lessonTitle}</div>
+        <div><b>Thời gian:</b> <span class='badge bg-primary-subtle text-primary border border-primary-subtle'>{dateStr}</span></div>
+    </div>
+
+    <!-- Section 1: Chuyên cần -->
+    <div style='margin-bottom: 16px;'>
+        <div style='font-weight: 700; font-size: 0.78rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; letter-spacing: 0.05em;'>📌 Chuyên cần của {studentName}</div>
+        <div style='padding: 10px; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0;'>
+            {attendanceHtml}
+        </div>
+    </div>
+
+    <!-- Section 2: Điểm học tập -->
+    <div style='margin-bottom: 16px;'>
+        <div style='font-weight: 700; font-size: 0.78rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; letter-spacing: 0.05em;'>📝 Kết quả bài học (Thường xuyên)</div>
+        <div style='padding: 10px; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0;'>
+            {scoreHtml}
+        </div>
+    </div>
+
+    <!-- Section 3: Điểm thi / Tổng kết -->
+    {examGradesHtml}
+
+    <!-- Section 4: Học liệu -->
+    {materialsHtml}
+
+    <div class='text-center mt-3'>
+        <a href='/Parent/Lessons?ChildId={studentId}&LessonId={lessonId}' class='btn btn-sm px-4 fw-semibold text-white d-inline-block' style='background: linear-gradient(135deg, #4F46E5, #7C3AED); border: none; border-radius: 8px; font-size: 0.82rem; text-decoration: none; padding: 8px 18px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);'>
+            <i class='bi bi-folder2-open me-1'></i> Xem chi tiết buổi học
+        </a>
+    </div>
+</div>";
 
                 var notification = new Notification
                 {
                     ParentId = parentId,
                     ClassId = classId,
-                    Title = isRebroadcast ? $"Cập nhật buổi học - {className}" : $"Buổi học mới - {className}",
+                    Title = isRebroadcast ? $"Cập nhật học tập & chuyên cần - {studentName}" : $"Báo cáo học tập & chuyên cần - {studentName}",
                     Message = messageBody,
                     IsRead = false,
                     CreatedAt = DateTime.Now
@@ -486,6 +615,255 @@ namespace PROJECT_PRN232_.Application.Services
 
                 await _realtimeNotifier.PushNotificationToParentAsync(parentId, dto, unreadCount);
             }
+        }
+
+        public async Task NotifyDailyGradeUpdatedAsync(
+            int parentId,
+            int classId,
+            string className,
+            string lessonTitle,
+            string studentName,
+            decimal? score,
+            string? comment)
+        {
+            var title = $"Cập nhật điểm Thường xuyên Buổi {lessonTitle} - {studentName}";
+            var scoreText = score.HasValue ? $"<strong class='text-primary'>{score.Value.ToString("0.##")}</strong> / 10" : "Chưa nhập";
+            var commentText = !string.IsNullOrWhiteSpace(comment) ? $"<div class='mt-1 text-muted small'>Nhận xét: {comment}</div>" : "";
+
+            var messageBody = $@"
+<div class='published-daily-grade' style='font-family: inherit; color: #1e293b; background: #fff;'>
+    <div style='background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 8px; padding: 12px; margin-bottom: 16px;'>
+        <div style='margin-bottom: 4px;'><b>Lớp học:</b> {className}</div>
+        <div style='margin-bottom: 4px;'><b>Buổi học:</b> {lessonTitle}</div>
+    </div>
+    <div style='margin-bottom: 16px;'>
+        <div style='font-weight: 700; font-size: 0.78rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; letter-spacing: 0.05em;'>📝 Kết quả bài học (Thường xuyên)</div>
+        <div style='padding: 10px; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0;'>
+            <div><b>Điểm số:</b> {scoreText} {commentText}</div>
+        </div>
+    </div>
+</div>";
+
+            var notification = new Notification
+            {
+                ParentId = parentId,
+                ClassId = classId,
+                Title = title,
+                Message = messageBody,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            };
+
+            await _notificationRepository.AddAsync(notification);
+            var unreadCount = await _notificationRepository.CountUnreadByParentAsync(parentId);
+
+            var dto = new NotificationResponseDto
+            {
+                Id = notification.Id,
+                ClassId = notification.ClassId,
+                Title = notification.Title,
+                Message = notification.Message,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt
+            };
+
+            await _realtimeNotifier.PushNotificationToParentAsync(parentId, dto, unreadCount);
+        }
+
+        public async Task NotifyClassTranscriptUpdatedAsync(
+            int parentId,
+            int classId,
+            string className,
+            string studentName,
+            decimal? midtermScore,
+            string? midtermComment,
+            decimal? finalScore,
+            string? finalComment,
+            decimal? averageDailyScore,
+            decimal? finalScoreTotal)
+        {
+            var title = $"Trung tâm đã cập nhật bảng điểm định kỳ (Giữa kỳ/Cuối kỳ) - {studentName}";
+            
+            var tbText = averageDailyScore.HasValue ? $"<strong>{averageDailyScore.Value.ToString("0.##")}</strong> / 10" : "—";
+            var gkText = midtermScore.HasValue ? $"<strong>{midtermScore.Value.ToString("0.##")}</strong> / 10" : "—";
+            var ckText = finalScore.HasValue ? $"<strong>{finalScore.Value.ToString("0.##")}</strong> / 10" : "—";
+            var totalText = finalScoreTotal.HasValue ? $"<span class='badge bg-success'>{finalScoreTotal.Value.ToString("0.##")}</span>" : "—";
+
+            var gkCommentText = !string.IsNullOrWhiteSpace(midtermComment) ? $"<div class='text-muted small mt-1'>Nhận xét GK: {midtermComment}</div>" : "";
+            var ckCommentText = !string.IsNullOrWhiteSpace(finalComment) ? $"<div class='text-muted small mt-1'>Nhận xét CK: {finalComment}</div>" : "";
+
+            var messageBody = $@"
+<div class='published-transcript-report' style='font-family: inherit; color: #1e293b; background: #fff;'>
+    <div style='background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 8px; padding: 12px; margin-bottom: 16px;'>
+        <div style='margin-bottom: 4px;'><b>Lớp học:</b> {className}</div>
+        <div style='margin-bottom: 4px;'><b>Học sinh:</b> {studentName}</div>
+    </div>
+    <div style='margin-bottom: 16px;'>
+        <div style='font-weight: 700; font-size: 0.78rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; letter-spacing: 0.05em;'>🏆 Đánh giá & Điểm tổng hợp</div>
+        <div style='padding: 12px; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem;'>
+            <div style='margin-bottom: 6px;'><b>Trung bình Thường xuyên (30%):</b> {tbText}</div>
+            <div style='margin-bottom: 6px;'><b>Điểm Giữa kỳ (30%):</b> {gkText} {gkCommentText}</div>
+            <div style='margin-bottom: 6px;'><b>Điểm Cuối kỳ (40%):</b> {ckText} {ckCommentText}</div>
+            <hr style='opacity: 0.15; margin: 8px 0;'>
+            <div style='font-weight: 700; font-size: 0.9rem;'>Tổng kết lớp học: {totalText}</div>
+        </div>
+    </div>
+</div>";
+
+            var notification = new Notification
+            {
+                ParentId = parentId,
+                ClassId = classId,
+                Title = title,
+                Message = messageBody,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            };
+
+            await _notificationRepository.AddAsync(notification);
+            var unreadCount = await _notificationRepository.CountUnreadByParentAsync(parentId);
+
+            var dto = new NotificationResponseDto
+            {
+                Id = notification.Id,
+                ClassId = notification.ClassId,
+                Title = notification.Title,
+                Message = notification.Message,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt
+            };
+
+            await _realtimeNotifier.PushNotificationToParentAsync(parentId, dto, unreadCount);
+        }
+
+        public async Task NotifyTeacherAssignedClassAsync(int teacherId, int classId, string className)
+        {
+            if (teacherId <= 0) return;
+
+            var messageBody = $@"
+<div class='mb-2'><b>Lớp học:</b> <span class='badge bg-indigo text-white' style='background-color: #4F46E5;'>{className}</span></div>
+<hr style='opacity: 0.15; margin: 10px 0;'>
+<div class='text-muted small' style='font-size: 0.85rem;'>Bạn đã được phân công làm giáo viên giảng dạy cho lớp học này. Vui lòng kiểm tra lịch học tại trang quản lý lớp học của tôi.</div>
+";
+
+            var notification = new Notification
+            {
+                ParentId = teacherId, // Dùng chung trường ParentId làm UserId người nhận
+                ClassId = classId,
+                Title = $"Phân công giảng dạy lớp {className}",
+                Message = messageBody,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            };
+
+            await _notificationRepository.AddAsync(notification);
+            var unreadCount = await _notificationRepository.CountUnreadByParentAsync(teacherId);
+
+            var dto = new NotificationResponseDto
+            {
+                Id = notification.Id,
+                ClassId = notification.ClassId,
+                Title = notification.Title,
+                Message = notification.Message,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt
+            };
+
+            await _realtimeNotifier.PushNotificationToParentAsync(teacherId, dto, unreadCount);
+        }
+
+        public async Task NotifyTransferRequestCreatedAsync(int centerId, string fromTeacherName, string toTeacherName, string className, int classId)
+        {
+            if (centerId <= 0) return;
+
+            var messageBody = $@"
+<div class='mb-2'><b>Giáo viên yêu cầu:</b> {fromTeacherName}</div>
+<div class='mb-2'><b>Lớp học:</b> {className}</div>
+<div class='mb-2'><b>Giáo viên nhận:</b> {toTeacherName}</div>
+<hr style='opacity: 0.15; margin: 10px 0;'>
+<div class='text-muted small' style='font-size: 0.85rem;'>Có đơn xin đổi lớp học mới đang chờ bạn phê duyệt.</div>
+";
+
+            var notification = new Notification
+            {
+                ParentId = centerId,
+                ClassId = classId,
+                Title = "Yêu cầu đổi lớp mới",
+                Message = messageBody,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            };
+
+            await _notificationRepository.AddAsync(notification);
+            var unreadCount = await _notificationRepository.CountUnreadByParentAsync(centerId);
+
+            var dto = new NotificationResponseDto
+            {
+                Id = notification.Id,
+                ClassId = notification.ClassId,
+                Title = notification.Title,
+                Message = notification.Message,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt
+            };
+
+            await _realtimeNotifier.PushNotificationToParentAsync(centerId, dto, unreadCount);
+        }
+
+        public async Task NotifyTransferRequestProcessedAsync(int teacherId, string className, int classId, bool isApproved, bool isFromTeacher)
+        {
+            if (teacherId <= 0) return;
+
+            // Nếu là giáo viên nhận bàn giao nhưng đơn bị từ chối thì không cần gửi thông báo
+            if (!isFromTeacher && !isApproved) return;
+
+            string title;
+            string messageBody;
+
+            if (isFromTeacher)
+            {
+                title = isApproved ? $"Đồng ý yêu cầu đổi lớp {className}" : $"Từ chối yêu cầu đổi lớp {className}";
+                messageBody = $@"
+<div class='mb-2'><b>Lớp học:</b> {className}</div>
+<div class='mb-2'><b>Trạng thái:</b> <span class='badge {(isApproved ? "bg-success" : "bg-danger")}'>{(isApproved ? "Đã duyệt" : "Từ chối")}</span></div>
+<hr style='opacity: 0.15; margin: 10px 0;'>
+<div class='text-muted small' style='font-size: 0.85rem;'>{(isApproved ? "Yêu cầu đổi lớp của bạn đã được quản trị viên phê duyệt." : "Yêu cầu đổi lớp của bạn đã bị quản trị viên từ chối.")}</div>
+";
+            }
+            else
+            {
+                title = $"Phân công giảng dạy lớp {className}";
+                messageBody = $@"
+<div class='mb-2'><b>Lớp học:</b> <span class='badge bg-indigo text-white' style='background-color: #4F46E5;'>{className}</span></div>
+<hr style='opacity: 0.15; margin: 10px 0;'>
+<div class='text-muted small' style='font-size: 0.85rem;'>Bạn đã được bàn giao giảng dạy lớp học này sau khi duyệt đơn đổi lớp. Vui lòng kiểm tra trang lớp học của tôi.</div>
+";
+            }
+
+            var notification = new Notification
+            {
+                ParentId = teacherId,
+                ClassId = classId,
+                Title = title,
+                Message = messageBody,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            };
+
+            await _notificationRepository.AddAsync(notification);
+            var unreadCount = await _notificationRepository.CountUnreadByParentAsync(teacherId);
+
+            var dto = new NotificationResponseDto
+            {
+                Id = notification.Id,
+                ClassId = notification.ClassId,
+                Title = notification.Title,
+                Message = notification.Message,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt
+            };
+
+            await _realtimeNotifier.PushNotificationToParentAsync(teacherId, dto, unreadCount);
         }
     }
 }

@@ -33,6 +33,8 @@ namespace PROJECT_PRN232_.Infrastructure.Repositories
         {
             return await _context.ClassTransferRequests
                 .Include(r => r.Class)
+                .Include(r => r.FromTeacher)
+                .Include(r => r.ToTeacher)
                 .FirstOrDefaultAsync(r => r.Id == id);
         }
 

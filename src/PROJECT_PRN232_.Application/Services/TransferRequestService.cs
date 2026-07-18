@@ -12,11 +12,16 @@ namespace PROJECT_PRN232_.Application.Services
     {
         private readonly ITransferRequestRepository _repository;
         private readonly IClassRepository _classRepository;
+        private readonly INotificationService _notificationService;
 
-        public TransferRequestService(ITransferRequestRepository repository, IClassRepository classRepository)
+        public TransferRequestService(
+            ITransferRequestRepository repository, 
+            IClassRepository classRepository,
+            INotificationService notificationService)
         {
             _repository = repository;
             _classRepository = classRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<ClassTransferRequestDto> CreateRequestAsync(TransferRequestCreateDto dto)
@@ -32,6 +37,16 @@ namespace PROJECT_PRN232_.Application.Services
             };
 
             var createdRequest = await _repository.AddAsync(request);
+
+            if (createdRequest.Class != null)
+            {
+                var centerId = createdRequest.Class.CenterId;
+                var fromTeacherName = createdRequest.FromTeacher?.FullName ?? "Giáo viên";
+                var toTeacherName = createdRequest.ToTeacher?.FullName ?? "Giáo viên";
+                var className = createdRequest.Class.ClassName;
+
+                await _notificationService.NotifyTransferRequestCreatedAsync(centerId, fromTeacherName, toTeacherName, className, createdRequest.ClassId);
+            }
 
             return MapToDto(createdRequest);
         }
@@ -67,7 +82,22 @@ namespace PROJECT_PRN232_.Application.Services
                 }
             }
 
-            return await _repository.UpdateAsync(request);
+            var success = await _repository.UpdateAsync(request);
+            if (success)
+            {
+                var className = request.Class?.ClassName ?? "Lớp học";
+
+                // Thông báo cho Giáo viên gửi yêu cầu
+                await _notificationService.NotifyTransferRequestProcessedAsync(request.FromTeacherId, className, request.ClassId, isApproved, isFromTeacher: true);
+
+                // Thông báo cho Giáo viên được bàn giao lớp (chỉ gửi khi được duyệt)
+                if (isApproved)
+                {
+                    await _notificationService.NotifyTransferRequestProcessedAsync(request.ToTeacherId, className, request.ClassId, isApproved, isFromTeacher: false);
+                }
+            }
+
+            return success;
         }
 
         private static ClassTransferRequestDto MapToDto(ClassTransferRequest request)

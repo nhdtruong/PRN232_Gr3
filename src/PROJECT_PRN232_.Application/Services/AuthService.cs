@@ -65,7 +65,8 @@ namespace PROJECT_PRN232_.Application.Services
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role) // Lưu Role để phân quyền
+                new Claim(ClaimTypes.Role, user.Role), // Lưu Role để phân quyền
+                new Claim("FullName", user.FullName)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));

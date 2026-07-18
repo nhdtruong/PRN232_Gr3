@@ -5,6 +5,36 @@
     ViewData["Title"] = "Lớp học của tôi";
 }
 
+<style>
+    :root {
+        --eb-indigo-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
+        --eb-text-dark: #1E293B;
+        --eb-text-muted: #64748B;
+    }
+
+    .class-card {
+        background-color: #ffffff;
+        border-radius: 20px;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        overflow: hidden;
+    }
+    .class-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06) !important;
+    }
+    
+    .btn-indigo-gradient {
+        background: var(--eb-indigo-gradient);
+        border: none;
+        color: #ffffff;
+        transition: opacity 0.2s ease;
+    }
+    .btn-indigo-gradient:hover {
+        opacity: 0.95;
+        color: #ffffff;
+    }
+</style>
+
 <div class="container-fluid py-4" style="max-width: 1200px;">
     <div class="mb-4 d-flex justify-content-between align-items-center">
         <div>
@@ -16,47 +46,14 @@
     <!-- Top Alert Messages Container -->
     <div id="alertContainer"></div>
 
-    <div class="row g-4">
-        @if (Model.MyClasses.Count == 0)
-        {
-            <div class="col-12 text-center py-5 text-muted">
-                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                <p>Bạn chưa được phân công giảng dạy lớp nào.</p>
+    <div class="row g-4" id="classesContainer">
+        <!-- Classes will be loaded here dynamically -->
+        <div class="col-12 text-center py-5 text-muted">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
             </div>
-        }
-        else
-        {
-            @foreach (var c in Model.MyClasses)
-            {
-                <div class="col-md-6 col-lg-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 position-relative overflow-hidden">
-                        <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                            <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1">@c.Subject</span>
-                            <span class="text-muted small"><i class="bi bi-people me-1"></i> Tối đa @c.MaxCapacity hs</span>
-                        </div>
-                        <div class="card-body px-4">
-                            <h5 class="fw-bold mb-1">@c.ClassName</h5>
-                            <p class="text-muted small mb-3">Mã lớp: CLS-@c.Id</p>
-                            
-                            <div class="d-flex align-items-center gap-3 mb-3">
-                                <div class="d-flex align-items-center text-secondary small">
-                                    <i class="bi bi-journal-bookmark me-1"></i> @c.TotalLessons buổi
-                                </div>
-                                <div class="d-flex align-items-center text-success small fw-semibold">
-                                    <i class="bi bi-check-circle me-1"></i> Đang hoạt động
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-light border-top-0 p-3 text-center">
-                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold w-100" 
-                                onclick="openTransferModal(@c.Id, '@c.ClassName')" data-bs-toggle="modal" data-bs-target="#transferModal">
-                                <i class="bi bi-arrow-left-right me-1"></i> Xin đổi lớp
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            }
-        }
+            <p class="mt-2">Đang tải danh sách lớp học...</p>
+        </div>
     </div>
 </div>
 
@@ -83,10 +80,6 @@
                         <label class="form-label fw-semibold text-muted small">Đổi cho giáo viên (*)</label>
                         <select class="form-select" id="transferToTeacherId" required>
                             <option value="" selected disabled>-- Chọn giáo viên --</option>
-                            @foreach (var t in Model.OtherTeachers)
-                            {
-                                <option value="@t.Id">@t.FullName (@t.Username)</option>
-                            }
                         </select>
                     </div>
 
@@ -105,8 +98,95 @@
 </div>
 
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        const teacherId = @User.FindFirstValue(ClaimTypes.NameIdentifier);
+        const teacherId = "@User.FindFirstValue(ClaimTypes.NameIdentifier)";
+
+        function loadMyClasses() {
+            fetch('/api/class/my-classes')
+                .then(res => {
+                    if (!res.ok) throw new Error("Không thể tải danh sách lớp học.");
+                    return res.json();
+                })
+                .then(classes => {
+                    const container = document.getElementById('classesContainer');
+                    if (classes.length === 0) {
+                        container.innerHTML = `
+                            <div class="col-12 text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                <p>Bạn chưa được phân công giảng dạy lớp nào.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    let html = '';
+                    classes.forEach(c => {
+                        html += `
+                            <div class="col-md-6 col-lg-4">
+                                <div class="card border-0 shadow-sm class-card h-100 position-relative">
+                                    <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1">${c.subject}</span>
+                                        <span class="text-muted small"><i class="bi bi-people me-1"></i> Tối đa ${c.maxCapacity} hs</span>
+                                    </div>
+                                    <div class="card-body px-4">
+                                        <h5 class="fw-bold mb-1" style="color: var(--eb-text-dark);">${c.className}</h5>
+                                        <p class="text-muted small mb-3">Mã lớp: CLS-${c.id}</p>
+                                        
+                                        <div class="d-flex align-items-center gap-3 mb-3">
+                                            <div class="d-flex align-items-center text-secondary small">
+                                                <i class="bi bi-journal-bookmark me-1"></i> ${c.totalLessons} buổi
+                                            </div>
+                                            <div class="d-flex align-items-center text-success small fw-semibold">
+                                                <i class="bi bi-check-circle me-1"></i> Đang hoạt động
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-light border-top-0 p-3 text-center d-flex gap-2" style="background-color: #fafbfe !important;">
+                                        <a href="/Teacher/Lessons/Lesson/${c.id}" class="btn btn-indigo-gradient btn-sm rounded-pill px-3 fw-semibold flex-grow-1 text-white">
+                                            <i class="bi bi-calendar2-week me-1"></i> Buổi học
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold flex-grow-1" 
+                                            onclick="openTransferModal(${c.id}, '${c.className}')" data-bs-toggle="modal" data-bs-target="#transferModal">
+                                            <i class="bi bi-arrow-left-right me-1"></i> Đổi lớp
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                })
+                .catch(err => {
+                    document.getElementById('classesContainer').innerHTML = `
+                        <div class="col-12 text-center py-5 text-danger">
+                            <i class="bi bi-exclamation-triangle fs-1 d-block mb-3"></i>
+                            <p>${err.message}</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function loadOtherTeachers() {
+            fetch('/api/class/other-teachers')
+                .then(res => {
+                    if (!res.ok) throw new Error("Không thể tải danh sách giáo viên.");
+                    return res.json();
+                })
+                .then(teachers => {
+                    const select = document.getElementById('transferToTeacherId');
+                    select.innerHTML = '<option value="" selected disabled>-- Chọn giáo viên --</option>';
+                    teachers.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t.id;
+                        opt.textContent = `${t.fullName} (${t.username})`;
+                        select.appendChild(opt);
+                    });
+                })
+                .catch(err => {
+                    console.error("Lỗi tải danh sách giáo viên:", err);
+                });
+        }
 
         function openTransferModal(classId, className) {
             document.getElementById('transferClassId').value = classId;
@@ -164,5 +244,19 @@
                 $(`.alert`).alert('close');
             }, 5000);
         }
+
+        $(document).ready(function() {
+            loadMyClasses();
+            loadOtherTeachers();
+
+            // Lắng nghe thông báo realtime để tự động reload danh sách lớp học mà không cần F5
+            window.addEventListener('eb-notification-received', function(e) {
+                const title = e.detail.title || "";
+                if (title.includes("yêu cầu đổi lớp") || title.includes("Phân công giảng dạy")) {
+                    console.log("Real-time update: Reloading classes list due to transfer request update...");
+                    loadMyClasses();
+                }
+            });
+        });
     </script>
 }

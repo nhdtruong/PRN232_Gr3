@@ -37,9 +37,8 @@ namespace PROJECT_PRN232_.Domain
 		[ForeignKey(nameof(SlotId))]
 		public virtual Slot? Slot { get; set; }
 
-		// Navigation Properties
 		public virtual ICollection<Material> Materials { get; set; } = new List<Material>();
 		public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
-		public virtual ICollection<Assessment> Assessments { get; set; } = new List<Assessment>();
+		public virtual ICollection<DailyAssessment> DailyAssessments { get; set; } = new List<DailyAssessment>();
 	}
 }

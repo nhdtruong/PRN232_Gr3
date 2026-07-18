@@ -1,5 +1,5 @@
 @page
-@model PROJECT_PRN232_.WebApp.Pages.Center.Lessons.GradeSheetModel
+@model PROJECT_PRN232_.WebApp.Pages.Teacher.Lessons.GradeSheetModel
 @using PROJECT_PRN232_.Domain
 @{
     ViewData["Title"] = Model.RollCallData != null
@@ -22,7 +22,7 @@
         </div>
     </div>
     <div class="text-center mt-3">
-        <a href="/Center/Dashboard" class="btn btn-outline-secondary rounded-pill px-4">
+        <a href="/Teacher/Dashboard" class="btn btn-outline-secondary rounded-pill px-4">
             <i class="bi bi-arrow-left me-1"></i> Quay về Dashboard
         </a>
     </div>
@@ -38,7 +38,8 @@
         <div class="col">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1 small">
-                    <li class="breadcrumb-item"><a href="/Center/Dashboard" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="/Teacher/Dashboard" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="/Teacher/Lessons/Lesson/@data.ClassId" class="text-decoration-none">Quản lý buổi học</a></li>
                     <li class="breadcrumb-item active" aria-current="page">Kết quả học tập</li>
                 </ol>
             </nav>
@@ -47,7 +48,7 @@
             </h1>
         </div>
         <div class="col-auto">
-            <a href="/Center/Dashboard" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <a href="/Teacher/Lessons/Lesson/@data.ClassId" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                 <i class="bi bi-arrow-left me-1"></i> Quay lại
             </a>
         </div>

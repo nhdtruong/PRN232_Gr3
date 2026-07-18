@@ -11,11 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── GUARD CLAUSE ─────────────────────────────────────────────────────────
     const globalMeta = document.getElementById('global-chat-metadata');
     if (!globalMeta) return;
-    if (globalMeta.getAttribute('data-current-role') !== 'Parent') return;
+    const role = globalMeta.getAttribute('data-current-role');
+    if (role !== 'Parent' && role !== 'Teacher' && role !== 'Center') return;
     // ─────────────────────────────────────────────────────────────────────────
 
     // Inject the detail modal into DOM (once, on first load)
-    injectNotificationModal();
+    if (role === 'Parent' || role === 'Teacher') {
+        injectNotificationModal();
+    }
 
     // 1. SignalR connection
     const connection = new signalR.HubConnectionBuilder()
@@ -28,11 +31,33 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => console.error("Error connecting to SignalR Hub:", err.toString()));
 
     // 2. Hub event handlers
-    connection.on("UpdateUnreadCount", (count) => updateBadgeCount(count));
+    connection.on("UpdateUnreadCount", (count) => {
+        if (role === 'Parent' || role === 'Teacher') {
+            updateBadgeCount(count);
+        }
+    });
 
     connection.on("ReceiveNotification", (notification, newUnreadCount) => {
-        updateBadgeCount(newUnreadCount);
+        if (role === 'Parent' || role === 'Teacher') {
+            updateBadgeCount(newUnreadCount);
+        }
+        
+        // Show realtime toast
         showToast(notification.title, notification.message);
+
+        // Dispatch custom event for sub-pages to react to notifications in real-time
+        window.dispatchEvent(new CustomEvent('eb-notification-received', { detail: notification }));
+
+        // Realtime update for Center's class transfer pending requests badge
+        if (role === 'Center' && notification.title === "Yêu cầu đổi lớp mới") {
+            const transferBadge = document.getElementById('transfer-pending-badge');
+            if (transferBadge) {
+                let currentCount = parseInt(transferBadge.innerText) || 0;
+                currentCount++;
+                transferBadge.innerText = currentCount;
+                transferBadge.style.setProperty('display', 'inline-block', 'important');
+            }
+        }
 
         const dropdownMenu = document.getElementById('notification-list-container');
         if (dropdownMenu && dropdownMenu.classList.contains('show')) {
