@@ -53,7 +53,6 @@ namespace PROJECT_PRN232_.Controllers
         }
 
         [HttpPost("api/center/classes")]
-        [HttpPost("api/center/classes")]
         public async Task<IActionResult> CreateClass([FromBody] ClassCreateWithScheduleDto req)
         {
             if (req == null || req.CreateDto == null)
@@ -86,23 +85,77 @@ namespace PROJECT_PRN232_.Controllers
             // Lưu lớp học
             var created = await _classService.CreateClassAsync(req.CreateDto);
 
-            // Sinh các buổi học tuần tự bắt đầu từ hôm nay
+            // Sinh các buổi học theo lịch ngày/ca
             if (created != null)
             {
-                for (int i = 0; i < totalLessons; i++)
+                var scheduleList = new List<(DayOfWeek day, int slotId)>();
+
+                // Parse dayOfWeek từ request
+                if (req.DayOfWeek != null && req.SlotId != null)
                 {
-                    var lesson = new Lesson
+                    for (int i = 0; i < req.DayOfWeek.Count && i < req.SlotId.Count; i++)
                     {
-                        ClassId = created.Id,
-                        Title = $"Buổi {i + 1}",
-                        Description = $"Bài học buổi thứ {i + 1} của lớp {created.ClassName}",
-                        LessonDate = DateTime.Today.AddDays(i),
-                        RoomId = req.CreateRoomId > 0 ? req.CreateRoomId : (int?)null,
-                        SlotId = null,
-                        IsPublished = false
-                    };
-                    _context.Lessons.Add(lesson);
+                        if (Enum.TryParse<DayOfWeek>(req.DayOfWeek[i], true, out var dow))
+                        {
+                            scheduleList.Add((dow, req.SlotId[i]));
+                        }
+                    }
                 }
+
+                if (scheduleList.Count > 0)
+                {
+                    // Sinh buổi học theo lịch ngày/ca
+                    var startDate = DateTime.Today;
+                    var currentDate = startDate;
+                    int lessonsCreated = 0;
+                    int maxDays = 365; // giới hạn tìm kiếm trong 1 năm
+                    int dayCount = 0;
+
+                    while (lessonsCreated < totalLessons && dayCount < maxDays)
+                    {
+                        foreach (var schedule in scheduleList)
+                        {
+                            if (lessonsCreated >= totalLessons) break;
+                            if (currentDate.DayOfWeek == schedule.day)
+                            {
+                                var slotObj = await _context.Slots.FindAsync(schedule.slotId);
+                                var lesson = new Lesson
+                                {
+                                    ClassId = created.Id,
+                                    Title = $"Buổi {lessonsCreated + 1}",
+                                    Description = $"Bài học buổi thứ {lessonsCreated + 1} của lớp {created.ClassName}",
+                                    LessonDate = currentDate,
+                                    RoomId = req.CreateRoomId > 0 ? req.CreateRoomId : (int?)null,
+                                    SlotId = schedule.slotId,
+                                    IsPublished = false
+                                };
+                                _context.Lessons.Add(lesson);
+                                lessonsCreated++;
+                            }
+                        }
+                        currentDate = currentDate.AddDays(1);
+                        dayCount++;
+                    }
+                }
+                else
+                {
+                    // Không có lịch → sinh tuần tự mỗi ngày
+                    for (int i = 0; i < totalLessons; i++)
+                    {
+                        var lesson = new Lesson
+                        {
+                            ClassId = created.Id,
+                            Title = $"Buổi {i + 1}",
+                            Description = $"Bài học buổi thứ {i + 1} của lớp {created.ClassName}",
+                            LessonDate = DateTime.Today.AddDays(i),
+                            RoomId = req.CreateRoomId > 0 ? req.CreateRoomId : (int?)null,
+                            SlotId = null,
+                            IsPublished = false
+                        };
+                        _context.Lessons.Add(lesson);
+                    }
+                }
+
                 await _context.SaveChangesAsync();
 
                 // Gửi thông báo phân công giảng dạy cho Giáo viên
@@ -116,7 +169,7 @@ namespace PROJECT_PRN232_.Controllers
                 }
             }
 
-            return CreatedAtAction(nameof(GetClassById), new { classId = created.Id }, created);
+            return CreatedAtAction(nameof(GetClassById), new { classId = created!.Id }, created);
         }
 
         [HttpPut("api/center/classes/{classId}")]
@@ -173,8 +226,12 @@ namespace PROJECT_PRN232_.Controllers
                 catch (Exception) { /* Ignored */ }
             }
 
-            // Nếu thay đổi Môn học => Sinh lại số buổi học tương ứng
-            if (classEntity.Subject != req.UpdateDto.Subject)
+            // Xác định có cần sinh lại buổi học không
+            bool subjectChanged = classEntity.Subject != req.UpdateDto.Subject;
+            bool hasNewSchedule = req.DayOfWeek != null && req.DayOfWeek.Any(d => !string.IsNullOrEmpty(d))
+                                  && req.SlotId != null && req.SlotId.Any();
+
+            if (subjectChanged || hasNewSchedule)
             {
                 // Xóa các buổi học cũ (phải xóa các bảng con trước để tránh lỗi FK)
                 var existingLessons = _context.Lessons.Where(l => l.ClassId == classId).ToList();
@@ -182,39 +239,85 @@ namespace PROJECT_PRN232_.Controllers
 
                 if (lessonIds.Any())
                 {
-                    // 1. Xóa Materials (tài liệu) thuộc các buổi học này
                     var relatedMaterials = _context.Materials.Where(m => m.LessonId.HasValue && lessonIds.Contains(m.LessonId.Value));
                     _context.Materials.RemoveRange(relatedMaterials);
 
-                    // 2. Xóa Attendances (điểm danh) thuộc các buổi học này
                     var relatedAttendances = _context.Attendances.Where(a => lessonIds.Contains(a.LessonId));
                     _context.Attendances.RemoveRange(relatedAttendances);
 
-                    // 3. Xóa DailyAssessments (đánh giá thường xuyên) thuộc các buổi học này nếu có
                     var relatedAssessments = _context.DailyAssessments.Where(a => lessonIds.Contains(a.LessonId));
                     _context.DailyAssessments.RemoveRange(relatedAssessments);
 
-                    // 4. Cuối cùng mới xóa Lessons
                     _context.Lessons.RemoveRange(existingLessons);
                 }
-
                 await _context.SaveChangesAsync();
 
-                // Sinh các buổi học mới tuần tự bắt đầu từ hôm nay
-                for (int i = 0; i < totalLessons; i++)
+                // Parse lịch học mới
+                var scheduleList = new List<(DayOfWeek day, int slotId)>();
+                if (hasNewSchedule)
                 {
-                    var lesson = new Lesson
+                    for (int i = 0; i < req.DayOfWeek!.Count && i < req.SlotId!.Count; i++)
                     {
-                        ClassId = classId,
-                        Title = $"Buổi {i + 1}",
-                        Description = $"Bài học buổi thứ {i + 1} của lớp {req.UpdateDto.ClassName}",
-                        LessonDate = DateTime.Today.AddDays(i),
-                        RoomId = req.UpdateRoomId > 0 ? req.UpdateRoomId : (int?)null,
-                        SlotId = null,
-                        IsPublished = false
-                    };
-                    _context.Lessons.Add(lesson);
+                        if (Enum.TryParse<DayOfWeek>(req.DayOfWeek[i], true, out var dow))
+                        {
+                            scheduleList.Add((dow, req.SlotId[i]));
+                        }
+                    }
                 }
+
+                if (scheduleList.Count > 0)
+                {
+                    // Sinh buổi học theo lịch ngày/ca
+                    var startDate = DateTime.Today;
+                    var currentDate = startDate;
+                    int lessonsCreated = 0;
+                    int maxDays = 365;
+                    int dayCount = 0;
+
+                    while (lessonsCreated < totalLessons && dayCount < maxDays)
+                    {
+                        foreach (var schedule in scheduleList)
+                        {
+                            if (lessonsCreated >= totalLessons) break;
+                            if (currentDate.DayOfWeek == schedule.day)
+                            {
+                                var lesson = new Lesson
+                                {
+                                    ClassId = classId,
+                                    Title = $"Buổi {lessonsCreated + 1}",
+                                    Description = $"Bài học buổi thứ {lessonsCreated + 1} của lớp {req.UpdateDto.ClassName}",
+                                    LessonDate = currentDate,
+                                    RoomId = req.UpdateRoomId > 0 ? req.UpdateRoomId : (int?)null,
+                                    SlotId = schedule.slotId,
+                                    IsPublished = false
+                                };
+                                _context.Lessons.Add(lesson);
+                                lessonsCreated++;
+                            }
+                        }
+                        currentDate = currentDate.AddDays(1);
+                        dayCount++;
+                    }
+                }
+                else
+                {
+                    // Không có lịch → sinh tuần tự
+                    for (int i = 0; i < totalLessons; i++)
+                    {
+                        var lesson = new Lesson
+                        {
+                            ClassId = classId,
+                            Title = $"Buổi {i + 1}",
+                            Description = $"Bài học buổi thứ {i + 1} của lớp {req.UpdateDto.ClassName}",
+                            LessonDate = DateTime.Today.AddDays(i),
+                            RoomId = req.UpdateRoomId > 0 ? req.UpdateRoomId : (int?)null,
+                            SlotId = null,
+                            IsPublished = false
+                        };
+                        _context.Lessons.Add(lesson);
+                    }
+                }
+
                 await _context.SaveChangesAsync();
             }
 
