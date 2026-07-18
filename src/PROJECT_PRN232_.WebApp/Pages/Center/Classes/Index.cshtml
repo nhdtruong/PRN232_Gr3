@@ -1,7 +1,9 @@
 @page
+@using System.Security.Claims
 @model PROJECT_PRN232_.WebApp.Pages.Center.Classes.IndexModel
 @{
     ViewData["Title"] = "Quản lý Lớp học - EduBridge";
+    var centerId = 1; // CenterId mặc định (project chưa có bảng Center riêng)
 }
 
 <!-- Custom Styles for Premium Indigo Design -->
@@ -412,10 +414,10 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Mã lớp</label>
-                                <input class="form-control bg-light" type="text" value="CLS-1-@DateTime.Now.ToString("yyyyMM")-xxxx" readonly disabled style="cursor: not-allowed;" />
+                                <input class="form-control bg-light" type="text" value="CLS@(DateTime.Now.ToString("yyyyMM"))-xxxx" readonly disabled style="cursor: not-allowed;" />
                                 <span class="text-muted small d-block mt-1">Hệ thống cấp mã chính thức khi lưu lớp.</span>
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Tên lớp (*)</label>
                                 <input id="createClassName" class="form-control" placeholder="Nhập tên lớp..." required />
@@ -461,10 +463,45 @@
                         </div>
                     </div>
 
+                    <!-- Section: Lịch học -->
+                    <div class="bg-white rounded-3 p-4 border mb-4">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Lịch học <span class="text-muted fw-normal small">(tuỳ chọn)</span></h6>
+                        <p class="text-muted small mb-3">Chọn các ngày trong tuần và ca học tương ứng để hệ thống tự động sinh lịch buổi học.</p>
+                        <div id="createScheduleRows">
+                            <div class="schedule-row d-flex gap-2 align-items-center mb-2">
+                                <select class="form-select schedule-day" style="max-width: 200px;">
+                                    <option value="">-- Chọn ngày --</option>
+                                    <option value="Monday">Thứ Hai</option>
+                                    <option value="Tuesday">Thứ Ba</option>
+                                    <option value="Wednesday">Thứ Tư</option>
+                                    <option value="Thursday">Thứ Năm</option>
+                                    <option value="Friday">Thứ Sáu</option>
+                                    <option value="Saturday">Thứ Bảy</option>
+                                    <option value="Sunday">Chủ Nhật</option>
+                                </select>
+                                <select class="form-select schedule-slot">
+                                    @foreach (var s in Model.Slots)
+                                    {
+                                        <option value="@s.Id">@s.SlotName (@s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm"))</option>
+                                    }
+                                </select>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeScheduleRow(this)" title="Xóa">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-1" onclick="addCreateScheduleRow()">
+                            <i class="bi bi-plus-circle me-1"></i> Thêm buổi học trong tuần
+                        </button>
+                    </div>
+
                 </div>
                 <div class="modal-footer border-top px-4 py-3" style="background-color: #F8FAFC;">
                     <button type="button" class="btn btn-light rounded-3 border px-4 py-2 fw-semibold" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary rounded-3 px-4 py-2 fw-semibold" style="background: var(--eb-indigo-gradient); border: none;">Lưu lớp học</button>
+                    <button type="submit" id="createSubmitBtn" class="btn btn-primary rounded-3 px-4 py-2 fw-semibold" style="background: var(--eb-indigo-gradient); border: none;">
+                        <span id="createSubmitText"><i class="bi bi-floppy me-1"></i>Lưu lớp học</span>
+                        <span id="createSubmitSpinner" class="d-none"><span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -487,13 +524,13 @@
                     <!-- Section: Thông tin lớp học -->
                     <div class="bg-white rounded-3 p-4 border mb-4">
                         <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Thông tin lớp học</h6>
-                        
+
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Mã lớp</label>
                                 <input class="form-control bg-light" type="text" id="editClassCode" readonly disabled style="cursor: not-allowed;" />
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small mb-1">Tên lớp (*)</label>
                                 <input class="form-control" id="editClassName" required />
@@ -538,10 +575,45 @@
                         </div>
                     </div>
 
+                    <!-- Section: Lịch học -->
+                    <div class="bg-white rounded-3 p-4 border mb-4">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Lịch học mới <span class="text-muted fw-normal small">(để trống nếu không đổi)</span></h6>
+                        <p class="text-muted small mb-3">Nếu chọn lịch, hệ thống sẽ xóa toàn bộ buổi học cũ và tạo lại theo lịch mới.</p>
+                        <div id="editScheduleRows">
+                            <div class="schedule-row d-flex gap-2 align-items-center mb-2">
+                                <select class="form-select schedule-day" style="max-width: 200px;">
+                                    <option value="">-- Chọn ngày --</option>
+                                    <option value="Monday">Thứ Hai</option>
+                                    <option value="Tuesday">Thứ Ba</option>
+                                    <option value="Wednesday">Thứ Tư</option>
+                                    <option value="Thursday">Thứ Năm</option>
+                                    <option value="Friday">Thứ Sáu</option>
+                                    <option value="Saturday">Thứ Bảy</option>
+                                    <option value="Sunday">Chủ Nhật</option>
+                                </select>
+                                <select class="form-select schedule-slot">
+                                    @foreach (var s in Model.Slots)
+                                    {
+                                        <option value="@s.Id">@s.SlotName (@s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm"))</option>
+                                    }
+                                </select>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeScheduleRow(this)" title="Xóa">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-1" onclick="addEditScheduleRow()">
+                            <i class="bi bi-plus-circle me-1"></i> Thêm buổi học trong tuần
+                        </button>
+                    </div>
+
                 </div>
                 <div class="modal-footer border-top px-4 py-3" style="background-color: #F8FAFC;">
                     <button type="button" class="btn btn-light rounded-3 border px-4 py-2 fw-semibold" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary rounded-3 px-4 py-2 fw-semibold" style="background: var(--eb-indigo-gradient); border: none;">Lưu thay đổi</button>
+                    <button type="submit" id="editSubmitBtn" class="btn btn-primary rounded-3 px-4 py-2 fw-semibold" style="background: var(--eb-indigo-gradient); border: none;">
+                        <span id="editSubmitText"><i class="bi bi-floppy me-1"></i>Lưu thay đổi</span>
+                        <span id="editSubmitSpinner" class="d-none"><span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -551,20 +623,15 @@
 @section Scripts {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // Danh sách môn học và phòng học để tra cứu trên client
+        // centerId lấy từ claim server-side (không hardcode)
+        const currentCenterId = @centerId;
+
+        // Danh sách môn học để tra cứu trên client
         const subjectsData = [
             @foreach(var s in Model.Subjects) {
                 <text>{ code: "@s.SubjectCode", name: "@s.SubjectName" },</text>
             }
         ];
-
-        const globalSlotsOptions = `
-            <option value="">Tự chọn giờ</option>
-            @foreach (var s in Model.Slots)
-            {
-                <option value="@s.Id" data-start="@s.StartTime.ToString(@"hh\:mm")" data-end="@s.EndTime.ToString(@"hh\:mm")">@s.SlotName (@s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm"))</option>
-            }
-        `;
 
         let allClasses = [];
 
@@ -597,8 +664,10 @@
             }
 
             let html = '';
+            // Format mã lớp nhất quán: CLS + yyyyMM + id 4 chữ số
+            const yyyyMM = new Date().getFullYear().toString() + String(new Date().getMonth() + 1).padStart(2, '0');
             classes.forEach((c, idx) => {
-                const classCode = `CLS${c.id.toString().padStart(4, '0')}`;
+                const classCode = `CLS${yyyyMM}-${c.id.toString().padStart(4, '0')}`;
                 const subjectObj = subjectsData.find(s => s.code === c.subject);
                 const subjectDisplay = subjectObj ? subjectObj.name : (c.subject || '—');
                 
@@ -642,10 +711,64 @@
             tbody.innerHTML = html;
         }
 
+        // Helper: lấy lịch học từ schedule rows
+        function getScheduleData(containerId) {
+            const rows = document.querySelectorAll(`#${containerId} .schedule-row`);
+            const dayOfWeek = [];
+            const slotId = [];
+            rows.forEach(row => {
+                const day = row.querySelector('.schedule-day').value;
+                const slot = row.querySelector('.schedule-slot').value;
+                if (day && slot) {
+                    dayOfWeek.push(day);
+                    slotId.push(parseInt(slot));
+                }
+            });
+            return { dayOfWeek, slotId };
+        }
+
+        // Helper: thêm schedule row vào Create form
+        function addCreateScheduleRow() {
+            const container = document.getElementById('createScheduleRows');
+            const firstRow = container.querySelector('.schedule-row');
+            const newRow = firstRow.cloneNode(true);
+            newRow.querySelector('.schedule-day').value = '';
+            container.appendChild(newRow);
+        }
+
+        // Helper: thêm schedule row vào Edit form
+        function addEditScheduleRow() {
+            const container = document.getElementById('editScheduleRows');
+            const firstRow = container.querySelector('.schedule-row');
+            const newRow = firstRow.cloneNode(true);
+            newRow.querySelector('.schedule-day').value = '';
+            container.appendChild(newRow);
+        }
+
+        // Helper: xóa schedule row
+        function removeScheduleRow(btn) {
+            const row = btn.closest('.schedule-row');
+            const container = row.parentElement;
+            if (container.querySelectorAll('.schedule-row').length > 1) {
+                row.remove();
+            } else {
+                // Nếu chỉ còn 1 row thì reset về trống
+                row.querySelector('.schedule-day').value = '';
+            }
+        }
+
         // Tạo lớp học mới bằng Rest API
         document.getElementById('createClassForm').addEventListener('submit', function(e) {
             e.preventDefault();
             $('.create-error-container').html('');
+
+            // Loading state
+            const submitBtn = document.getElementById('createSubmitBtn');
+            document.getElementById('createSubmitText').classList.add('d-none');
+            document.getElementById('createSubmitSpinner').classList.remove('d-none');
+            submitBtn.disabled = true;
+
+            const schedule = getScheduleData('createScheduleRows');
 
             const bodyData = {
                 createDto: {
@@ -653,19 +776,17 @@
                     subject: document.getElementById('createClassSubject').value,
                     totalLessons: 0,
                     maxCapacity: parseInt(document.getElementById('createMaxCapacity').value),
-                    centerId: 1,
+                    centerId: currentCenterId,
                     teacherId: document.getElementById('createClassTeacher').value ? parseInt(document.getElementById('createClassTeacher').value) : null
                 },
                 createRoomId: parseInt(document.getElementById('createRoomId').value),
-                dayOfWeek: [],
-                slotId: []
+                dayOfWeek: schedule.dayOfWeek,
+                slotId: schedule.slotId
             };
 
             fetch('/api/center/classes', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyData)
             })
             .then(async res => {
@@ -675,7 +796,7 @@
                 }
                 return res.json();
             })
-            .then(data => {
+            .then(() => {
                 bootstrap.Modal.getInstance(document.getElementById('createClassModal')).hide();
                 showAlert("Tạo lớp học thành công!", "success");
                 loadClasses();
@@ -689,6 +810,11 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 `);
+            })
+            .finally(() => {
+                document.getElementById('createSubmitText').classList.remove('d-none');
+                document.getElementById('createSubmitSpinner').classList.add('d-none');
+                submitBtn.disabled = false;
             });
         });
 
@@ -710,6 +836,17 @@
             });
         }
 
+        // Map DayOfWeek int (từ C# enum) sang tên tiếng Anh
+        const dayOfWeekMap = {
+            0: 'Sunday',
+            1: 'Monday',
+            2: 'Tuesday',
+            3: 'Wednesday',
+            4: 'Thursday',
+            5: 'Friday',
+            6: 'Saturday'
+        };
+
         // Mở popup Sửa lớp học & gọi API
         function openEditModal(id) {
             $('.edit-error-container').html('');
@@ -718,8 +855,14 @@
             // Reset form trước khi load dữ liệu
             document.getElementById('editClassName').value = '';
             document.getElementById('editMaxCapacity').value = 30;
-            document.getElementById('editClassSubject').value = '';  // chọn placeholder
+            document.getElementById('editClassSubject').value = '';
             document.getElementById('editClassCode').value = '';
+
+            // Reset schedule rows về 1 row trống
+            const scheduleContainer = document.getElementById('editScheduleRows');
+            const existingRows = scheduleContainer.querySelectorAll('.schedule-row');
+            existingRows.forEach((r, i) => { if (i > 0) r.remove(); });
+            if (existingRows[0]) existingRows[0].querySelector('.schedule-day').value = '';
 
             fetch(`/api/center/classes/${id}/schedules`)
                 .then(res => res.json())
@@ -727,12 +870,10 @@
                     document.getElementById('editClassName').value = data.className || '';
                     document.getElementById('editMaxCapacity').value = data.maxCapacity || 30;
 
-                    // Set môn học - phải set SAU khi DOM đã sẵn sàng
+                    // Set môn học
                     const subjectSelect = document.getElementById('editClassSubject');
                     const subjectValue = data.subject || '';
-                    // Thử set trực tiếp
                     subjectSelect.value = subjectValue;
-                    // Nếu không khớp (trình duyệt không set được), dùng vòng lặp tìm option
                     if (subjectSelect.value !== subjectValue) {
                         Array.from(subjectSelect.options).forEach(opt => {
                             if (opt.value === subjectValue) opt.selected = true;
@@ -741,8 +882,10 @@
 
                     document.getElementById('editClassTeacher').value = data.teacherId || '';
 
-                    const formattedId = ("0000" + id).slice(-4);
-                    document.getElementById('editClassCode').value = `CLS-${data.centerId || 1}-${new Date().getFullYear()}${("0" + (new Date().getMonth() + 1)).slice(-2)}-${formattedId}`;
+                    // Format mã lớp nhất quán với bảng danh sách
+                    const ym = new Date().getFullYear().toString() + String(new Date().getMonth() + 1).padStart(2, '0');
+                    const formattedId = id.toString().padStart(4, '0');
+                    document.getElementById('editClassCode').value = `CLS${ym}-${formattedId}`;
 
                     const roomEl = document.getElementById('editClassRoom');
                     if (roomEl) {
@@ -751,6 +894,32 @@
                         } else {
                             roomEl.selectedIndex = 0;
                         }
+                    }
+
+                    // Populate lịch học hiện tại vào schedule rows
+                    if (data.lessons && data.lessons.length > 0) {
+                        const firstRow = scheduleContainer.querySelector('.schedule-row');
+
+                        data.lessons.forEach((lesson, idx) => {
+                            let row;
+                            if (idx === 0) {
+                                // Dùng row đầu tiên có sẵn
+                                row = firstRow;
+                            } else {
+                                // Clone thêm row mới
+                                row = firstRow.cloneNode(true);
+                                scheduleContainer.appendChild(row);
+                            }
+
+                            // Set ngày trong tuần
+                            const dayName = dayOfWeekMap[lesson.dayOfWeek] || '';
+                            row.querySelector('.schedule-day').value = dayName;
+
+                            // Set ca học
+                            if (lesson.slotId) {
+                                row.querySelector('.schedule-slot').value = lesson.slotId;
+                            }
+                        });
                     }
                 })
                 .catch(err => {
@@ -763,7 +932,14 @@
             e.preventDefault();
             $('.edit-error-container').html('');
 
+            // Loading state
+            const editBtn = document.getElementById('editSubmitBtn');
+            document.getElementById('editSubmitText').classList.add('d-none');
+            document.getElementById('editSubmitSpinner').classList.remove('d-none');
+            editBtn.disabled = true;
+
             const classId = parseInt(document.getElementById('editClassId').value);
+            const schedule = getScheduleData('editScheduleRows');
 
             const bodyData = {
                 updateDto: {
@@ -772,19 +948,17 @@
                     subject: document.getElementById('editClassSubject').value,
                     totalLessons: 0,
                     maxCapacity: parseInt(document.getElementById('editMaxCapacity').value),
-                    centerId: 1,
+                    centerId: currentCenterId,
                     teacherId: document.getElementById('editClassTeacher').value ? parseInt(document.getElementById('editClassTeacher').value) : null
                 },
                 updateRoomId: parseInt(document.getElementById('editClassRoom').value),
-                dayOfWeek: [],
-                slotId: []
+                dayOfWeek: schedule.dayOfWeek,
+                slotId: schedule.slotId
             };
 
             fetch(`/api/center/classes/${classId}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyData)
             })
             .then(async res => {
@@ -806,6 +980,11 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 `);
+            })
+            .finally(() => {
+                document.getElementById('editSubmitText').classList.remove('d-none');
+                document.getElementById('editSubmitSpinner').classList.add('d-none');
+                editBtn.disabled = false;
             });
         });
 
@@ -842,25 +1021,20 @@
             renderClassesTable(allClasses);
         }
 
-        function updateCreateTotalLessons() {
-            const subjectSelect = document.getElementById('createClassSubject');
-            const totalLessonsInput = document.getElementById('createTotalLessons');
-            if (subjectSelect && totalLessonsInput) {
-                const selectedOption = subjectSelect.options[subjectSelect.selectedIndex];
-                const sessions = selectedOption.getAttribute('data-sessions');
-                if (sessions) totalLessonsInput.value = sessions;
-            }
-        }
+        // Reset schedule rows khi modal bị đóng
+        document.getElementById('createClassModal').addEventListener('hidden.bs.modal', function() {
+            const container = document.getElementById('createScheduleRows');
+            const rows = container.querySelectorAll('.schedule-row');
+            rows.forEach((r, i) => { if (i > 0) r.remove(); });
+            if (rows[0]) rows[0].querySelector('.schedule-day').value = '';
+        });
 
-        function updateEditTotalLessons() {
-            const subjectSelect = document.getElementById('editClassSubject');
-            const totalLessonsInput = document.getElementById('editTotalLessons');
-            if (subjectSelect && totalLessonsInput) {
-                const selectedOption = subjectSelect.options[subjectSelect.selectedIndex];
-                const sessions = selectedOption.getAttribute('data-sessions');
-                if (sessions) totalLessonsInput.value = sessions;
-            }
-        }
+        document.getElementById('editClassModal').addEventListener('hidden.bs.modal', function() {
+            const container = document.getElementById('editScheduleRows');
+            const rows = container.querySelectorAll('.schedule-row');
+            rows.forEach((r, i) => { if (i > 0) r.remove(); });
+            if (rows[0]) rows[0].querySelector('.schedule-day').value = '';
+        });
 
         $(document).ready(function () {
             loadClasses();
