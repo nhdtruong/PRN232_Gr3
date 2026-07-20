@@ -31,5 +31,8 @@ RUN dotnet publish "PROJECT_PRN232_.WebApp.csproj" -c Release -o /app/publish /p
 # Image cuối cùng (siêu nhẹ) chỉ chứa runtime và file đã compile
 FROM base AS final
 WORKDIR /app
+# Fix lỗi inotify limit trên Render Free tier
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "PROJECT_PRN232_.WebApp.dll"]
