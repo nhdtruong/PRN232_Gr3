@@ -26,7 +26,7 @@ RUN dotnet build "PROJECT_PRN232_.WebApp.csproj" -c Release -o /app/build
 
 # Publish project
 FROM build AS publish
-RUN dotnet publish "PROJECT_PRN232_.WebApp.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "PROJECT_PRN232_.WebApp.csproj" -c Release -o /app/publish /p:UseAppHost=false /p:ErrorOnDuplicatePublishOutputFiles=false
 
 # Image cuối cùng (siêu nhẹ) chỉ chứa runtime và file đã compile
 FROM base AS final
