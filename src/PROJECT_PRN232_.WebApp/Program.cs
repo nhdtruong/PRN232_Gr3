@@ -119,9 +119,19 @@ var app = builder.Build();
 // Kích hoạt Database Seeder
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.Migrate(); // Tự động tạo Database và chạy Migrations nếu chưa có
-    DbSeeder.Seed(context);
+    try 
+    {
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        context.Database.Migrate(); // Tự động tạo Database và chạy Migrations nếu chưa có
+        DbSeeder.Seed(context);
+        Console.WriteLine("✅ Database Migration & Seeding successful.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("❌ LỖI KẾT NỐI DATABASE: " + ex.Message);
+        Console.WriteLine("👉 CẢNH BÁO: App đang chạy trên Render nhưng chưa có cấu hình Database.");
+        Console.WriteLine("👉 Vui lòng thêm biến môi trường ConnectionStrings__DefaultConnection trên Render.");
+    }
 }
 
 // Configure the HTTP request pipeline.

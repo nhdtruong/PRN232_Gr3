@@ -21,25 +21,6 @@ namespace PROJECT_PRN232_.Application.Services
             _studentRepository = studentRepository;
             _configuration = configuration;
         }
-
-        // 1. Logic Đăng ký tài khoản (Có băm mật khẩu)
-        public async Task<bool> RegisterAsync(RegisterDto dto)
-        {
-            var existing = await _studentRepository.GetUserByUsernameAsync(dto.Username);
-            if (existing != null)
-                return false; // Tài khoản đã tồn tại
-
-            var user = new User
-            {
-                Username = dto.Username,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password), // Băm mật khẩu ở đây
-                Role = dto.Role
-            };
-
-            await _studentRepository.AddUserAsync(user);
-            return true;
-        }
-
         // 1.5. Logic Kiểm tra thông tin đăng nhập (Dùng chung cho cả API và Razor Pages)
         public async Task<User?> AuthenticateAsync(string username, string password)
         {
