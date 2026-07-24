@@ -214,7 +214,7 @@
                         <i class="bi bi-table me-2"></i>Bảng điểm tổng hợp lớp học
                     </h5>
                     <div class="d-flex gap-2 mt-2">
-                        <span class="stat-chip"><i class="bi bi-clipboard2-check"></i> Thường xuyên (30%)</span>
+                        <span class="stat-chip"><i class="bi bi-patch-question-fill"></i> Quiz (30%)</span>
                         <span class="stat-chip"><i class="bi bi-file-earmark-text"></i> Giữa kỳ (30%)</span>
                         <span class="stat-chip"><i class="bi bi-award"></i> Cuối kỳ (40%)</span>
                     </div>
@@ -235,13 +235,14 @@
                         <tr>
                             <th style="width:42px; text-align:center;">#</th>
                             <th style="min-width:180px;">Họ và tên</th>
-                            <th class="col-tx text-center" style="width:110px;">TB TX (30%)</th>
+                            <th class="col-tx text-center" style="width:110px;">Quiz (30%)</th>
+                            <th class="col-tx text-center" style="min-width:180px;">Nhận xét Quiz</th>
                             
                             <th class="col-gk section-divider text-center" style="width:110px;">Giữa kỳ (30%)</th>
-                            <th class="col-gk text-center" style="min-width:200px;">Nhận xét Giữa kỳ</th>
+                            <th class="col-gk text-center" style="min-width:180px;">Nhận xét Giữa kỳ</th>
                             
                             <th class="col-ck section-divider text-center" style="width:110px;">Cuối kỳ (40%)</th>
-                            <th class="col-ck text-center" style="min-width:200px;">Nhận xét Cuối kỳ</th>
+                            <th class="col-ck text-center" style="min-width:180px;">Nhận xét Cuối kỳ</th>
                             
                             <th class="col-total section-divider text-center" style="width:110px;">Tổng kết</th>
                         </tr>
@@ -259,14 +260,21 @@
                                     </div>
                                 </td>
 
-                                <!-- TB TX (Read-only) -->
+                                <!-- Quiz -->
                                 <td class="text-center">
-                                    @{
-                                        string tbClass = s.AverageDailyScore == null ? "empty" : (s.AverageDailyScore >= 8 ? "excellent" : s.AverageDailyScore >= 6.5m ? "good" : s.AverageDailyScore >= 5 ? "average" : "poor");
-                                    }
-                                    <span class="badge-score @tbClass avg-tx-display">
-                                        @(s.AverageDailyScore.HasValue ? s.AverageDailyScore.Value.ToString("0.##") : "—")
-                                    </span>
+                                    <div class="score-input-cell">
+                                        <input type="number"
+                                               class="score-input quiz-score"
+                                               min="0" max="10" step="0.1"
+                                               placeholder="—"
+                                               value="@(s.QuizScore.HasValue ? s.QuizScore.Value.ToString("0.##") : "")" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="text"
+                                           class="comment-input quiz-comment"
+                                           placeholder="Nhận xét Quiz..."
+                                           value="@(s.QuizComment ?? "")" />
                                 </td>
 
                                 <!-- Giữa kỳ -->
@@ -282,7 +290,7 @@
                                 <td>
                                     <input type="text"
                                            class="comment-input gk-comment"
-                                           placeholder="Nhận xét giữa kỳ học sinh..."
+                                           placeholder="Nhận xét giữa kỳ..."
                                            value="@(s.MidTermComment ?? "")" />
                                 </td>
 
@@ -299,7 +307,7 @@
                                 <td>
                                     <input type="text"
                                            class="comment-input ck-comment"
-                                           placeholder="Nhận xét cuối kỳ học sinh..."
+                                           placeholder="Nhận xét cuối kỳ..."
                                            value="@(s.FinalComment ?? "")" />
                                 </td>
 
@@ -329,7 +337,7 @@
             <div class="d-flex align-items-center justify-content-between p-4 border-top">
                 <div class="text-muted small">
                     <i class="bi bi-info-circle me-1 text-primary"></i>
-                    Lưu bảng điểm định kỳ sẽ cập nhật điểm số và bắn thông báo trực tiếp đến Phụ huynh của từng học sinh.
+                    Lưu bảng điểm định kỳ sẽ cập nhật điểm số (Quiz, Giữa kỳ, Cuối kỳ) và bắn thông báo trực tiếp đến Phụ huynh.
                 </div>
                 <button id="btn-save-transcript-footer" class="btn-save-grade" onclick="document.getElementById('btn-save-transcript').click()">
                     <i class="bi bi-cloud-check-fill"></i> Lưu bảng điểm
@@ -350,21 +358,30 @@
 
         const rows = document.querySelectorAll('#grade-tbody .grade-row');
 
+        // Helper parse điểm số an toàn (xử lý cả dấu phẩy , và dấu chấm .)
+        function parseScore(inp) {
+            if (!inp || inp.value === undefined || inp.value === null) return null;
+            const v = inp.value.toString().trim().replace(',', '.');
+            if (v === '') return null;
+            const num = parseFloat(v);
+            return isNaN(num) ? null : num;
+        }
+
         // Live tính toán điểm tổng kết
         function recalcRow(row) {
-            const avgTXText = row.querySelector('.avg-tx-display')?.textContent?.trim() ?? '—';
-            const tbTX = avgTXText === '—' ? null : parseFloat(avgTXText);
-
+            if (!row) return;
+            const quizInp = row.querySelector('.quiz-score');
             const gkInp = row.querySelector('.gk-score');
             const ckInp = row.querySelector('.ck-score');
 
-            const gk = gkInp && gkInp.value.trim() !== '' ? parseFloat(gkInp.value) : null;
-            const ck = ckInp && ckInp.value.trim() !== '' ? parseFloat(ckInp.value) : null;
+            const quiz = parseScore(quizInp);
+            const gk = parseScore(gkInp);
+            const ck = parseScore(ckInp);
 
             const tkEl = row.querySelector('.tongket-display');
             if (tkEl) {
-                if (tbTX !== null && gk !== null && ck !== null) {
-                    const total = tbTX * 0.3 + gk * 0.3 + ck * 0.4;
+                if (quiz !== null && gk !== null && ck !== null) {
+                    const total = quiz * 0.3 + gk * 0.3 + ck * 0.4;
                     const rounded = Math.round(total * 100) / 100;
                     tkEl.textContent = rounded.toFixed(2);
                     tkEl.className = 'total-badge ' + totalClass(rounded);
@@ -382,11 +399,20 @@
             return 'poor2';
         }
 
-        rows.forEach(row => {
-            row.querySelectorAll('.score-input').forEach(inp => {
-                inp.addEventListener('input', () => recalcRow(row));
-                inp.addEventListener('change', () => recalcRow(row));
+        // Lắng nghe sự kiện realtime trực tiếp qua Event Delegation trên tbody
+        const tbody = document.getElementById('grade-tbody');
+        if (tbody) {
+            ['input', 'change', 'keyup', 'keydown', 'blur', 'paste', 'mouseup'].forEach(evtName => {
+                tbody.addEventListener(evtName, (e) => {
+                    const row = e.target.closest('.grade-row');
+                    if (row) recalcRow(row);
+                });
             });
+        }
+
+        // Khởi chạy tính toán điểm tổng kết cho tất cả các dòng khi tải trang
+        document.querySelectorAll('#grade-tbody .grade-row').forEach(row => {
+            recalcRow(row);
         });
 
         btnSave?.addEventListener('click', async () => {
@@ -416,6 +442,11 @@
             rows.forEach(row => {
                 const studentId = parseInt(row.getAttribute('data-student-id'));
                 
+                const quizInp = row.querySelector('.quiz-score');
+                const quizCommentInp = row.querySelector('.quiz-comment');
+                const quizScore = quizInp && quizInp.value.trim() !== '' ? parseFloat(quizInp.value) : null;
+                const quizComment = quizCommentInp ? quizCommentInp.value.trim() : '';
+
                 const gkInp = row.querySelector('.gk-score');
                 const gkCommentInp = row.querySelector('.gk-comment');
                 const gkScore = gkInp && gkInp.value.trim() !== '' ? parseFloat(gkInp.value) : null;
@@ -428,6 +459,8 @@
 
                 payload.push({
                     studentId,
+                    quizScore: quizScore,
+                    quizComment: quizComment || null,
                     midTermScore: gkScore,
                     midTermComment: gkComment || null,
                     finalScore: ckScore,

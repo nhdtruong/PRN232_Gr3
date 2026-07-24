@@ -161,15 +161,6 @@ namespace PROJECT_PRN232_.WebApp.Controllers
                 .ToListAsync();
             var classStudentsMap = classStudents.ToDictionary(cs => cs.StudentId);
 
-            var lessonIds = await _context.Lessons
-                .Where(l => l.ClassId == classId)
-                .Select(l => l.Id)
-                .ToListAsync();
-
-            var allDailyAssessments = await _context.DailyAssessments
-                .Where(da => lessonIds.Contains(da.LessonId))
-                .ToListAsync();
-
             int saved = 0;
 
             foreach (var entry in entries)
@@ -177,27 +168,20 @@ namespace PROJECT_PRN232_.WebApp.Controllers
                 if (!classStudentsMap.TryGetValue(entry.StudentId, out var classStudent))
                     continue;
 
+                if (entry.QuizScore.HasValue && (entry.QuizScore < 0 || entry.QuizScore > 10))
+                    return BadRequest(new { message = $"Điểm Quiz phải từ 0-10 (StudentId={entry.StudentId})" });
+
                 if (entry.MidTermScore.HasValue && (entry.MidTermScore < 0 || entry.MidTermScore > 10))
                     return BadRequest(new { message = $"Điểm giữa kỳ phải từ 0-10 (StudentId={entry.StudentId})" });
 
                 if (entry.FinalScore.HasValue && (entry.FinalScore < 0 || entry.FinalScore > 10))
                     return BadRequest(new { message = $"Điểm cuối kỳ phải từ 0-10 (StudentId={entry.StudentId})" });
 
-                // Tính toán AverageDailyScore (trung bình TX)
-                var studentTXScores = allDailyAssessments
-                    .Where(da => da.StudentId == entry.StudentId && da.Score.HasValue)
-                    .Select(da => da.Score!.Value)
-                    .ToList();
-
-                decimal? avgDailyScore = studentTXScores.Any()
-                    ? Math.Round(studentTXScores.Average(), 2)
-                    : null;
-
-                // Tính toán FinalScoreTotal nếu đủ 3 đầu điểm
+                // Tính toán FinalScoreTotal nếu đủ 3 đầu điểm (Quiz 30%, Giữa kỳ 30%, Cuối kỳ 40%)
                 decimal? finalScoreTotal = null;
-                if (avgDailyScore.HasValue && entry.MidTermScore.HasValue && entry.FinalScore.HasValue)
+                if (entry.QuizScore.HasValue && entry.MidTermScore.HasValue && entry.FinalScore.HasValue)
                 {
-                    finalScoreTotal = Math.Round(avgDailyScore.Value * 0.3m + entry.MidTermScore.Value * 0.3m + entry.FinalScore.Value * 0.4m, 2);
+                    finalScoreTotal = Math.Round(entry.QuizScore.Value * 0.3m + entry.MidTermScore.Value * 0.3m + entry.FinalScore.Value * 0.4m, 2);
                 }
 
                 var transcript = await _context.ClassTranscripts
@@ -211,11 +195,12 @@ namespace PROJECT_PRN232_.WebApp.Controllers
                     {
                         ClassId = classId,
                         StudentId = entry.StudentId,
+                        QuizScore = entry.QuizScore,
+                        QuizComment = string.IsNullOrWhiteSpace(entry.QuizComment) ? null : entry.QuizComment.Trim(),
                         MidTermScore = entry.MidTermScore,
-                        MidTermComment = entry.MidTermComment,
+                        MidTermComment = string.IsNullOrWhiteSpace(entry.MidTermComment) ? null : entry.MidTermComment.Trim(),
                         FinalScore = entry.FinalScore,
-                        FinalComment = entry.FinalComment,
-                        AverageDailyScore = avgDailyScore,
+                        FinalComment = string.IsNullOrWhiteSpace(entry.FinalComment) ? null : entry.FinalComment.Trim(),
                         FinalScoreTotal = finalScoreTotal
                     };
                     _context.ClassTranscripts.Add(transcript);
@@ -223,18 +208,24 @@ namespace PROJECT_PRN232_.WebApp.Controllers
                 }
                 else
                 {
-                    if (transcript.MidTermScore != entry.MidTermScore ||
-                        transcript.MidTermComment != entry.MidTermComment ||
+                    var qComment = string.IsNullOrWhiteSpace(entry.QuizComment) ? null : entry.QuizComment.Trim();
+                    var mComment = string.IsNullOrWhiteSpace(entry.MidTermComment) ? null : entry.MidTermComment.Trim();
+                    var fComment = string.IsNullOrWhiteSpace(entry.FinalComment) ? null : entry.FinalComment.Trim();
+
+                    if (transcript.QuizScore != entry.QuizScore ||
+                        transcript.QuizComment != qComment ||
+                        transcript.MidTermScore != entry.MidTermScore ||
+                        transcript.MidTermComment != mComment ||
                         transcript.FinalScore != entry.FinalScore ||
-                        transcript.FinalComment != entry.FinalComment ||
-                        transcript.AverageDailyScore != avgDailyScore ||
+                        transcript.FinalComment != fComment ||
                         transcript.FinalScoreTotal != finalScoreTotal)
                     {
+                        transcript.QuizScore = entry.QuizScore;
+                        transcript.QuizComment = qComment;
                         transcript.MidTermScore = entry.MidTermScore;
-                        transcript.MidTermComment = entry.MidTermComment;
+                        transcript.MidTermComment = mComment;
                         transcript.FinalScore = entry.FinalScore;
-                        transcript.FinalComment = entry.FinalComment;
-                        transcript.AverageDailyScore = avgDailyScore;
+                        transcript.FinalComment = fComment;
                         transcript.FinalScoreTotal = finalScoreTotal;
                         isChanged = true;
                     }
@@ -254,19 +245,32 @@ namespace PROJECT_PRN232_.WebApp.Controllers
                                 classId,
                                 classEntity.ClassName,
                                 classStudent.Student.FullName,
+                                entry.QuizScore,
+                                entry.QuizComment,
                                 entry.MidTermScore,
                                 entry.MidTermComment,
                                 entry.FinalScore,
                                 entry.FinalComment,
-                                avgDailyScore,
                                 finalScoreTotal);
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             // Ghi log lỗi gửi thông báo nhưng không làm gián đoạn việc lưu điểm
                         }
                     }
                 }
+            }
+
+            // Kiểm tra nếu tất cả học sinh trong lớp đã được nhập đầy đủ 3 đầu điểm (Quiz, Giữa kỳ, Cuối kỳ) -> Chuyển trạng thái lớp sang "Completed" (Đã hoàn thành)
+            var allStudentIds = classStudents.Select(cs => cs.StudentId).ToList();
+            var allTranscripts = await _context.ClassTranscripts
+                .Where(ct => ct.ClassId == classId && allStudentIds.Contains(ct.StudentId))
+                .ToListAsync();
+
+            if (allStudentIds.Any() && allTranscripts.Count == allStudentIds.Count &&
+                allTranscripts.All(ct => ct.QuizScore.HasValue && ct.MidTermScore.HasValue && ct.FinalScore.HasValue))
+            {
+                classEntity.Status = "Completed";
             }
 
             await _context.SaveChangesAsync();
@@ -291,6 +295,8 @@ namespace PROJECT_PRN232_.WebApp.Controllers
     public class TranscriptEntryDto
     {
         public int StudentId { get; set; }
+        public decimal? QuizScore { get; set; }
+        public string? QuizComment { get; set; }
         public decimal? MidTermScore { get; set; }
         public string? MidTermComment { get; set; }
         public decimal? FinalScore { get; set; }

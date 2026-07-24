@@ -18,6 +18,9 @@ namespace PROJECT_PRN232_.Domain
         [ForeignKey(nameof(StudentId))]
         public virtual Student Student { get; set; } = null!;
 
+        public decimal? QuizScore { get; set; }
+        public string? QuizComment { get; set; }
+
         public decimal? MidTermScore { get; set; }
         public string? MidTermComment { get; set; }
 
@@ -25,6 +28,6 @@ namespace PROJECT_PRN232_.Domain
         public string? FinalComment { get; set; }
 
         public decimal? AverageDailyScore { get; set; }
-        public decimal? FinalScoreTotal { get; set; }
+        public decimal? FinalScoreTotal { set; get; }
     }
 }

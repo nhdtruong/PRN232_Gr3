@@ -33,7 +33,8 @@ namespace PROJECT_PRN232_.WebApp.Pages.Teacher.Lessons
         {
             public int StudentId { get; set; }
             public string StudentName { get; set; } = "";
-            public decimal? AverageDailyScore { get; set; }
+            public decimal? QuizScore { get; set; }
+            public string? QuizComment { get; set; }
             public decimal? MidTermScore { get; set; }
             public string? MidTermComment { get; set; }
             public decimal? FinalScore { get; set; }
@@ -78,17 +79,6 @@ namespace PROJECT_PRN232_.WebApp.Pages.Teacher.Lessons
                 return Page();
             }
 
-            // Lấy danh sách lessonId của lớp này
-            var lessonIds = await _context.Lessons
-                .Where(l => l.ClassId == ClassId)
-                .Select(l => l.Id)
-                .ToListAsync();
-
-            // Lấy tất cả DailyAssessment của các buổi học trong lớp
-            var allDailyAssessments = await _context.DailyAssessments
-                .Where(da => lessonIds.Contains(da.LessonId) && da.Score.HasValue)
-                .ToListAsync();
-
             // Lấy bảng điểm định kỳ đã lưu
             var savedTranscripts = await _context.ClassTranscripts
                 .Where(ct => ct.ClassId == ClassId)
@@ -96,33 +86,24 @@ namespace PROJECT_PRN232_.WebApp.Pages.Teacher.Lessons
 
             foreach (var cs in classStudents)
             {
-                // Tính trung bình TX
-                var studentTXScores = allDailyAssessments
-                    .Where(da => da.StudentId == cs.StudentId)
-                    .Select(da => da.Score!.Value)
-                    .ToList();
-
-                decimal? avgDailyScore = studentTXScores.Any()
-                    ? Math.Round(studentTXScores.Average(), 2)
-                    : (decimal?)null;
-
                 savedTranscripts.TryGetValue(cs.StudentId, out var transcript);
 
                 var row = new StudentTranscriptRow
                 {
                     StudentId = cs.StudentId,
                     StudentName = cs.Student.FullName,
-                    AverageDailyScore = avgDailyScore,
+                    QuizScore = transcript?.QuizScore,
+                    QuizComment = transcript?.QuizComment,
                     MidTermScore = transcript?.MidTermScore,
                     MidTermComment = transcript?.MidTermComment,
                     FinalScore = transcript?.FinalScore,
                     FinalComment = transcript?.FinalComment
                 };
 
-                // Tự động tính điểm tổng kết lớp học nếu có đủ cả 3 cột điểm
-                if (row.AverageDailyScore.HasValue && row.MidTermScore.HasValue && row.FinalScore.HasValue)
+                // Tự động tính điểm tổng kết lớp học nếu có đủ cả 3 cột điểm (Quiz 30%, Giữa kỳ 30%, Cuối kỳ 40%)
+                if (row.QuizScore.HasValue && row.MidTermScore.HasValue && row.FinalScore.HasValue)
                 {
-                    row.FinalScoreTotal = Math.Round(row.AverageDailyScore.Value * 0.3m + row.MidTermScore.Value * 0.3m + row.FinalScore.Value * 0.4m, 2);
+                    row.FinalScoreTotal = Math.Round(row.QuizScore.Value * 0.3m + row.MidTermScore.Value * 0.3m + row.FinalScore.Value * 0.4m, 2);
                 }
                 else
                 {

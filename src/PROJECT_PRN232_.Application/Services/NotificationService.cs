@@ -675,20 +675,22 @@ namespace PROJECT_PRN232_.Application.Services
             int classId,
             string className,
             string studentName,
+            decimal? quizScore,
+            string? quizComment,
             decimal? midtermScore,
             string? midtermComment,
             decimal? finalScore,
             string? finalComment,
-            decimal? averageDailyScore,
             decimal? finalScoreTotal)
         {
-            var title = $"Trung tâm đã cập nhật bảng điểm định kỳ (Giữa kỳ/Cuối kỳ) - {studentName}";
+            var title = $"Trung tâm đã cập nhật bảng điểm định kỳ (Quiz/Giữa kỳ/Cuối kỳ) - {studentName}";
             
-            var tbText = averageDailyScore.HasValue ? $"<strong>{averageDailyScore.Value.ToString("0.##")}</strong> / 10" : "—";
+            var quizText = quizScore.HasValue ? $"<strong>{quizScore.Value.ToString("0.##")}</strong> / 10" : "—";
             var gkText = midtermScore.HasValue ? $"<strong>{midtermScore.Value.ToString("0.##")}</strong> / 10" : "—";
             var ckText = finalScore.HasValue ? $"<strong>{finalScore.Value.ToString("0.##")}</strong> / 10" : "—";
             var totalText = finalScoreTotal.HasValue ? $"<span class='badge bg-success'>{finalScoreTotal.Value.ToString("0.##")}</span>" : "—";
 
+            var quizCommentText = !string.IsNullOrWhiteSpace(quizComment) ? $"<div class='text-muted small mt-1'>Nhận xét Quiz: {quizComment}</div>" : "";
             var gkCommentText = !string.IsNullOrWhiteSpace(midtermComment) ? $"<div class='text-muted small mt-1'>Nhận xét GK: {midtermComment}</div>" : "";
             var ckCommentText = !string.IsNullOrWhiteSpace(finalComment) ? $"<div class='text-muted small mt-1'>Nhận xét CK: {finalComment}</div>" : "";
 
@@ -701,7 +703,7 @@ namespace PROJECT_PRN232_.Application.Services
     <div style='margin-bottom: 16px;'>
         <div style='font-weight: 700; font-size: 0.78rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; letter-spacing: 0.05em;'>🏆 Đánh giá & Điểm tổng hợp</div>
         <div style='padding: 12px; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem;'>
-            <div style='margin-bottom: 6px;'><b>Trung bình Thường xuyên (30%):</b> {tbText}</div>
+            <div style='margin-bottom: 6px;'><b>Điểm Quiz (30%):</b> {quizText} {quizCommentText}</div>
             <div style='margin-bottom: 6px;'><b>Điểm Giữa kỳ (30%):</b> {gkText} {gkCommentText}</div>
             <div style='margin-bottom: 6px;'><b>Điểm Cuối kỳ (40%):</b> {ckText} {ckCommentText}</div>
             <hr style='opacity: 0.15; margin: 8px 0;'>
