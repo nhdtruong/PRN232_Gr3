@@ -38,6 +38,8 @@ namespace PROJECT_PRN232_.Infrastructure.Repositories
 
             if (existing != null)
             {
+                existing.QuizScore = transcript.QuizScore;
+                existing.QuizComment = transcript.QuizComment;
                 existing.MidTermScore = transcript.MidTermScore;
                 existing.MidTermComment = transcript.MidTermComment;
                 existing.FinalScore = transcript.FinalScore;

@@ -67,97 +67,11 @@ namespace PROJECT_PRN232_.WebApp.Pages.Teacher.Lessons
 
         public async Task<IActionResult> OnGetAsync()
         {
-            if (ClassId <= 0)
+            if (ClassId > 0)
             {
-                ErrorMessage = "Mã lớp học không hợp lệ.";
-                return Page();
+                return Redirect("/Teacher/Lessons/ClassTranscript?ClassId=" + ClassId);
             }
-
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!int.TryParse(userIdStr, out int teacherId))
-            {
-                ErrorMessage = "Không thể xác định thông tin đăng nhập.";
-                return Page();
-            }
-
-            // Kiểm tra quyền giáo viên
-            var classEntity = await _context.Classes
-                .FirstOrDefaultAsync(c => c.Id == ClassId && c.TeacherId == teacherId);
-            if (classEntity == null)
-            {
-                ErrorMessage = "Bạn không có quyền truy cập lớp học này.";
-                return Page();
-            }
-
-            ClassName = classEntity.ClassName;
-
-            // Lấy các buổi học của lớp (chỉ lấy buổi được highlight nếu có)
-            var queryLessons = _context.Lessons
-                .Where(l => l.ClassId == ClassId);
-
-            if (HighlightLessonId > 0)
-            {
-                queryLessons = queryLessons.Where(l => l.Id == HighlightLessonId);
-            }
-
-            var lessons = await queryLessons
-                .OrderBy(l => l.LessonDate)
-                .Select(l => new { l.Id, l.LessonDate, l.Title })
-                .ToListAsync();
-
-            LessonHeaders = lessons.Select((l, idx) => new LessonScoreHeader
-            {
-                LessonId = l.Id,
-                LessonTitle = l.Title ?? $"Buổi {idx + 1}",
-                LessonDate = l.LessonDate.ToString("dd/MM")
-            }).ToList();
-
-            // Lấy tất cả học sinh trong lớp
-            var classStudents = await _context.ClassStudents
-                .Where(cs => cs.ClassId == ClassId)
-                .Include(cs => cs.Student)
-                .OrderBy(cs => cs.Student.FullName)
-                .ToListAsync();
-
-            if (!classStudents.Any())
-            {
-                Students = new List<StudentGradeRow>();
-                return Page();
-            }
-
-            var lessonIds = lessons.Select(l => l.Id).ToList();
-            var studentIds = classStudents.Select(cs => cs.StudentId).ToList();
-
-            // Lấy toàn bộ DailyAssessment của học sinh trong lớp cho các buổi học này
-            var allAssessments = await _context.DailyAssessments
-                .Where(a => studentIds.Contains(a.StudentId) && lessonIds.Contains(a.LessonId))
-                .ToListAsync();
-
-            foreach (var cs in classStudents)
-            {
-                var row = new StudentGradeRow
-                {
-                    StudentId = cs.StudentId,
-                    StudentName = cs.Student.FullName
-                };
-
-                var studentAssessments = allAssessments.Where(a => a.StudentId == cs.StudentId).ToList();
-
-                // Điểm TX - theo từng buổi học
-                foreach (var lid in lessonIds)
-                {
-                    var a = studentAssessments.FirstOrDefault(x => x.LessonId == lid);
-                    row.TXScores[lid] = (a?.Id, a?.Score, a?.Comment);
-                }
-
-                // Không hiển thị GK và CK trên trang này
-                row.GiuaKy = (null, null, null);
-                row.CuoiKy = (null, null, null);
-
-                Students.Add(row);
-            }
-
-            return Page();
+            return Redirect("/Teacher/MyClasses");
         }
     }
 }

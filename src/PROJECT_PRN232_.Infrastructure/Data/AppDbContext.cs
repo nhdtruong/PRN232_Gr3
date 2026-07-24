@@ -101,6 +101,10 @@ namespace PROJECT_PRN232_.Infrastructure.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<ClassTranscript>()
+                .Property(ct => ct.QuizScore)
+                .HasColumnType("decimal(4,2)");
+
+            modelBuilder.Entity<ClassTranscript>()
                 .Property(ct => ct.MidTermScore)
                 .HasColumnType("decimal(4,2)");
 

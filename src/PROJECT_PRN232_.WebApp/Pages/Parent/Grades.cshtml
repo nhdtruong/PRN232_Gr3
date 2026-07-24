@@ -1,0 +1,187 @@
+@page
+@model PROJECT_PRN232_.WebApp.Pages.Parent.GradesModel
+@{
+    ViewData["Title"] = "Bảng điểm & Đánh giá của con";
+}
+
+<div class="container py-4">
+    <!-- Header Page -->
+    <div class="row align-items-center mb-4 g-3">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="/Parent/Dashboard" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Bảng điểm của con</li>
+                </ol>
+            </nav>
+            <h1 class="h3 fw-bold text-dark mb-1">
+                <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Bảng điểm & Đánh giá kết quả học tập
+            </h1>
+            <p class="text-muted mb-0">Theo dõi điểm Quiz, thi giữa kỳ, cuối kỳ và nhận xét học tập của con em.</p>
+        </div>
+
+        @if (Model.Children.Any())
+        {
+            <div class="col-md-4 text-md-end">
+                <form method="get" id="childSelectorForm">
+                    @if (Model.ClassId.HasValue && Model.ClassId.Value > 0)
+                    {
+                        <input type="hidden" name="ClassId" value="@Model.ClassId.Value" />
+                    }
+                    <div class="d-inline-block text-start w-100 bg-white p-2 rounded-4 shadow-sm border">
+                        <label for="selectChild" class="form-label small fw-bold text-muted mb-1 px-2">
+                            <i class="bi bi-person-check-fill text-primary me-1"></i>Chọn con em:
+                        </label>
+                        <select name="SelectedStudentId" id="selectChild" class="form-select form-select-sm border-0 fw-bold text-dark" onchange="document.getElementById('childSelectorForm').submit();">
+                            @foreach (var child in Model.Children)
+                            {
+                                <option value="@child.Id" selected="@(Model.SelectedStudentId == child.Id ? "selected" : null)">
+                                    👦 @child.FullName (ID: @child.Id)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                </form>
+            </div>
+        }
+    </div>
+
+    @if (!Model.Children.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+            <div class="card-body">
+                <i class="bi bi-emoji-smile fs-1 text-muted mb-3 d-block"></i>
+                <h5 class="fw-bold">Chưa liên kết hồ sơ con học viên</h5>
+                <p class="text-muted mb-0">Tài khoản của bạn hiện chưa gắn liền với hồ sơ học sinh nào trong hệ thống.</p>
+            </div>
+        </div>
+    }
+    else if (!Model.ClassGrades.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+            <div class="card-body">
+                <i class="bi bi-journal-x fs-1 text-muted mb-3 d-block"></i>
+                <h5 class="fw-bold">Chưa có thông tin bảng điểm</h5>
+                <p class="text-muted mb-0">Học viên <strong>@Model.CurrentStudent?.FullName</strong> hiện chưa tham gia lớp học nào hoặc giáo viên chưa nhập điểm.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Danh sách bảng điểm theo lớp -->
+        <div class="d-flex flex-column gap-4">
+            @foreach (var grade in Model.ClassGrades)
+            {
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <!-- Header Card Lớp -->
+                    <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom">
+                        <div>
+                            <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-1.5 rounded-pill me-2">
+                                <i class="bi bi-book me-1"></i>@(string.IsNullOrWhiteSpace(grade.Subject) ? "Môn học" : grade.Subject)
+                            </span>
+                            <h4 class="d-inline-block fw-bold text-dark mb-0 fs-5">@grade.ClassName</h4>
+                            <span class="text-muted ms-3 small"><i class="bi bi-person-badge me-1"></i>GV: <strong>@grade.TeacherName</strong></span>
+                        </div>
+                        <div>
+                            <span class="badge @(grade.Status == "Active" ? "bg-success-subtle text-success" : "bg-primary-subtle text-primary") rounded-pill px-3 py-1.5 border">
+                                @(grade.Status == "Active" ? "Đang học" : "Đã hoàn thành")
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <!-- Thống kê điểm số tổng quan -->
+                        <div class="row g-3 mb-4">
+                            <!-- Điểm Quiz -->
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 bg-light rounded-4 text-center border h-100">
+                                    <span class="text-muted small fw-semibold d-block mb-1">Điểm Quiz (30%)</span>
+                                    <h3 class="fw-bold text-info mb-0">
+                                        @(grade.QuizScore.HasValue ? grade.QuizScore.Value.ToString("0.0") : "—")
+                                    </h3>
+                                    <span class="text-muted" style="font-size: 0.75rem;">Bài Quiz</span>
+                                </div>
+                            </div>
+
+                            <!-- Điểm Giữa Kỳ -->
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 bg-light rounded-4 text-center border h-100">
+                                    <span class="text-muted small fw-semibold d-block mb-1">Điểm Giữa Kỳ (30%)</span>
+                                    <h3 class="fw-bold text-primary mb-0">
+                                        @(grade.MidTermScore.HasValue ? grade.MidTermScore.Value.ToString("0.0") : "—")
+                                    </h3>
+                                    <span class="text-muted" style="font-size: 0.75rem;">Thi giữa kỳ</span>
+                                </div>
+                            </div>
+
+                            <!-- Điểm Cuối Kỳ -->
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 bg-light rounded-4 text-center border h-100">
+                                    <span class="text-muted small fw-semibold d-block mb-1">Điểm Cuối Kỳ (40%)</span>
+                                    <h3 class="fw-bold text-warning mb-0">
+                                        @(grade.FinalScore.HasValue ? grade.FinalScore.Value.ToString("0.0") : "—")
+                                    </h3>
+                                    <span class="text-muted" style="font-size: 0.75rem;">Thi cuối kỳ</span>
+                                </div>
+                            </div>
+
+                            <!-- Điểm Tổng Kết & Xếp Loại -->
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 rounded-4 text-center h-100 shadow-sm d-flex flex-column justify-content-center align-items-center" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #ffffff;">
+                                    <span class="small fw-bold d-block mb-1 text-white-50">Điểm Tổng Kết</span>
+                                    <h3 class="fw-bold text-white mb-2" style="font-size: 1.8rem; font-weight: 800;">
+                                        @(grade.FinalScoreTotal.HasValue ? grade.FinalScoreTotal.Value.ToString("0.0") : "—")
+                                    </h3>
+                                    <span class="badge bg-white text-primary rounded-pill px-3 py-1 fw-bold small shadow-sm">@grade.AcademicRating</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nhận xét định kỳ từ Giáo viên -->
+                        @if (!string.IsNullOrWhiteSpace(grade.QuizComment) || !string.IsNullOrWhiteSpace(grade.MidTermComment) || !string.IsNullOrWhiteSpace(grade.FinalComment))
+                        {
+                            <div class="p-3 bg-light-subtle rounded-3 border">
+                                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-chat-square-quote text-primary me-2"></i>Nhận xét từ Giáo viên:</h6>
+                                <div class="row g-2 small">
+                                    @if (!string.IsNullOrWhiteSpace(grade.QuizComment))
+                                    {
+                                        <div class="col-md-4">
+                                            <strong>Quiz:</strong> <span class="text-secondary">@grade.QuizComment</span>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(grade.MidTermComment))
+                                    {
+                                        <div class="col-md-4">
+                                            <strong>Giữa kỳ:</strong> <span class="text-secondary">@grade.MidTermComment</span>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(grade.FinalComment))
+                                    {
+                                        <div class="col-md-4">
+                                            <strong>Cuối kỳ:</strong> <span class="text-secondary">@grade.FinalComment</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Lắng nghe thông báo SignalR Realtime để tự động cập nhật bảng điểm tức thì cho Phụ huynh
+        window.addEventListener('eb-notification-received', (e) => {
+            const notif = e.detail;
+            if (notif && (notif.title.includes('Bảng điểm') || notif.title.includes('điểm'))) {
+                console.log('Nhận tín hiệu cập nhật điểm số SignalR Realtime, tự động tải lại bảng điểm...');
+                setTimeout(() => location.reload(), 800);
+            }
+        });
+    </script>
+}

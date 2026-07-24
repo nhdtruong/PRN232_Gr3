@@ -86,11 +86,12 @@ namespace PROJECT_PRN232_.Application.Services
             int classId,
             string className,
             string studentName,
+            decimal? quizScore,
+            string? quizComment,
             decimal? midtermScore,
             string? midtermComment,
             decimal? finalScore,
             string? finalComment,
-            decimal? averageDailyScore,
             decimal? finalScoreTotal);
 
         Task NotifyTeacherAssignedClassAsync(int teacherId, int classId, string className);

@@ -277,44 +277,100 @@ async function openNotificationDetail(item) {
 function injectNotificationModal() {
     if (document.getElementById('eb-notification-modal')) return; // Already exists
 
+    // Inject custom CSS to make published lesson reports beautiful and 2-column layout on wide screens
+    const styleHtml = `
+    <style>
+        @media (min-width: 576px) {
+            .published-lesson-report {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 16px !important;
+                background: transparent !important;
+            }
+            .published-lesson-report > div:first-child {
+                grid-column: span 2 !important;
+                margin-bottom: 0 !important;
+            }
+            .published-lesson-report > div[style*="margin-bottom"] {
+                margin-bottom: 0 !important;
+                display: flex;
+                flex-direction: column;
+            }
+            .published-lesson-report > div[style*="margin-bottom"] > div:last-child,
+            .published-lesson-report > div[style*="margin-bottom"] > ul {
+                flex-grow: 1;
+            }
+            .published-lesson-report > .text-center {
+                grid-column: span 2 !important;
+                margin-top: 8px !important;
+            }
+        }
+        /* Style improvement for report boxes */
+        .published-lesson-report div[style*="border: 1px solid"] {
+            border: 1px solid rgba(79, 70, 229, 0.1) !important;
+            background: #f8fafc !important;
+            border-radius: 12px !important;
+            padding: 14px !important;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .published-lesson-report div[style*="border: 1px solid"]:hover {
+            border-color: rgba(79, 70, 229, 0.2) !important;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.05);
+        }
+        .published-lesson-report ul {
+            background: #f8fafc !important;
+            border: 1px solid rgba(79, 70, 229, 0.1) !important;
+            border-radius: 12px !important;
+            padding: 14px 14px 14px 30px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .published-lesson-report hr {
+            display: none !important; /* Hide ugly raw HR lines */
+        }
+    </style>`;
+    document.head.insertAdjacentHTML('beforeend', styleHtml);
+
     const modalHtml = `
     <div id="eb-notification-modal" class="modal fade" tabindex="-1"
          aria-labelledby="eb-notif-modal-title" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
-            <div class="modal-content" style="border-radius: 16px; border: none; overflow: hidden; box-shadow: 0 24px 64px rgba(79,70,229,0.18);">
+        <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 760px; width: 95%;">
+            <div class="modal-content" style="border-radius: 20px; border: none; overflow: hidden; box-shadow: 0 24px 64px rgba(79,70,229,0.22);">
 
                 <!-- Header gradient -->
-                <div class="modal-header" style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); border: none; padding: 1.1rem 1.4rem;">
-                    <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden me-2">
-                        <div style="min-width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;">
-                            <i class="bi bi-bell-fill text-white" style="font-size:0.9rem;"></i>
+                <div class="modal-header" style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); border: none; padding: 1.25rem 1.6rem;">
+                    <div class="d-flex align-items-center gap-3 flex-grow-1 overflow-hidden me-2">
+                        <div style="min-width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);">
+                            <i class="bi bi-bell-fill text-white" style="font-size:1.05rem;"></i>
                         </div>
-                        <h6 class="modal-title text-white fw-bold mb-0"
-                            id="eb-notif-modal-title"
-                            style="font-size:0.9rem; line-height:1.35; white-space:normal;"></h6>
+                        <div>
+                            <h6 class="modal-title text-white fw-bold mb-0"
+                                id="eb-notif-modal-title"
+                                style="font-size:0.95rem; line-height:1.4; white-space:normal;"></h6>
+                        </div>
                     </div>
                     <button type="button" class="btn-close btn-close-white flex-shrink-0"
                             data-bs-dismiss="modal" aria-label="Đóng"></button>
                 </div>
 
                 <!-- Body -->
-                <div class="modal-body px-4 py-3">
-                    <p id="eb-notif-modal-message"
+                <div class="modal-body px-4 py-4" style="background-color: #fafafa;">
+                    <div id="eb-notif-modal-message"
                        class="mb-3"
-                       style="font-size:0.88rem; line-height:1.65; color:#374151; white-space:pre-line;"></p>
-                    <div class="d-flex align-items-center gap-1"
-                         style="font-size:0.73rem; color:#9CA3AF;">
+                       style="font-size:0.9rem; line-height:1.65; color:#374151;"></div>
+                    <div class="d-flex align-items-center gap-1 border-top pt-3"
+                         style="font-size:0.75rem; color:#9CA3AF; border-color: rgba(0,0,0,0.05) !important;">
                         <i class="bi bi-clock me-1"></i>
                         <span id="eb-notif-modal-time"></span>
                     </div>
                 </div>
 
                 <!-- Footer -->
-                <div class="modal-footer" style="border-top:1px solid rgba(79,70,229,0.1); padding:0.6rem 1.4rem;">
+                <div class="modal-footer" style="border-top:1px solid rgba(0,0,0,0.05); padding:0.8rem 1.6rem; background-color: #ffffff;">
                     <button type="button"
-                            class="btn btn-sm px-4 fw-semibold"
+                            class="btn btn-sm px-4 fw-semibold text-white shadow-sm"
                             data-bs-dismiss="modal"
-                            style="background:linear-gradient(135deg,#4F46E5,#7C3AED); color:white; border:none; border-radius:8px; font-size:0.82rem; letter-spacing:0.01em;">
+                            style="background:linear-gradient(135deg,#4F46E5,#7C3AED); border:none; border-radius:10px; font-size:0.85rem; padding: 8px 24px; transition: all 0.2s ease;">
                         Đóng
                     </button>
                 </div>
